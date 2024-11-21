@@ -37,7 +37,6 @@
             <div v-if="showDropdown" class="dropdown-menu">
               <router-link to="/community/group" class="dropdown-item">모임</router-link>
               <router-link to="/community/inquiry" class="dropdown-item">문의 게시판</router-link>
-              <router-link to="/community/board" class="dropdown-item">자유 게시판</router-link>
             </div>
           </div>
         </div>
