@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.oo.group.model.dao.GroupDao">
+
+	<!-- resultMap 정의 -->
+	<resultMap type="com.oo.group.model.dto.Group" id="GroupResultMap">
+	</resultMap>
+
+    <!-- 전체 게시글 조회 -->
+	<select id="selectAll" resultMap="GroupResultMap">
+		SELECT *
+		FROM group_board;
+	</select>
+	
+	<!-- 상세 게시글 조회 -->
+	<select id="selectOne" resultType="Group" parameterType="int">
+		SELECT *
+		FROM group_board
+		WHERE g_board_no = #{gBoardNo};
+	</select>
+
+	<!-- 게시글 삭제 -->
+	<delete id="removeGroup" parameterType="int">
+		DELETE FROM group_board
+		WHERE g_board_no = #{gBoardNo};
+	</delete>
+	
+	<!-- 게시글 수정 -->
+	<update id="modifyGroup" parameterType="Group">
+    	UPDATE group_board
+	    SET 
+	        g_board_title = #{gBoardTitle},
+	        g_board_content = #{gBoardContent},
+	        g_board_is_resolved = #{gBoardIsResolved}
+	    WHERE g_board_no = #{gBoardNo};
+	</update>
+
+</mapper>

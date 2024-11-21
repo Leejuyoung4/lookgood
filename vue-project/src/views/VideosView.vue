@@ -1,0 +1,334 @@
+<template>
+  <div class="video-div">
+    <div class="video-menu">
+      <!-- 메뉴바 아이템들 -->
+      <div class="menu-item" v-for="(icon, index) in icons" :key="index" @click="filterVideos(icon.category)">
+        <img :src="icon.src" />
+        <span>{{ icon.name }}</span>
+      </div>
+    </div>
+
+    <!-- 로딩 상태 표시 -->
+    <div v-if="loading" class="loading">
+      데이터를 불러오는 중...
+    </div>
+
+    <!-- 에러 메시지 표시 -->
+    <div v-if="error" class="error">
+      {{ error }}
+    </div>
+
+    <!-- 비디오 리스트 -->
+    <div v-else class="video-list">
+      <div class="video" 
+           v-for="video in paginatedVideos" 
+           :key="video.id"
+           @click="goToVideoDetail(video.id)">
+        <div class="video-thumbnail">
+          <img :src="video.image" :alt="video.title" />
+        </div>
+        <div class="video-content">
+          <h3 class="video-title">{{ video.title || '제목 없음' }}</h3>
+          <p class="video-description">{{ video.description || '설명 없음' }}</p>
+          <div class="video-info">
+            <span class="instructor">{{ video.instructor || '강사 미정' }}</span>
+            <p class="instructor-intro">{{ video.instructorIntro }}</p>
+            <div class="stats">
+              <span class="views">조회수 {{ video.views }}회</span>
+              <span class="upload-date">{{ video.uploadDate }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 페이지네이션 버튼 -->
+    <div class="pagination" v-if="filteredVideos.length > itemsPerPage">
+      <button @click="prevPage" :disabled="currentPage === 1">이전</button>
+      <button @click="nextPage" :disabled="currentPage === totalPages">다음</button>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import axios from 'axios';
+import allIcon from '@/assets/img/video/all-icon.png';
+import healthIcon from '@/assets/img/video/health-icon.png';
+import yogaIcon from '@/assets/img/video/yoga-icon.png';
+import pilatesIcon from '@/assets/img/video/pilates-icon.png';
+import dancingIcon from '@/assets/img/video/dancing-icon.png';
+import boxingIcon from '@/assets/img/video/boxing-icon.png';
+import ex from '@/assets/img/video/ex.png';
+
+const router = useRouter();
+const videos = ref([]);
+const loading = ref(true);
+const error = ref(null);
+
+// 메뉴 아이콘 리스트
+const icons = [
+  { src: allIcon, name: '전체', category: 'all' },
+  { src: healthIcon, name: '헬스', category: 'health' },
+  { src: yogaIcon, name: '요가', category: 'yoga' },
+  { src: pilatesIcon, name: '필라테스', category: 'pilates' },
+  { src: dancingIcon, name: '댄스', category: 'dancing' },
+  { src: boxingIcon, name: '복싱', category: 'boxing' }
+];
+
+// 비디오 데이터 가져오기
+const fetchVideos = async () => {
+  try {
+    loading.value = true;
+    const response = await axios.get('/api/videos');
+    console.log('Raw response:', response.data); // 데이터 확인용
+
+    videos.value = response.data.map(video => ({
+      id: video.vno,                     // vno로 수정
+      title: video.vtitle,               // vtitle로 수정
+      description: video.vdescription,    // vdescription로 수정
+      image: ex,                         // 임시 이미지 사용
+      category: video.vcategoryName,     // vcategoryName로 수정
+      uploadDate: formatDate(video.vuploadDate), // vuploadDate로 수정
+      views: video.vviews,               // vviews로 수정
+      instructor: video.vinstructor,     // vinstructor로 수정
+      instructorIntro: video.vinstructorIntro // vinstructorIntro로 수정
+    }));
+
+    console.log('Mapped videos:', videos.value); // 매핑된 데이터 확인
+  } catch (err) {
+    error.value = '비디오 데이터를 불러오는데 실패했습니다.';
+    console.error('Error fetching videos:', err);
+  } finally {
+    loading.value = false;
+  }
+};
+
+// 날짜 포맷팅 함수
+const formatDate = (dateString) => {
+  if (!dateString) return '';
+  try {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('ko-KR', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    }).format(date);
+  } catch (e) {
+    console.error('Date formatting error:', e);
+    return dateString;
+  }
+};
+
+// 비디오 상세 페이지로 이동
+const goToVideoDetail = (videoId) => {
+  router.push(`/videos/${videoId}`);
+};
+
+// 컴포넌트 마운트 시 데이터 로드
+onMounted(() => {
+  fetchVideos();
+});
+
+// 페이지네이션 상태
+const currentPage = ref(1);
+const itemsPerPage = 8;
+const selectedCategory = ref('all');
+
+const filteredVideos = computed(() => {
+  if (selectedCategory.value === 'all') {
+    return videos.value;
+  }
+  return videos.value.filter(video => video.category === selectedCategory.value);
+});
+
+const totalPages = computed(() => Math.ceil(filteredVideos.value.length / itemsPerPage));
+
+const paginatedVideos = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage;
+  const end = start + itemsPerPage;
+  return filteredVideos.value.slice(start, end);
+});
+
+const nextPage = () => {
+  if (currentPage.value < totalPages.value) {
+    currentPage.value++;
+  }
+};
+
+const prevPage = () => {
+  if (currentPage.value > 1) {
+    currentPage.value--;
+  }
+};
+
+const filterVideos = (category) => {
+  selectedCategory.value = category;
+  currentPage.value = 1; // 페이지를 1로 초기화
+};
+
+// formatDate 함수를 template에서 사용할 수 있도록 내보내기
+defineExpose({
+  formatDate
+});
+</script>
+
+<style scoped>
+.video-div {
+  background: #ffffff;
+  box-sizing: border-box;
+  height: auto;
+  position: relative;
+  overflow: hidden;
+  padding-bottom: 50px;
+}
+
+.video-menu {
+  display: flex;
+  justify-content: center;
+  gap: 70px;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: 250px;
+}
+
+.menu-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer; /* 클릭 가능하도록 변경 */
+}
+
+.menu-item img {
+  width: 60px;
+  height: auto;
+}
+
+.menu-item span {
+  margin-top: 10px;
+  font-size: 20px;
+  font-family: "Inter-Medium", sans-serif;
+  font-weight: 500;
+}
+
+.video-list {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+  margin-top: 600px;
+  padding: 0 50px;
+}
+
+.video {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease;
+}
+
+.video:hover {
+  transform: translateY(-4px);
+}
+
+.video-thumbnail {
+  width: 100%;
+  position: relative;
+  padding-top: 56.25%; /* 16:9 비율 */
+  overflow: hidden;
+}
+
+.video-thumbnail img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.video-content {
+  padding: 16px;
+}
+
+.video-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  color: #333;
+}
+
+.video-description {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 12px;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.video-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.instructor {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1a73e8;
+}
+
+.instructor-intro {
+  font-size: 13px;
+  color: #666;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.stats {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #666;
+  margin-top: 8px;
+}
+
+.views, .upload-date {
+  color: #666;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.pagination button {
+  margin: 0 10px;
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.loading, .error {
+  text-align: center;
+  margin-top: 300px;
+  font-size: 18px;
+  color: #666;
+}
+
+.error {
+  color: #ff4444;
+}
+</style>

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.oo.eventdetail.model.dao.EventDetailDao">
+
+    <!-- 특정 이벤트 ID로 이벤트 상세 정보 조회 -->
+    <select id="findEventDetailById" resultType="com.oo.eventdetail.model.dto.EventDetail">
+        SELECT 
+            e_details_no AS eDetailsNo,
+            description,
+            address,
+            inquiry_number AS inquiryNumber,
+            website_url AS websiteUrl,
+            check_in_time AS checkInTime,
+            check_out_time AS checkOutTime,
+            parking_available AS parkingAvailable,
+            facilities,
+            entry_fee AS entryFee,
+            e_no AS eNo
+        FROM 
+            events_details
+        WHERE 
+            e_no = #{id}
+    </select>
+    
+    <!-- ai포스터 이미지 가져오기 -->
+
+<!-- EventDetailMapper.xml -->
+
+<select id="findRelatedEvents" resultType="EventDetail">
+    SELECT *
+    FROM events_details
+    WHERE e_details_no != #{param1}
+    AND description LIKE '%축제%'
+    ORDER BY e_details_no DESC
+    LIMIT 5
+</select>
+</mapper>
+

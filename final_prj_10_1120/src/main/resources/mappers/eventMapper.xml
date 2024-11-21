@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.oo.event.model.dao.EventDao">
+
+	<!-- 전체 이벤트 리스트 가져오기 -->
+	<select id="findAll" resultType="com.oo.event.model.dto.Event">
+		SELECT
+		e.e_no AS eNo, -- DTO의 eNo 필드에 매핑
+		e.e_title AS eTitle, -- DTO의 eTitle 필드에 매핑
+		e.e_short AS eShort, -- DTO의 eShort 필드에 매핑
+		e.e_content AS eContent, -- DTO의 eContent 필드에 매핑
+		e.e_start_date AS eStartDate, -- DTO의 eStartDate 필드에 매핑
+		e.e_end_date AS eEndDate, -- DTO의 eEndDate 필드에 매핑
+		e.e_big_city AS eBigCity, -- DTO의 eBigCity 필드에 매핑
+		e.e_small_city AS eSmallCity -- DTO의 eSmallCity 필드에 매핑
+		FROM
+		events e
+		ORDER BY
+		e.e_start_date DESC; -- 최신순 정렬
+	</select>
+
+</mapper>

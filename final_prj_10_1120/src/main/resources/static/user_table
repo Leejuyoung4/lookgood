@@ -1,0 +1,67 @@
+CREATE DATABASE IF NOT EXISTS final_prj_10;
+
+USE final_prj_10;
+
+CREATE TABLE IF NOT EXISTS `user` (
+    user_no INT AUTO_INCREMENT PRIMARY KEY,
+    user_id VARCHAR(100) UNIQUE,
+    user_name VARCHAR(20) NOT NULL,
+    password VARCHAR(100) NOT NULL,
+    email VARCHAR(200) NOT NULL,
+    phone_num VARCHAR(100) UNIQUE,
+    join_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT INTO `user` (user_id, user_name, password, email, phone_num) VALUES
+('john_doe01', 'John Doe', 'p@ssword123', 'john.doe@example.com', '555-201-0001'),
+('emma.smith02', 'Emma Smith', 'qwerty789', 'emma.smith@example.com', '555-201-0002'),
+('mike_hunter', 'Mike Hunter', 'hunter123!', 'mike.hunter@example.com', '555-201-0003'),
+('lisa.martinez', 'Lisa Martinez', 'password456', 'lisa.martinez@example.com', '555-201-0004'),
+('oliver.jones', 'Oliver Jones', 'oliver_pw', 'oliver.jones@example.com', '555-201-0005'),
+('ava.brown', 'Ava Brown', 'brownie@123', 'ava.brown@example.com', '555-201-0006'),
+('ethan_wilson', 'Ethan Wilson', 'wilson@456', 'ethan.wilson@example.com', '555-201-0007'),
+('sophia.lee', 'Sophia Lee', 'sofia$Lee', 'sophia.lee@example.com', '555-201-0008'),
+('james_moore', 'James Moore', 'mooreJames!', 'james.moore@example.com', '555-201-0009'),
+('mia.perez', 'Mia Perez', 'Perez#999', 'mia.perez@example.com', '555-201-0010'),
+('lucas_anderson', 'Lucas Anderson', 'lucas_pw2023', 'lucas.anderson@example.com', '555-201-0011'),
+('isabella.kim', 'Isabella Kim', 'Isab3ll@!', 'isabella.kim@example.com', '555-201-0012'),
+('benjamin_taylor', 'Benjamin Taylor', 'ben@Taylor', 'benjamin.taylor@example.com', '555-201-0013'),
+('charlotte.wong', 'Charlotte Wong', 'Charlott3$', 'charlotte.wong@example.com', '555-201-0014'),
+('daniel.harris', 'Daniel Harris', 'Dan_Harris123', 'daniel.harris@example.com', '555-201-0015'),
+('amelia.clark', 'Amelia Clark', 'Amelia#C2023', 'amelia.clark@example.com', '555-201-0016'),
+('henry_morris', 'Henry Morris', 'Morris!Henry', 'henry.morris@example.com', '555-201-0017'),
+('scarlett_white', 'Scarlett White', 'sc@rlettW', 'scarlett.white@example.com', '555-201-0018'),
+('leo.garcia', 'Leo Garcia', 'garciaLeo!', 'leo.garcia@example.com', '555-201-0019'),
+('zoe.young', 'Zoe Young', 'YoungZoe#9', 'zoe.young@example.com', '555-201-0020'),
+('liam_davis', 'Liam Davis', 'davisL!@m', 'liam.davis@example.com', '555-201-0021'),
+('ella.thomas', 'Ella Thomas', 'Ell@Thom!', 'ella.thomas@example.com', '555-201-0022'),
+('jackson_clark', 'Jackson Clark', 'clarkJack$', 'jackson.clark@example.com', '555-201-0023'),
+('chloe.mitchell', 'Chloe Mitchell', 'Clo!Mitch', 'chloe.mitchell@example.com', '555-201-0024'),
+('matthew.martinez', 'Matthew Martinez', 'M@thew2023', 'matthew.martinez@example.com', '555-201-0025'),
+('lily.allen', 'Lily Allen', 'Al!Lily99', 'lily.allen@example.com', '555-201-0026'),
+('alex.roberts', 'Alex Roberts', 'R0berts@lex', 'alex.roberts@example.com', '555-201-0027'),
+('sophia.wright', 'Sophia Wright', 'Wright#Soph', 'sophia.wright@example.com', '555-201-0028'),
+('ryan.king', 'Ryan King', 'K!ngRyan1', 'ryan.king@example.com', '555-201-0029'),
+('emma.johnson', 'Emma Johnson', 'john$0Emma', 'emma.johnson@example.com', '555-201-0030'),
+('harry_morgan', 'Harry Morgan', 'Harr@Morg', 'harry.morgan@example.com', '555-201-0031'),
+('amelie.foster', 'Amelie Foster', 'FosterAm!', 'amelie.foster@example.com', '555-201-0032'),
+('olivia.evans', 'Olivia Evans', 'Oli#Evans', 'olivia.evans@example.com', '555-201-0033'),
+('lucas.watson', 'Lucas Watson', 'W@ts0nL!', 'lucas.watson@example.com', '555-201-0034'),
+('ella.brooks', 'Ella Brooks', 'BrooksEll$', 'ella.brooks@example.com', '555-201-0035'),
+('oscar.gonzalez', 'Oscar Gonzalez', 'Osc@rG123', 'oscar.gonzalez@example.com', '555-201-0036'),
+('hannah.ramirez', 'Hannah Ramirez', 'Rami!Han', 'hannah.ramirez@example.com', '555-201-0037'),
+('michael.phillips', 'Michael Phillips', 'Ph!lMike', 'michael.phillips@example.com', '555-201-0038'),
+('abigail.price', 'Abigail Price', 'Abby!Pr1ce', 'abigail.price@example.com', '555-201-0039'),
+('isaac.cooper', 'Isaac Cooper', 'CooP@1saac', 'isaac.cooper@example.com', '555-201-0040'),
+('natalie.bell', 'Natalie Bell', 'BellNat@!', 'natalie.bell@example.com', '555-201-0041'),
+('gabriel.ward', 'Gabriel Ward', 'W@rdGab!', 'gabriel.ward@example.com', '555-201-0042'),
+('eva.roberts', 'Eva Roberts', 'R0bEva23', 'eva.roberts@example.com', '555-201-0043'),
+('william.green', 'William Green', 'W!llGreen', 'william.green@example.com', '555-201-0044'),
+('grace.baker', 'Grace Baker', 'Grac@B@ke', 'grace.baker@example.com', '555-201-0045'),
+('jacob.reed', 'Jacob Reed', 'ReedJacob#', 'jacob.reed@example.com', '555-201-0046'),
+('mia.young', 'Mia Young', 'YouNg@Mia', 'mia.young@example.com', '555-201-0047'),
+('elizabeth.cook', 'Elizabeth Cook', 'C00kLiz', 'elizabeth.cook@example.com', '555-201-0048'),
+('jackson.taylor', 'Jackson Taylor', 'TaylJ@cks', 'jackson.taylor@example.com', '555-201-0049'),
+('charlie.hill', 'Charlie Hill', 'HiLL$Char', 'charlie.hill@example.com', '555-201-0050');
+
+select * from user;
