@@ -13,7 +13,7 @@
         <div class="video-info">
           <h1 class="video-title">{{ video.vtitle }}</h1>
           <div class="video-meta">
-            <span class="views">조회수 {{ formatViews(video.vviews) }}회</span>
+            <span class="views">조회수 {{ formatViews(video.vviews) }}회</span>2
           </div>
 
           <!-- 액션 버튼 -->
