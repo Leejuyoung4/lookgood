@@ -8,9 +8,9 @@
 
       <div class="board-tab">
         <button class="tab-item" :class="{ active: sortBy === 'latest' }" @click="setSortBy('latest')">최신순</button>
-        <span class="divider-vertical">|</span>
+        <!-- <span class="divider-vertical">|</span> -->
         <button class="tab-item" :class="{ active: sortBy === 'distance' }" @click="setSortBy('distance')">거리순</button>
-        <span class="divider-vertical">|</span>
+        <!-- <span class="divider-vertical">|</span> -->
         <button class="tab-item" :class="{ active: sortBy === 'likes' }" @click="setSortBy('likes')">인기순</button>
       </div>
     </div>
@@ -343,12 +343,12 @@ const filterBySubregion = (subregion) => {
 }
 
 .tag-filter-item:hover {
-  background-color: rgba(0, 123, 255, 0.1);
-  color: #007bff;
+  background-color: f8cd71(0, 123, 255, 0.1);
+  color: #f8cd71;
 }
 
 .tag-filter-item.active {
-  background-color: #007bff;
+  background-color: #ffd987;
   color: white;
 }
 
@@ -358,43 +358,46 @@ const filterBySubregion = (subregion) => {
 .board-tab {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 25px; /* 간격 유지 */
 }
 
 .tab-item {
   background: none;
   border: none;
-  padding: 8px 12px;
-  font-size: 16px;
+  padding: 10px 15px; /* 버튼 내부 여백 */
+  font-size: 18px; /* 폰트 크기 */
   cursor: pointer;
-  transition: all 0.2s ease;
   position: relative;
-  color: #666;
+  color: #aaa; /* 기본 색상 */
+  transition: color 0.3s ease, transform 0.2s ease; /* 부드러운 전환 효과 */
 }
 
 .tab-item:hover {
-  color: #007bff;
+  color: #555; /* 호버 색상 */
+  transform: translateY(-2px); /* 살짝 위로 이동 */
 }
 
 .tab-item.active {
-  color: #007bff;
-  font-weight: 600;
+  color: #000; /* 활성화된 상태의 색상 */
+  font-weight: bold; /* 두껍게 표시 */
 }
 
 .tab-item.active::after {
   content: '';
   position: absolute;
-  bottom: -2px;
-  left: 0;
-  width: 100%;
-  height: 2px;
-  background-color: #007bff;
+  bottom: -5px; /* 하단 위치 */
+  left: 10%; /* 양쪽 여백 */
+  right: 10%; /* 양쪽 여백 */
+  height: 3px; /* 밑줄 두께 */
+  background-color: #ffd987; /* 활성화 밑줄 색상 */
+  border-radius: 2px; /* 둥근 모서리 */
+  transition: width 0.3s ease, background-color 0.3s ease; /* 부드러운 효과 */
 }
 
-.divider-vertical {
+
+/* .divider-vertical {
   color: #ddd;
-  font-weight: 300;
-}
+} */
 
 /* 애니메이션 */
 .fade-enter-active,
@@ -453,7 +456,7 @@ const filterBySubregion = (subregion) => {
   width: 40px;
   height: 40px;
   border: 4px solid #f3f3f3;
-  border-top: 4px solid #3498db;
+  border-top: 4px solid #ffd987;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }

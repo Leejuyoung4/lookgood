@@ -177,7 +177,8 @@ onMounted(() => {
 .logo {
   display: flex;
   color: #ebd03b;
-  font-size: 2.5vw; /* 크기 축소 */
+  /* font-size: 3vw; */
+  font-size: 78px;
   font-weight: 400;
   text-decoration: none;
 }
@@ -533,7 +534,7 @@ onMounted(() => {
 @media (max-width: 576px) {
   .menu-bar {
     flex-direction: column;
-    gap: 20px;
+    gap: 50px !important;
     align-items: center;
   }
 

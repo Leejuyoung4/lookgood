@@ -26,7 +26,13 @@ public class GroupServiceImpl implements GroupService {
 	public Group readGroup(int gBoardNo) {
 		return groupDao.selectOne(gBoardNo);
 	}
-
+	
+	// 게시글 등록
+	@Override
+	public void createGroup(Group group) {
+		groupDao.insertGroup(group);
+	}
+	
 	// 게시글 삭제
 	@Override
 	public void deleteGroup(int gBoardNo) {
@@ -38,5 +44,6 @@ public class GroupServiceImpl implements GroupService {
 	public void updateGroup(Group group) {
 		groupDao.modifyGroup(group);
 	}
+
 
 }
