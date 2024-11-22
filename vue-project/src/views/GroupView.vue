@@ -1,5 +1,4 @@
 <template>
-  <Header />
   <div class="event-div">
 
     <!-- 상단바 -->
@@ -130,7 +129,6 @@
     
   
 
-    <Footer />
   </div>
 </template>
 
@@ -139,8 +137,6 @@ import { ref, computed, onMounted } from 'vue';
 import axios from 'axios';
 import router from '@/router';
 
-import Header from '@/components/Header.vue';
-import Footer from '@/components/Footer.vue';
 import searchImage from '@/assets/img/search1.svg';
 import penImg from '@/assets/img/pen.svg';
 

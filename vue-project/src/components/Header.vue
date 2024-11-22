@@ -50,8 +50,8 @@
         </div>
       </div>
 
-      <!-- 로그인 상태에 따른 메뉴 표시 -->
-      <div class="log-menu">
+       <!-- 로그인 상태에 따른 메뉴 표시 -->
+       <div class="log-menu">
         <div v-if="!isLoggedIn" class="log-options">
           <button class="log-item" @click="openLoginModal">로그인
             <img class="user-check" :src="userCheckImage" alt="Login" />
@@ -59,6 +59,10 @@
           <router-link to="/signup" class="log-item">회원가입
             <img class="user-plus" :src="userPlusImage" alt="Signup" />
           </router-link>
+          <!-- 다크모드 토글 버튼 추가 -->
+          <button @click="themeStore.toggleDarkMode" class="theme-toggle log-item">
+            <i :class="themeStore.isDarkMode ? 'bi bi-sun-fill' : 'bi bi-moon-fill'"></i>
+          </button>
         </div>
         <div v-else class="log-options-logged-in">
           <div class="welcome-text">{{ userInfo.userId }}님 환영합니다</div>
@@ -67,6 +71,10 @@
               <img class="my-page-img" :src="fluentHomePersonImage" alt="My Page" />
             </router-link>
             <button class="log-item" @click="logout">로그아웃</button>
+            <!-- 다크모드 토글 버튼 추가 -->
+            <button @click="themeStore.toggleDarkMode" class="theme-toggle log-item">
+              <i :class="themeStore.isDarkMode ? 'bi bi-sun-fill' : 'bi bi-moon-fill'"></i>
+            </button>
           </div>
         </div>
       </div>
@@ -82,6 +90,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import LoginViewModal from '@/views/LoginViewModal.vue';
+import { useThemeStore } from '@/stores/theme'
 
 import searchImage from '@/assets/img/search1.svg';
 import groupImage from '@/assets/img/group0.svg';
@@ -97,6 +106,8 @@ const isLoginModalOpen = ref(false); // 로그인 모달 상태
 const userId = ref(''); // 사용자 아이디
 const rememberMe = ref(false); // 아이디 저장 체크박스 상태
 const showDropdown = ref(false);
+const themeStore = useThemeStore()
+
 
 // 로그아웃
 const logout = () => {
@@ -615,5 +626,63 @@ onMounted(() => {
 
 .dropdown-item:hover {
   background-color: #f1f1f1;
+}
+
+/* 다크모드 토글 버튼 스타일 */
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  font-size: 22px;
+  color: #333;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.theme-toggle i {
+  font-size: 24px;
+}
+
+/* 다크모드 시 스타일 변경 */
+:root {
+  --bg-color: #fff;
+  --text-color: #333;
+}
+
+.dark-mode {
+  --bg-color: #1a1a1a;
+  --text-color: #fff;
+}
+
+.header {
+  background-color: var(--bg-color);
+}
+
+.menu-item, .log-item, .welcome-text {
+  color: var(--text-color);
+}
+
+.search-bar {
+  background: var(--bg-color);
+  border: 1px solid var(--text-color);
+}
+
+.search-bar input {
+  color: var(--text-color);
+}
+
+.dropdown-menu {
+  background-color: var(--bg-color);
+  border-color: var(--text-color);
+}
+
+.dropdown-item {
+  color: var(--text-color);
+}
+
+.dropdown-item:hover {
+  background-color: var(--text-color);
+  color: var(--bg-color);
 }
 </style>
