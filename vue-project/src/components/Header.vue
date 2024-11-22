@@ -91,7 +91,6 @@
 import { ref, onMounted } from 'vue';
 import { useThemeStore } from '@/stores/theme'
 import LoginViewModal from '@/views/LoginViewModal.vue';
-import { useThemeStore } from '@/stores/theme'
 
 import searchImage from '@/assets/img/search1.svg';
 import groupImage from '@/assets/img/group0.svg';
