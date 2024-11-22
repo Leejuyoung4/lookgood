@@ -37,7 +37,6 @@
             <div v-if="showDropdown" class="dropdown-menu">
               <router-link to="/community/group" class="dropdown-item">모임</router-link>
               <router-link to="/community/inquiry" class="dropdown-item">문의 게시판</router-link>
-              <router-link to="/community/board" class="dropdown-item">자유 게시판</router-link>
             </div>
           </div>
         </div>
@@ -168,7 +167,8 @@ onMounted(() => {
 .logo {
   display: flex;
   color: #ebd03b;
-  font-size: 2.5vw; /* 크기 축소 */
+  /* font-size: 3vw; */
+  font-size: 78px;
   font-weight: 400;
   text-decoration: none;
 }
@@ -524,7 +524,7 @@ onMounted(() => {
 @media (max-width: 576px) {
   .menu-bar {
     flex-direction: column;
-    gap: 20px;
+    gap: 50px !important;
     align-items: center;
   }
 

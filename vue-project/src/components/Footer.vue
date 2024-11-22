@@ -41,13 +41,13 @@
     <div class="center-buttons">
       <div class="button">
         <div class="button-background"></div>
-        <RouterLink to="/inquiry" style="text-decoration: none;">
+        <RouterLink to="/community/inquiry" style="text-decoration: none;">
           <span class="button-text">고객센터</span>
         </RouterLink>
       </div>
       <div class="button">
         <div class="button-background"></div>
-        <RouterLink to="/inquiry" style="text-decoration: none;">
+        <RouterLink to="/community/inquiry" style="text-decoration: none;">
           <span class="button-text">질문게시판</span>
         </RouterLink>
       </div>

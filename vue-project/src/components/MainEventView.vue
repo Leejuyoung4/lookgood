@@ -4,7 +4,7 @@
     <div class="suggestion-info">이 대회! 알고 계셨나요?</div>
 
     <div class="more-info">
-      <RouterLink to="/competition" style="text-decoration: none;">
+      <RouterLink to="/event" style="text-decoration: none;">
         <span class="more-info-yellow">대회 </span>
         <span class="more-info-black">더보기</span>
       </RouterLink>

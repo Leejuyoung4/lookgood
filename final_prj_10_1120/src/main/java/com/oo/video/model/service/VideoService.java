@@ -8,6 +8,10 @@ public interface VideoService {
 
 	List<Video> getAllVideos();
 
+	Video getVideoById(int id);
 
+	boolean incrementViews(int id);
+
+	List<Video> getRecommendedVideos(Long currentVideoId, String category, int limit);
 	
 }

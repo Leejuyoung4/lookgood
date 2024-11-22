@@ -15,11 +15,15 @@ public interface InquiryDao {
 	// 상세 게시글 조회
 	public Inquiry selectOne(int iNo);
 
+	// 게시글 등록
+	public void insertInquiry(Inquiry inquiry);
+
 	// 게시글 삭제
 	public void removeInquiry(int iNo);
 
 	// 게시글 수정
 	public void modifyInquiry(Inquiry inquiry);
+
 
 
 }

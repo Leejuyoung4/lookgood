@@ -48,11 +48,26 @@
 
     <!-- 글쓰기 버튼 -->
     <div class="write-wrapper">
-      <button class="write-button">
-        <img :src="penImg" class="button-icon"/>
+      <!-- 글쓰기 버튼 -->
+      <button class="write-button" @click="openWriteModal">
+        <img :src="penImg" class="button-icon" />
         글쓰기
       </button>
     </div>
+
+<!-- 글쓰기 모달 -->
+<div v-if="showWriteModal" class="modal">
+  <div class="modal-content">
+    <h3>글쓰기</h3>
+    <form @submit.prevent="submitPost">
+      <input type="text" v-model="newPostTitle" placeholder="제목" required />
+      <textarea v-model="newPostContent" placeholder="내용" required></textarea>
+      <button type="submit">등록</button>
+      <button type="button" @click="showWriteModal = false">닫기</button>
+    </form>
+  </div>
+</div>
+
 
    <!-- 게시글 목록 -->
    <div class="list-container">
@@ -79,8 +94,8 @@
       <div class="description">{{ post.iContents }}</div>
       <!-- 작성자 및 기타 정보 -->
       <div class="item-footer">
-        <span class="info-item"><i class="icon-eye"></i> 조회수: {{ post.iViews }}</span>
-        <span class="info-item"><i class="icon-comment"></i> 댓글 수: {{ post.iCommentsCount }}</span>
+        <span class="info-item"><i class="icon-eye"></i> 👀 {{ post.iViews }}</span>
+        <span class="info-item"><i class="icon-comment"></i> 🗨️ {{ post.iCommentsCount }}</span>
         <span class="info-item"><i class="icon-resolved"></i> 해결 여부: {{ post.iIsResolved ? '해결됨' : '미해결' }}</span>
       </div>
     </div>
@@ -172,104 +187,161 @@ const tabs = ref([
 const setActiveTab = (id) => {
   activeTab.value = id; // 현재 활성화된 탭을 업데이트
 };
+
+// 글쓰기
+const showWriteModal = ref(false); // 글쓰기 모달 표시 상태
+const newPostTitle = ref(''); // 새 글 제목
+const newPostContent = ref(''); // 새 글 내용
+
+// 글쓰기 버튼 클릭 이벤트
+const openWriteModal = () => {
+  showWriteModal.value = true; // 모달 표시 상태를 true로 변경
+};
+
+const submitPost = async () => {
+    try {
+        const newPost = {
+            iTitle: newPostTitle.value,
+            iContents: newPostContent.value,
+            iFile: null, // 필요하면 파일 추가
+            iViews: 0,
+            iIsResolved: false,
+            iCommentsCount: 0,
+            iCategoryName: "기타", // 카테고리 설정
+        };
+
+        const response = await axios.post("http://localhost:8080/api/inquiry", newPost);
+
+        // 등록 성공 시 목록에 추가
+        posts.value.unshift(response.data); // 목록 맨 위에 추가
+        alert("글이 성공적으로 등록되었습니다.");
+
+        
+
+        // 입력값 초기화
+        newPostTitle.value = "";
+        newPostContent.value = "";
+        showWriteModal.value = false;
+    } catch (error) {
+        console.error("글 등록 중 오류 발생:", error);
+        alert("글 등록에 실패했습니다.");
+    }
+};
+
+
+
 </script>
 
 
 <style scoped>
 /* 전체 레이아웃 */
 .inquiry-div {
-  background: #ffffff;
+  background: linear-gradient(to bottom, #f9f9f9, #ffffff);
+  padding: 20px 0;
   box-sizing: border-box;
   position: relative;
   overflow: hidden;
+  font-family: 'Noto Sans KR', sans-serif;
 }
 
 .top-bar {
-  background: #ffd987;
+  background: linear-gradient(to right, #ffd987, #fcdfa0);
   color: #ffffff;
   width: 100%;
-  height: 80px;
-  position: absolute;
-  top: 60px;
-  z-index: 10;
-  overflow: hidden;
+  height: 100px;
+  text-align: center;
   font-size: 26px;
   font-weight: bold;
-  padding-left: 200px;
+  padding: 20px 0;
   display: flex;
   align-items: center;
+  justify-content: center;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
 }
 
+/* 정렬탭1 스타일 */
 .board-tab1 {
   display: flex;
+  justify-content: start; /* 위치는 기존과 동일하게 유지 */
   width: 1000px;
-  gap: 10px;
   margin: 140px auto 0;
-  border-bottom: 1px solid #ccc;
+  border-bottom: 1px solid #ddd; /* 부드러운 하단 구분선 */
   position: relative;
   z-index: 5;
 }
 
 .tab-item {
-  padding: 10px 20px;
+  padding: 10px 25px;
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 22px;
+  font-size: 18px;
+  color: #666; /* 기본 색상 */
   position: relative;
-  color: #333;
+  transition: color 0.3s ease, transform 0.2s ease;
 }
 
-.tab-item::after {
-  content: "";
-  position: absolute;
-  bottom: -1px;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background-color: transparent;
-  transition: background-color 0.3s ease, height 0.3s ease;
+.tab-item:hover {
+  color: #000; /* 호버 시 글자 색 강조 */
+  transform: translateY(-2px); /* 살짝 위로 올라가는 효과 */
 }
 
-.tab-item.active::after {
-  background-color: #000;
-  height: 3px;
-}
-
-.tab-item:hover::after {
-  background-color: #666;
-}
-
-.tab-item.active, .tab-item2.active {
+.tab-item.active {
   color: #000;
   font-weight: bold;
 }
+
+.tab-item.active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px; /* 버튼 아래쪽 여백 */
+  left: 10%; /* 선 양쪽 여백 */
+  right: 10%;
+  height: 3px;
+  background-color: #ffd987; /* 강조 색상 */
+  border-radius: 3px;
+  transition: width 0.3s ease, background-color 0.3s ease; /* 부드러운 전환 효과 */
+}
+
+/* 정렬탭2 스타일 */
 .board-tab2 {
   display: flex;
-  justify-content: start;
+  justify-content: start; /* 위치 유지 */
   width: 1000px;
   margin: 50px auto 0;
   position: relative;
 }
-/* 정렬탭2 버튼 공통 스타일 */
+
 .tab-item2 {
   padding: 10px 15px;
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 20px;
-  color: #aaaaaa;
-  transition: color 0.3s ease, font-weight 0.3s ease;
+  font-size: 18px;
+  color: #aaa; /* 기본 색상 */
+  position: relative;
+  transition: color 0.3s ease, transform 0.2s ease;
 }
 
-/* 정렬탭2 버튼 활성화 스타일 */
+.tab-item2:hover {
+  color: #555;
+  transform: translateY(-2px);
+}
+
 .tab-item2.active {
   color: #000;
-  font-weight: bold; /* 두껍게 표시 */
+  font-weight: bold;
 }
 
-.tab-2:hover {
-  color: #666;
+.tab-item2.active::after {
+  content: '';
+  position: absolute;
+  bottom: -5px;
+  left: 10%;
+  right: 10%;
+  height: 3px;
+  background-color: #ffd987; /* 활성화된 정렬탭 색상 */
+  border-radius: 2px;
 }
 
 /* 검색 바 */
@@ -278,164 +350,186 @@ const setActiveTab = (id) => {
   align-items: center;
   justify-content: center;
   margin: 20px auto;
-  width: 1000px; /* 전체 너비 */
-  gap: 10px; /* 검색 바와 버튼 사이 간격 */
+  width: 40%;
+  gap: 15px;
 }
 
 .search-bar {
   display: flex;
   align-items: center;
-  background: rgb(255, 248, 232);
-  border-radius: 20px;
-  padding: 5px 15px;
-  flex-grow: 1; /* 검색 바가 너비를 채우도록 설정 */
-  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); /* 그림자 효과 */
+  background: #fff;
+  border-radius: 25px;
+  padding: 10px 20px;
+  flex-grow: 1;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .search-bar input {
   flex-grow: 1;
   border: none;
   background: transparent;
-  font-size: 18px;
-  padding-left: 10px;
+  font-size: 16px;
+  padding: 10px;
   outline: none;
 }
 
 .search-bar:focus-within {
-  background-color: white;
+  background-color: #f9f9f9;
 }
-
 
 .search-bar img {
   height: 22px;
 }
 
-/* 검색 버튼 */
 .search-button {
-  background: #ebd03b;
-  color: #ffffff;
-  border-radius: 10px;
-  width: 70px; /* 버튼 크기 */
-  height: 30px;
-  font-size: 18px;
+  background: #ffd987;
+  color: white;
+  border-radius: 20px;
+  padding: 10px 20px;
+  font-size: 16px;
   border: none;
-  transition: background-color 0.3s ease, transform 0.2s ease;
   cursor: pointer;
+  transition: transform 0.2s ease, background-color 0.3s ease;
 }
 
 .search-button:hover {
-  background-color: #d1b031;
+  background-color: #f8cd71;
+  transform: translateY(-2px);
+}
+
+/* 글쓰기 버튼 */
+.write-wrapper {
+  display: flex;
+  justify-content: flex-end;
+  margin: 20px 580px;
 }
 
 .write-button {
-  background-color: #ebd03b;
-  color: #ffffff;
-  border-radius: 10px; /* 버튼 테두리 둥글게 */
-  height: 40px; /* 버튼 높이 */
-  font-size: 18px; /* 글자 크기 */
-  border: none; /* 테두리 제거 */
-  display: flex; /* 아이콘과 텍스트 정렬을 위해 flex 사용 */
-  align-items: center; /* 세로 정렬 */
-  justify-content: center; /* 가로 정렬 */
-  gap: 8px; /* 아이콘과 텍스트 간 간격 */
-  transition: background-color 0.3s ease, transform 0.2s ease;
+  background: #ffd987;
+  color: #fff;
+  border-radius: 25px;
+  padding: 10px 20px;
+  font-size: 16px;
+  border: none;
   cursor: pointer;
-  position: absolute;
-  right: 770px;
-  top: 310px;
-}
-.write-button img {
-  width: 30px;
-}
-.write-button:hover {
-  background-color: #d1b031;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: transform 0.2s ease, background-color 0.3s ease;
 }
 
+.write-button img {
+  width: 20px;
+}
+
+.write-button:hover {
+  background-color: #f8cd71;
+  transform: translateY(-2px);
+}
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5); /* 배경 흐림 효과 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000; /* 모달이 다른 요소 위에 오도록 설정 */
+}
+
+.modal-content {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  width: 400px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+
+/* 게시글 목록 */
 .list-container {
   display: flex;
   flex-direction: column;
-  gap: 30px; /* 목록 간격 */
-  padding: 120px 800px;
+  gap: 25px;
+  padding: 20px 15%;
   background-color: #fff;
 }
 
 .list-item {
-  border-bottom: 1px solid #e5e5e5;
-  padding-bottom: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  background: #f9f9f9;
+  border-radius: 15px;
+  padding: 20px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.3s ease;
+}
+
+.list-item:hover {
+  transform: translateY(-5px); /* 카드 위로 살짝 이동 */
+  box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.15);
 }
 
 .item-footer {
   display: flex;
-  justify-content: space-between; /* 좌우로 정렬 */
-  align-items: center; /* 세로 중앙 정렬 */
+  /* justify-content: space-between; */
+  align-items: center;
+  margin-top: 10px;
+  gap: 20px;
 }
 
-/* 기본 태그 스타일 */
 .tag {
   display: inline-block;
   font-size: 12px;
   font-weight: bold;
   padding: 5px 10px;
-  border-radius: 5px;
+  border-radius: 10px;
 }
 
-/* 회원 태그 스타일 */
 .tag.user {
-  background-color: #ffe4b3; /* 연한 주황색 */
-  color: #ffa500; /* 주황색 글자 */
+  background-color: #ffe4b3; /* 회원 태그 */
+  color: #ffa500;
 }
 
-/* 영상 태그 스타일 */
 .tag.video {
-  background-color: #cce5ff; /* 연한 파란색 */
-  color: #007bff; /* 파란색 글자 */
+  background-color: #cce5ff; /* 영상 태그 */
+  color: #007bff;
 }
 
-/* 모임 태그 스타일 */
 .tag.community {
-  background-color: #d4edda; /* 연한 초록색 */
-  color: #28a745; /* 초록색 글자 */
+  background-color: #d4edda; /* 모임 태그 */
+  color: #28a745;
 }
 
-/* 기타 태그 스타일 */
 .tag.etc {
-  background-color: #f8d7da; /* 연한 빨간색 */
-  color: #dc3545; /* 빨간색 글자 */
+  background-color: #f8d7da; /* 기타 태그 */
+  color: #dc3545;
 }
 
-/* 제목 스타일 */
 .title {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: bold;
   color: #333;
-}
-
-/* 설명 */
-.description {
-  font-size: 14px;
-  color: #555;
   margin-bottom: 10px;
 }
 
-/* 작성자 */
-.writer {
-  font-size: 12px;
-  color: #999;
+.description {
+  font-size: 14px;
+  color: #777;
+  margin-bottom: 15px;
 }
 
-/* 정보 섹션 */
-.info {
-  display: flex;
-  gap: 10px;
+.author {
   font-size: 12px;
-  color: #666;
+  color: #aaa;
 }
 
 .info-item {
   display: flex;
   align-items: center;
+  gap: 5px;
+  color: #555;
 }
+
 </style>
