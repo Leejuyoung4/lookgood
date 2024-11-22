@@ -1,5 +1,4 @@
 <template>
-  <Header />
   <div class="event-div">
     <div class="event-title">전체</div>
     <hr class="divider">
@@ -66,7 +65,6 @@
 </template>
 
 <script setup>
-import Header from "@/components/Header.vue";
 import axios from "axios";
 import { ref, computed, onMounted } from "vue";
 import { useRouter } from 'vue-router';

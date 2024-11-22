@@ -17,10 +17,91 @@
             v_instructor as vInstructor,
             v_instructor_intro as vInstructorIntro,
             v_category_name as vCategoryName,
-            saved_no as savedNo
+            saved_no as savedNo,
+            video_id as videoId
         FROM 
             videos 
         ORDER BY 
             v_no DESC
     </select>
+
+    <!-- 특정 ID의 비디오 조회 -->
+    <select id="selectById" parameterType="int" resultType="Video">
+        SELECT 
+            v_no as vNo,
+            v_title as vTitle,
+            v_description as vDescription,
+            v_upload_date as vUploadDate,
+            v_views as vViews,
+            v_likes as vLikes,
+            v_hates as vHates,
+            v_instructor as vInstructor,
+            v_instructor_intro as vInstructorIntro,
+            v_category_name as vCategoryName,
+            saved_no as savedNo,
+            video_id as videoId
+        FROM 
+            videos 
+        WHERE 
+            v_no = #{id}
+    </select>
+
+    <!-- 조회수 증가 -->
+    <update id="updateViews" parameterType="int">
+        UPDATE videos 
+        SET v_views = v_views + 1 
+        WHERE v_no = #{id}
+    </update>
+    
+    
+<!-- 추천 비디오 찾기 -->
+<select id="findRecommendedVideos" resultType="Video">
+    SELECT 
+        v_no as vNo,
+        v_title as vTitle,
+        v_description as vDescription,
+        v_upload_date as vUploadDate,
+        v_views as vViews,
+        v_likes as vLikes,
+        v_hates as vHates,
+        v_instructor as vInstructor,
+        v_instructor_intro as vInstructorIntro,
+        v_category_name as vCategoryName,
+        saved_no as savedNo,
+        video_id as videoId
+    FROM videos
+    WHERE v_no != #{currentVideoId}
+    <if test="category != null and category != ''">
+        AND v_category_name = #{category}
+    </if>
+    ORDER BY v_views DESC, v_upload_date DESC
+    LIMIT #{limit}
+</select>
+
+<!-- 인기 있는 비디오 찾기 -->
+<select id="findPopularVideosExcept" resultType="Video">
+    SELECT 
+        v_no as vNo,
+        v_title as vTitle,
+        v_description as vDescription,
+        v_upload_date as vUploadDate,
+        v_views as vViews,
+        v_likes as vLikes,
+        v_hates as vHates,
+        v_instructor as vInstructor,
+        v_instructor_intro as vInstructorIntro,
+        v_category_name as vCategoryName,
+        saved_no as savedNo,
+        video_id as videoId
+    FROM videos
+    WHERE v_no != #{currentVideoId}
+    <if test="excludeIds != null and excludeIds.size() > 0">
+        AND v_no NOT IN
+        <foreach item="id" collection="excludeIds" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </if>
+    ORDER BY v_views DESC, v_upload_date DESC
+    LIMIT #{limit}
+</select>
 </mapper>

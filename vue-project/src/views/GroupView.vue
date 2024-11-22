@@ -1,5 +1,4 @@
 <template>
-  <Header />
   <div class="event-div">
 
     <!-- 상단바 -->
@@ -113,10 +112,6 @@
       </div>
       </RouterLink> 
     </div>
-    
-  
-
-    <Footer />
   </div>
 </template>
 
@@ -124,8 +119,6 @@
 import { ref, computed, onMounted } from 'vue'; 
 import axios from 'axios';
 
-import Header from '@/components/Header.vue';
-import Footer from '@/components/Footer.vue';
 import searchImage from '@/assets/img/search1.svg';
 import penImg from '@/assets/img/pen.svg';
 
