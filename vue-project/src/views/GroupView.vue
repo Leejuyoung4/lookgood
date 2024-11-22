@@ -1,5 +1,4 @@
 <template>
-  <Header />
   <div class="event-div">
 
     <!-- 상단바 -->
@@ -127,10 +126,6 @@
       </div>
       </RouterLink> 
     </div>
-    
-  
-
-    <Footer />
   </div>
 </template>
 
@@ -139,8 +134,6 @@ import { ref, computed, onMounted } from 'vue';
 import axios from 'axios';
 import router from '@/router';
 
-import Header from '@/components/Header.vue';
-import Footer from '@/components/Footer.vue';
 import searchImage from '@/assets/img/search1.svg';
 import penImg from '@/assets/img/pen.svg';
 
@@ -309,6 +302,15 @@ const submitPost = async () => {
   transform: translateY(-2px); /* 살짝 위로 이동 */
 }
 
+.board-tab1 .tab-item {
+  position: relative; /* 하단 선 위치 조정을 위해 필요 */
+  padding: 10px 20px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  color: #333;
+  
 .board-tab1 .tab-item.active {
   color: #000; /* 활성화된 상태의 글자 색상 */
   font-weight: bold;
