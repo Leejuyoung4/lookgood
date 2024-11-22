@@ -235,6 +235,7 @@ const sortPosts = criteria => {
 }
 
 /* 정렬탭1 스타일 */
+/* 정렬탭1 스타일 */
 .board-tab1 .tab-item {
   position: relative; /* 하단 선 위치 조정을 위해 필요 */
   padding: 10px 20px;
