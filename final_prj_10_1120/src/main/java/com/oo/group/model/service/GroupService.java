@@ -11,10 +11,14 @@ public interface GroupService {
 	// 게시글 상세 조회
 	public Group readGroup(int gBoardNo);
 
+	// 게시글 등록
+	public void createGroup(Group group);
+
 	// 게시글 삭제
 	public void deleteGroup(int gBoardNo);
 
 	// 게시글 수정
 	public void updateGroup(Group group);
+
 
 }

@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -51,6 +52,19 @@ public class GroupController {
         }
         return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }
+    // 게시글 등록
+    @PostMapping
+    public ResponseEntity<Group> createGroup(@RequestBody Group group) {
+        try {
+            groupService.createGroup(group);
+            return new ResponseEntity<>(group, HttpStatus.CREATED); // 생성된 글 반환
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    
     
     // 게시글 삭제
     @DeleteMapping("{gBoardNo}")
