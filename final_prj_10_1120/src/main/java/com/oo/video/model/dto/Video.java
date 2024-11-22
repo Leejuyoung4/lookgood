@@ -12,13 +12,16 @@ public class Video {
     private String vInstructorIntro; // 강사 소개
     private String vCategoryName;    // 카테고리 이름
     private int savedNo;             // 저장 번호
+    private String videoId;          // YouTube 비디오 ID
 
     // 기본 생성자
     public Video() {}
 
     // 모든 필드를 포함한 생성자
-    public Video(int vNo, String vTitle, String vDescription, String vUploadDate, int vViews, int vLikes, int vHates,
-                 String vInstructor, String vInstructorIntro, String vCategoryName, int savedNo) {
+    public Video(int vNo, String vTitle, String vDescription, String vUploadDate, 
+                int vViews, int vLikes, int vHates, String vInstructor, 
+                String vInstructorIntro, String vCategoryName, int savedNo, 
+                String videoId) {
         this.vNo = vNo;
         this.vTitle = vTitle;
         this.vDescription = vDescription;
@@ -30,6 +33,7 @@ public class Video {
         this.vInstructorIntro = vInstructorIntro;
         this.vCategoryName = vCategoryName;
         this.savedNo = savedNo;
+        this.videoId = videoId;
     }
 
     // Getter와 Setter
@@ -120,8 +124,17 @@ public class Video {
     public void setSavedNo(int savedNo) {
         this.savedNo = savedNo;
     }
+    
+ // videoId의 Getter와 Setter 추가
+    public String getVideoId() {
+        return videoId;
+    }
 
-    // toString 메서드
+    public void setVideoId(String videoId) {
+        this.videoId = videoId;
+    }
+
+    // toString 메서드 수정
     @Override
     public String toString() {
         return "Video{" +
@@ -136,6 +149,7 @@ public class Video {
                 ", vInstructorIntro='" + vInstructorIntro + '\'' +
                 ", vCategoryName='" + vCategoryName + '\'' +
                 ", savedNo=" + savedNo +
+                ", videoId='" + videoId + '\'' +
                 '}';
     }
 }

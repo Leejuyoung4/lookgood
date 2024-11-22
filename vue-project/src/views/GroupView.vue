@@ -1,5 +1,4 @@
 <template>
-  <Header />
   <div class="event-div">
 
     <!-- 상단바 -->
@@ -113,10 +112,6 @@
       </div>
       </RouterLink> 
     </div>
-    
-  
-
-    <Footer />
   </div>
 </template>
 
@@ -124,8 +119,6 @@
 import { ref, computed, onMounted } from 'vue'; 
 import axios from 'axios';
 
-import Header from '@/components/Header.vue';
-import Footer from '@/components/Footer.vue';
 import searchImage from '@/assets/img/search1.svg';
 import penImg from '@/assets/img/pen.svg';
 
@@ -241,6 +234,7 @@ const sortPosts = criteria => {
   font-weight: bold;
 }
 
+/* 정렬탭1 스타일 */
 /* 정렬탭1 스타일 */
 .board-tab1 .tab-item {
   position: relative; /* 하단 선 위치 조정을 위해 필요 */
