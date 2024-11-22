@@ -305,6 +305,16 @@ const submitPost = async () => {
   transform: translateY(-2px); /* 살짝 위로 이동 */
 }
 
+.board-tab1 .tab-item {
+  position: relative; /* 하단 선 위치 조정을 위해 필요 */
+  padding: 10px 20px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  color: #333;
+  }
+  
 .board-tab1 .tab-item.active {
   color: #000; /* 활성화된 상태의 글자 색상 */
   font-weight: bold;

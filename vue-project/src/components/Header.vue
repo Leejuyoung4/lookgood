@@ -89,6 +89,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
+import { useThemeStore } from '@/stores/theme'
 import LoginViewModal from '@/views/LoginViewModal.vue';
 import { useThemeStore } from '@/stores/theme'
 
@@ -107,7 +108,6 @@ const userId = ref(''); // 사용자 아이디
 const rememberMe = ref(false); // 아이디 저장 체크박스 상태
 const showDropdown = ref(false);
 const themeStore = useThemeStore()
-
 
 // 로그아웃
 const logout = () => {
