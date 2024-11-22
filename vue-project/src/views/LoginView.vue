@@ -1,6 +1,5 @@
 <template>
   <div>
-    <Header />
 
     <!-- 로그인 모달 및 오버레이 -->
     <div v-if="isLoginModalOpen" class="overlay">
@@ -33,15 +32,12 @@
       </div>
     </div>
 
-    <Footer />
   </div>
 </template>
 
 <script setup>
 import { ref } from 'vue';
 import axios from 'axios';
-import Header from '@/components/Header.vue';
-import Footer from '@/components/Footer.vue';
 
 // 사용자 입력 데이터
 const userId = ref('');

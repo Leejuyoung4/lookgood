@@ -1,5 +1,4 @@
 <template>
-  <Header />
   <div class="signup-container">
     <div class="signup-content">
       <div class="signup-logo">회원가입</div>
@@ -143,7 +142,6 @@
       </div>
     </div>
   </div>
-  <Footer />
 </template>
 
 <script setup>
@@ -152,8 +150,6 @@ import router from '@/router';
 import axios from 'axios';
 import eyeOpen from '@/assets/img/user/open_eye.png';
 import eyeClosed from '@/assets/img/user/closed_eye.png';
-import Footer from '@/components/Footer.vue';
-import Header from '@/components/Header.vue';
 
 // Placeholder states
 const userIdPlaceholder = ref('아이디를 입력하세요');

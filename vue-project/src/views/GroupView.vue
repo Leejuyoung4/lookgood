@@ -126,6 +126,9 @@
       </div>
       </RouterLink> 
     </div>
+    
+  
+
   </div>
 </template>
 
@@ -310,6 +313,7 @@ const submitPost = async () => {
   cursor: pointer;
   font-size: 16px;
   color: #333;
+  }
   
 .board-tab1 .tab-item.active {
   color: #000; /* 활성화된 상태의 글자 색상 */

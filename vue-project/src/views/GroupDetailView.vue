@@ -1,6 +1,5 @@
 <template>
   <div>
-    <Header />
     <div class="group-detail">
       <h1>{{ group.gBoardTitle }}</h1>
       <p>{{ group.gBoardContent }}</p>
@@ -20,7 +19,6 @@
     </div>
     
     <GroupComment v-if="group.gBoardNo" :gBoardNo="group.gBoardNo" />
-    <Footer />
   </div>
 </template>
 
@@ -29,8 +27,6 @@ import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import axios from 'axios';
 
-import Header from '@/components/Header.vue';
-import Footer from '@/components/Footer.vue';
 import GroupComment from '@/components/GroupComment.vue';
 
 const route = useRoute();

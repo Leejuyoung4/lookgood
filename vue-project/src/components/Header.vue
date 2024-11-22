@@ -50,8 +50,8 @@
         </div>
       </div>
 
-      <!-- 로그인 상태에 따른 메뉴 표시 -->
-      <div class="log-menu">
+       <!-- 로그인 상태에 따른 메뉴 표시 -->
+       <div class="log-menu">
         <div v-if="!isLoggedIn" class="log-options">
           <button class="log-item" @click="openLoginModal">로그인
             <img class="user-check" :src="userCheckImage" alt="Login" />
@@ -91,6 +91,7 @@
 import { ref, onMounted } from 'vue';
 import { useThemeStore } from '@/stores/theme'
 import LoginViewModal from '@/views/LoginViewModal.vue';
+import { useThemeStore } from '@/stores/theme'
 
 import searchImage from '@/assets/img/search1.svg';
 import groupImage from '@/assets/img/group0.svg';
@@ -684,5 +685,4 @@ onMounted(() => {
   background-color: var(--text-color);
   color: var(--bg-color);
 }
-
 </style>

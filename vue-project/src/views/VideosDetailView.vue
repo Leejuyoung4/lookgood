@@ -13,11 +13,7 @@
         <div class="video-info">
           <h1 class="video-title">{{ video.vtitle }}</h1>
           <div class="video-meta">
-            <span class="speaker-name">{{ video.vinstructor }}</span>
-            <span class="bullet">•</span>
-            <span class="series-name">{{ video.vcategoryName }}</span>
-            <span class="bullet">•</span>
-            <span class="date">{{ formatDate(video.vuploadDate) }}</span>
+            <span class="views">조회수 {{ formatViews(video.vviews) }}회</span>
           </div>
 
           <!-- 액션 버튼 -->
@@ -91,8 +87,6 @@ import { ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-const currentIP = window.location.hostname;
 const route = useRoute()
 const router = useRouter()
 const video = ref(null)
@@ -100,12 +94,7 @@ const recommendedVideos = ref([])
 
 const fetchVideoDetails = async () => {
   try {
-    const response = await axios({
-      method: 'get',
-      url: `/api/videos/${route.params.id}`,
-      baseURL: `http://${currentIP}:8080`,
-      withCredentials: false
-    });
+    const response = await axios.get(`/api/videos/${route.params.id}`);
     video.value = response.data;
     // 비디오 데이터를 받아온 후에 추천 비디오 호출
     await fetchRecommendedVideos();
@@ -118,16 +107,12 @@ const fetchRecommendedVideos = async () => {
   try {
     if (!video.value) return; // video가 없으면 리턴
 
-    const response = await axios({
-      method: 'get',
-      url: `/api/videos/recommended`,
-      baseURL: `http://${currentIP}:8080`,
+    const response = await axios.get('/api/videos/recommended', {
       params: {
-        currentVideoId: route.params.id, // 문자열로 된 ID
-        category: video.value.vCategoryName, // 카테고��� 이름
+        currentVideoId: route.params.id,
+        category: video.value.vCategoryName,
         limit: 5
-      },
-      withCredentials: false
+      }
     });
 
     console.log('추천 비디오 응답:', response.data); // 디버깅용

@@ -1,6 +1,5 @@
 <template>
   <div>
-    <Header />
     <div class="inquiry-detail">
       <h1>{{ inquiry.iTitle }}</h1>
       <p>{{ inquiry.iContents }}</p>
@@ -16,7 +15,6 @@
       <button @click="editPost">수정</button>
       <button @click="deletePost">삭제</button>
     </div>
-    <Footer />
   </div>
 </template>
 
@@ -24,9 +22,6 @@
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import axios from 'axios';
-
-import Header from '@/components/Header.vue';
-import Footer from '@/components/Footer.vue';
 
 const route = useRoute();
 const router = useRouter();
