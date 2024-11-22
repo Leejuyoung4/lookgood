@@ -31,6 +31,12 @@ public class InquiryServiceImpl implements InquiryService {
 		return inquiryDao.selectOne(iNo);
 	}
 
+	// 게시글 등록
+	@Override
+	public void createInquiry(Inquiry inquiry) {
+		inquiryDao.insertInquiry(inquiry);
+	}
+
 	// 게시글 삭제
 	@Override
 	public void deleteInquiry(int iNo) {
@@ -42,6 +48,7 @@ public class InquiryServiceImpl implements InquiryService {
 	public void updateInquiry(Inquiry inquiry) {
 		inquiryDao.modifyInquiry(inquiry);
 	}
+
 	
 	
 	
