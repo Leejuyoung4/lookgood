@@ -39,8 +39,13 @@
         <router-link to="/search">
           <img :src="searchImage" alt="Search Icon" />
         </router-link>
-        <input type="text" placeholder="검색어를 입력하세요" />
-        <button class="search-button">검색</button>
+        <input
+          type="text"
+          v-model="searchQuery"
+          placeholder="검색어를 입력하세요"
+        />
+        <button class="search-button" @click="searchPosts">검색</button>
+
       </div>
     </div>
     
@@ -78,17 +83,30 @@
     </div>
 
     <!-- 글쓰기 모달 -->
-    <div v-if="showWriteModal" class="modal">
-      <div class="modal-content">
-        <h3>글쓰기</h3>
-        <form @submit.prevent="submitPost">
-          <input type="text" v-model="newPostTitle" placeholder="제목" required />
-          <textarea v-model="newPostContent" placeholder="내용" required></textarea>
-          <button type="submit">등록</button>
-          <button type="button" @click="showWriteModal = false">닫기</button>
-        </form>
+<div v-if="showWriteModal" class="modal">
+  <div class="modal-content">
+    <h3>글쓰기</h3>
+    <form @submit.prevent="submitPost" enctype="multipart/form-data">
+      <label>
+        제목:
+        <input type="text" v-model="newPostTitle" placeholder="제목을 입력하세요" required />
+      </label>
+      <label>
+        내용:
+        <textarea v-model="newPostContent" placeholder="내용을 입력하세요" required></textarea>
+      </label>
+      <label>
+        첨부 파일:
+        <input type="file" @change="handleFileUpload" />
+      </label>
+      <div class="form-actions">
+        <button type="submit">등록</button>
+        <button type="button" @click="showWriteModal = false">취소</button>
       </div>
-    </div>
+    </form>
+  </div>
+</div>
+
 
 
    <!-- 게시글 목록 -->
@@ -176,8 +194,11 @@ const filteredPosts = computed(() => {
 
   // 검색어 필터링
   if (searchQuery.value) {
-    filtered = filtered.filter(post => post.gBoardTitle.includes(searchQuery.value));
-  }
+      const sanitizedQuery = searchQuery.value.trim();
+      filtered = filtered.filter(post =>
+        post.gBoardTitle.includes(sanitizedQuery) || post.gBoardContent.includes(sanitizedQuery)
+      );
+    }
 
   // 정렬 기준 적용
   if (sortBy.value === 'latest') {
@@ -197,7 +218,15 @@ const filterCategory = category => {
 
 // 게시글 검색
 const searchPosts = () => {
-  // 이미 computed에서 searchQuery를 활용하므로 별도 동작 불필요
+  const sanitizedKeyword = searchQuery.value.trim();
+  if (!sanitizedKeyword) {
+    alert("검색어를 입력해주세요.");
+    return;
+  }
+  
+  console.log('검색 버튼 클릭:', sanitizedKeyword);
+  // `searchQuery`를 업데이트하면 `filteredPosts`가 자동으로 재계산됨
+  searchQuery.value = sanitizedKeyword;
 };
 
 // 게시글 정렬
@@ -215,41 +244,46 @@ const openWriteModal = () => {
   showWriteModal.value = true;
 };
 
+// 파일 업로드 상태
+const selectedFile = ref(null); // 선택된 파일
+
+// 파일 선택 이벤트 핸들러
+const handleFileUpload = (event) => {
+  selectedFile.value = event.target.files[0];
+};
+
 // 서버로 글 등록 요청
 const submitPost = async () => {
   try {
-    const newPost = {
-      gBoardTitle: newPostTitle.value,
-      gBoardContent: newPostContent.value,
-      gBoardFile: 'default.jpg',
-      gBoardViews: 0,
-      gBoardIsResolved: false,
-      gBoardCommentsCount: 0,
-      gBoardLikeCount: 0,
-      gBoardHateCount: 0,
-      userNo: 1,
-    };
+    // FormData 객체 생성
+    const formData = new FormData();
+    formData.append('gBoardTitle', newPostTitle.value);
+    formData.append('gBoardContent', newPostContent.value);
 
-    const response = await axios.post('http://localhost:8080/api/group', newPost);
+    if (selectedFile.value) {
+      formData.append('gBoardFile', selectedFile.value);
+    }
+
+    // 서버 요청
+    await axios.post('http://localhost:8080/api/group', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
 
     alert('글이 성공적으로 등록되었습니다.');
 
     // 목록 페이지로 이동 후 새로고침
-    router.push('/community/group').then(() => {
-      window.location.reload(); // 목록 페이지 새로고침
-    });
+    await router.push('/community/group');
+    window.location.reload(); // 목록 페이지 새로고침
 
   } catch (error) {
     console.error('글 등록 중 오류 발생:', error);
     alert('글 등록에 실패했습니다.');
   }
 };
-
-
-
-
-
 </script>
+
 
 
 <style scoped>
@@ -495,6 +529,34 @@ const submitPost = async () => {
   border-radius: 10px;
   width: 400px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+.modal-content input,
+.modal-content textarea {
+  width: 100%;
+  padding: 10px;
+  margin-top: 5px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.modal-content .form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.modal-content button {
+  padding: 10px 20px;
+  background-color: #ffd987;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.modal-content button:hover {
+  background-color: #f8cd71;
 }
 
 .list-container {

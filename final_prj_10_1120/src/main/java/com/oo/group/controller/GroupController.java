@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -12,7 +13,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import com.oo.group.model.dto.Group;
@@ -52,19 +56,30 @@ public class GroupController {
         }
         return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }
+    
     // 게시글 등록
-    @PostMapping
-    public ResponseEntity<Group> createGroup(@RequestBody Group group) {
+    @PostMapping(consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
+    public ResponseEntity<?> createGroup(
+        @RequestPart("gBoardTitle") String gBoardTitle,
+        @RequestPart("gBoardContent") String gBoardContent,
+        @RequestPart(value = "gBoardFile", required = false) MultipartFile gBoardFile) {
+
         try {
+            Group group = new Group();
+            group.setgBoardTitle(gBoardTitle);
+            group.setgBoardContent(gBoardContent);
+            group.setgBoardFile(gBoardFile != null ? gBoardFile.getOriginalFilename() : null);
+
+            // 파일 저장 로직 추가 필요
             groupService.createGroup(group);
-            return new ResponseEntity<>(group, HttpStatus.CREATED); // 생성된 글 반환
+
+            return new ResponseEntity<>(group, HttpStatus.CREATED);
         } catch (Exception e) {
             e.printStackTrace();
-            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("게시글 등록 실패", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
-    
     
     // 게시글 삭제
     @DeleteMapping("{gBoardNo}")
@@ -89,10 +104,56 @@ public class GroupController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-    
-    
-    
-    
+
+    // 게시글 검색
+    @GetMapping("/search")
+    public ResponseEntity<List<Group>> searchPosts(
+        @RequestParam(value = "keyword", required = false) String keyword) {
+        try {
+        	System.out.println(groupService.searchPosts(keyword));
+            List<Group> posts = groupService.searchPosts(keyword);
+            return new ResponseEntity<>(posts, HttpStatus.OK);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // 조회수 증가
+    @PutMapping("/{gBoardNo}/view")
+    public ResponseEntity<Void> incrementViewCount(@PathVariable int gBoardNo) {
+        try {
+            groupService.incrementViewCount(gBoardNo);
+            return new ResponseEntity<>(HttpStatus.OK);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // 좋아요수 증가
+    @PutMapping("/{gBoardNo}/like")
+    public ResponseEntity<Boolean> toggleLike(@PathVariable int gBoardNo, @RequestParam int userNo) {
+        try {
+            boolean isLiked = groupService.toggleLike(gBoardNo, userNo);
+            return new ResponseEntity<>(isLiked, HttpStatus.OK); // 좋아요 상태 반환
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @GetMapping("/{gBoardNo}/like")
+    public ResponseEntity<Boolean> isUserLiked(@PathVariable int gBoardNo, @RequestParam int userNo) {
+        try {
+            boolean isLiked = groupService.isUserLiked(gBoardNo, userNo);
+            return new ResponseEntity<>(isLiked, HttpStatus.OK);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     
     
 }

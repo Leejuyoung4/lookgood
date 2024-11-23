@@ -20,5 +20,15 @@ public interface GroupService {
 	// 게시글 수정
 	public void updateGroup(Group group);
 
+	// 게시글 검색
+	public List<Group> searchPosts(String keyword);
+
+	// 조회수 증가
+	public void incrementViewCount(int gBoardNo);
+
+	// 좋아요수 증가
+	public boolean toggleLike(int gBoardNo, int userNo);
+	public boolean isUserLiked(int gBoardNo, int userNo);
+
 
 }
