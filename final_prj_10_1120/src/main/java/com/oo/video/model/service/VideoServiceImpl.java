@@ -2,7 +2,6 @@ package com.oo.video.model.service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -95,6 +94,56 @@ public class VideoServiceImpl implements VideoService {
             return new ArrayList<>();
         }
     }
+    
+    @Override
+    public int updateLikes(int videoId) {
+        return videoDao.updateLikes(videoId);
+    }
+
+    @Override
+    public int updateHates(int videoId) {
+        return videoDao.updateHates(videoId);
+    }
+    
+ // VideoServiceImpl에 추가할 메서드들
+    @Override
+    public void saveVideo(int userNo, int vNo) {
+        try {
+            videoDao.saveVideo(userNo, vNo);
+        } catch (Exception e) {
+            throw new RuntimeException("영상 저장에 실패했습니다: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void unsaveVideo(int userNo, int vNo) {
+        try {
+            videoDao.unsaveVideo(userNo, vNo);
+        } catch (Exception e) {
+            throw new RuntimeException("저장 취소에 실패했습니다: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public boolean checkSaveStatus(int userNo, int vNo) {
+        try {
+            return videoDao.checkSaveStatus(userNo, vNo);
+        } catch (Exception e) {
+            throw new RuntimeException("저장 상태 확인에 실패했습니다: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public List<Video> getSavedVideos(int userNo) {
+        try {
+            return videoDao.getSavedVideos(userNo);
+        } catch (Exception e) {
+            throw new RuntimeException("저장된 영상 조회에 실패했습니다: " + e.getMessage());
+        }
+    }
+    
+    
+
     
 }
 

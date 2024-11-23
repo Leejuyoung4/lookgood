@@ -21,7 +21,7 @@ import com.oo.inquiry.model.service.InquiryService;
 
 @RestController
 @RequestMapping("/api/inquiry")
-@CrossOrigin(origins = "*") // 모든 출처 허용
+@CrossOrigin(origins = "*", allowCredentials = "false")
 public class InquiryController {
 	// 서비스 의존성 주입
 	private final InquiryService inquiryService;

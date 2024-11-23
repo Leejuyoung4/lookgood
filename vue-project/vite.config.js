@@ -27,6 +27,13 @@ export default defineConfig({
     },
     optimizeDeps: {
       include: ['kakao.maps.sdk']  // 카카오맵 SDK를 사전 번들링에 포함
+    },
+    proxy: {
+      '/youtube': {
+        target: 'https://www.youtube.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/youtube/, '')
+      }
     }
   }
 })

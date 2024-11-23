@@ -12,6 +12,7 @@ import UpdateGroupView from '@/views/UpdateGroupView.vue'
 import InquiryView from '@/views/InquiryView.vue';
 import InquiryDetailView from '@/views/InquiryDetailView.vue';
 import UpdateInquiryView from '@/views/UpdateInquiryView.vue';
+import MyPage from '@/views/MyPage.vue'
 
 
 const routes = [
@@ -83,6 +84,12 @@ const routes = [
   path: '/community/inquiries/edit/:iNo',
   name: 'updateInquiriesDetail',
   component: UpdateInquiryView
+},
+{
+  path: '/mypage',
+  name: 'mypage',
+  component: MyPage,
+  meta: { requiresAuth: true }  // 로그인 필요
 },
 
 
