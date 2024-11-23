@@ -2,22 +2,34 @@
   <div>
     <!-- 수정 모드가 아닐 때 -->
     <div v-if="!editMode" class="group-detail">
-      <h1>{{ group.gBoardTitle }}</h1>
-      <p>{{ group.gBoardContent }}</p>
-      <ul>
-        <li><strong>작성자:</strong> {{ group.gBoardAuthor }}</li>
-        <li><strong>등록일:</strong> {{ formatDate(group.gBoardRegDate) }}</li>
-        <li><strong>조회수:</strong> {{ group.gBoardViews }}</li>
-        <li><strong>좋아요:</strong> ❤️ {{ group.gBoardLikeCount }}</li>
-        <li><strong>댓글 수:</strong> {{ group.gBoardCommentsCount }}</li>
-        <li><strong>상태:</strong> {{ group.gBoardIsResolved ? '모집완료' : '모집중' }}</li>
-        <!-- 첨부 파일 -->
-        <li v-if="group.gBoardFile">
-          <strong>첨부 파일:</strong> 
-          <a :href="'/uploads/' + group.gBoardFile" target="_blank">{{ group.gBoardFile }}</a>
-        </li>
-      </ul>
-    </div>
+  <h1>{{ group.gBoardTitle }}</h1>
+  <p>{{ group.gBoardContent }}</p>
+  <ul>
+    <li><strong>작성자:</strong> {{ group.gBoardAuthor }}</li>
+    <li><strong>등록일:</strong> {{ formatDate(group.gBoardRegDate) }}</li>
+    <li><strong>조회수:</strong> {{ group.gBoardViews }}</li>
+    <li><strong>좋아요:</strong> ❤️ {{ group.gBoardLikeCount }}</li>
+    <li><strong>댓글 수:</strong> {{ group.gBoardCommentsCount }}</li>
+    <li><strong>상태:</strong> {{ group.gBoardIsResolved ? '모집완료' : '모집중' }}</li>
+    <!-- 첨부 파일 -->
+    <li v-if="group.gBoardFilesList && group.gBoardFilesList.length">
+      <strong>첨부 파일:</strong>
+      <div class="uploaded-images">
+        <img
+          v-for="(file, index) in group.gBoardFilesList"
+          :key="index"
+          :src="`/uploads/${file}`"
+          alt="첨부 이미지"
+          class="uploaded-image"
+        />
+      </div>
+    </li>
+
+
+
+  </ul>
+</div>
+
 
     <!-- 수정 모드일 때 -->
     <div v-else class="edit-form">
@@ -53,7 +65,7 @@
     <div v-if="!editMode" class="actions">
       <button @click="toggleEdit">수정</button>
       <button @click="deletePost">삭제</button>
-      <button @click="toggleLike">
+      <button @click="toggleLike" :disabled="!loggedInUserNo">
         <span v-if="isLiked">❤️</span>
         <span v-else>🤍</span>
         좋아요 {{ group.gBoardLikeCount }}
@@ -62,12 +74,8 @@
     </div>
 
     <div class="comment-form">
-    <textarea
-      v-model="newCommentContent"
-      placeholder="댓글을 입력하세요"
-      class="comment-input"
-    ></textarea>
-    <button @click="submitComment" class="submit-button">댓글 작성</button>
+      <textarea v-model="newCommentContent" :disabled="!loggedInUserNo" placeholder="댓글을 입력하세요"></textarea>
+      <button @click="submitComment" :disabled="!loggedInUserNo">댓글 작성</button>
   </div>
 
 
@@ -158,17 +166,37 @@ const deletePost = async () => {
 const isLiked = ref(false); // 좋아요 상태
 const toggleLike = async () => {
   try {
-    const response = await axios.put(`http://localhost:8080/api/group/${group.value.gBoardNo}/like`, null, {
-      params: { userNo: 1 }, // 로그인된 사용자 ID
-    });
+    // 로그인된 사용자 ID 가져오기
+    const loggedInUserNo = localStorage.getItem('loggedInUserNo'); // 또는 Vuex에서 가져오기
+    if (!loggedInUserNo) {
+      alert("로그인이 필요합니다.");
+      return;
+    }
 
-    isLiked.value = response.data; // 좋아요 상태 갱신
-    group.value.gBoardLikeCount += isLiked.value ? 1 : -1; // 좋아요 수 업데이트
+    const response = await axios.put(
+      `http://localhost:8080/api/group/${group.value.gBoardNo}/like`,
+      null,
+      { params: { userNo: loggedInUserNo } }
+    );
+
+    isLiked.value = response.data; // 좋아요 상태 업데이트
+    // 최신 좋아요 수를 가져옵니다.
+    const groupResponse = await axios.get(`http://localhost:8080/api/group/${group.value.gBoardNo}`);
+    group.value = groupResponse.data; // 게시글 데이터 갱신
   } catch (error) {
-    console.error("좋아요 토글 중 오류 발생:", error);
-    alert("좋아요 상태를 변경하지 못했습니다. 다시 시도해주세요.");
+    console.error("좋아요 오류:", error);
+    alert("좋아요 상태를 변경할 수 없습니다. 다시 시도해주세요.");
   }
 };
+
+
+// 로그인 성공 시 사용자 ID 저장
+localStorage.setItem('loggedInUserNo', 1); // 예: 사용자 ID = 1
+
+// 컴포넌트에서 ID 가져오기
+const loggedInUserNo = localStorage.getItem('loggedInUserNo');
+
+
 
 // 초기 데이터 로드
 onMounted(async () => {
@@ -176,10 +204,20 @@ onMounted(async () => {
   const userNo = 1; // 현재 로그인된 사용자 번호 (로그인 로직에 따라 동적으로 변경 필요)
   
   try {
-    // 게시글 데이터 로드
-    const response = await axios.get(`http://localhost:8080/api/group/${gBoardNo}`);
+     // 게시글 데이터 로드
+     const response = await axios.get(`http://localhost:8080/api/group/${gBoardNo}`);
     group.value = response.data;
 
+    // 첨부 파일을 배열로 처리
+    if (group.value.gBoardFile) {
+      group.value.gBoardFiles = group.value.gBoardFile.split(","); // 콤마로 구분된 파일명들
+    } else {
+      group.value.gBoardFiles = [];
+    }
+
+    console.log(group.gBoardFilesList);
+
+    
     // 조회수 증가 요청
     await axios.put(`http://localhost:8080/api/group/${gBoardNo}/view`);
 
@@ -213,7 +251,7 @@ const submitComment = async () => {
 
   try {
     // 댓글 작성 요청
-    const response = await axios.post(
+    await axios.post(
       `http://localhost:8080/api/group/comment/${route.params.gBoardNo}`,
       {
         gBoardCommentContent: newCommentContent.value,
@@ -224,11 +262,8 @@ const submitComment = async () => {
     alert("댓글이 작성되었습니다.");
     newCommentContent.value = ""; // 입력 내용 초기화
 
-    // 작성된 댓글 즉시 목록에 추가 (응답 데이터 활용)
-    comments.value.push(response.data);
-
-    // 또는 전체 댓글 목록 새로고침
-    await fetchComments();
+    // 페이지 새로고침 (작성된 댓글 반영)
+    window.location.reload();
   } catch (error) {
     console.error("댓글 작성 중 오류 발생:", error);
     alert("댓글 작성에 실패했습니다.");
@@ -236,16 +271,43 @@ const submitComment = async () => {
 };
 
 
+
 // 댓글 목록 가져오기
 const fetchComments = async () => {
   try {
     const response = await axios.get(`http://localhost:8080/api/group/comment/${route.params.gBoardNo}`);
-    comments.value = response.data; // 댓글 목록 업데이트
+    // 댓글 목록 업데이트하면서 각 댓글에 editMode 추가
+    comments.value = response.data.map((comment) => ({
+      ...comment,
+      editMode: false, // 수정 모드 상태 추가
+    }));
   } catch (error) {
     console.error("댓글 목록을 가져오는 중 오류 발생:", error);
     alert("댓글 목록을 가져오는 데 실패했습니다.");
   }
 };
+
+// 수정 모드 토글
+const toggleEditMode = (comment) => {
+  comment.editMode = !comment.editMode;
+};
+
+// 댓글 수정
+const saveComment = async (comment) => {
+  try {
+    await axios.put(`http://localhost:8080/api/group/comment/${comment.gBoardCommentNo}`, {
+      gBoardCommentContent: comment.gBoardCommentContent,
+    });
+
+    alert("댓글이 성공적으로 수정되었습니다.");
+    comment.editMode = false; // 수정 모드 끄기
+    fetchComments(); // 최신 댓글 목록 새로고침
+  } catch (error) {
+    console.error("댓글 수정 중 오류 발생:", error);
+    alert("댓글 수정에 실패했습니다. 다시 시도해주세요.");
+  }
+};
+
 
 // 초기 데이터 로드
 onMounted(() => {
@@ -326,4 +388,19 @@ onMounted(() => {
 .edit-form button:hover {
   background-color: #f8cd71;
 }
+
+.uploaded-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.uploaded-image {
+  max-width: 100px;
+  max-height: 100px;
+  border-radius: 5px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+}
+
 </style>

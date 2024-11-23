@@ -64,12 +64,15 @@ public class GroupServiceImpl implements GroupService {
 
 	    if (isLiked) {
 	        groupDao.deleteLike(gBoardNo, userNo); // 좋아요 취소
+	        groupDao.decrementLikeCount(gBoardNo); // 좋아요 수 감소
 	    } else {
 	        groupDao.addLike(gBoardNo, userNo); // 좋아요 추가
+	        groupDao.incrementLikeCount(gBoardNo); // 좋아요 수 증가
 	    }
 
-	    return !isLiked; // 좋아요 상태 반환
+	    return !isLiked; // 변경된 좋아요 상태 반환
 	}
+
 
 	@Override
 	public boolean isUserLiked(int gBoardNo, int userNo) {

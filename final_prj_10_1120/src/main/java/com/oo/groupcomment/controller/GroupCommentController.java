@@ -1,5 +1,6 @@
 package com.oo.groupcomment.controller;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,7 +39,7 @@ public class GroupCommentController {
         if (!groupComments.isEmpty()) {
             return ResponseEntity.ok(groupComments); // 댓글 목록 반환
         }
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("댓글이 존재하지 않습니다."); // 에러 메시지 반환
+        return ResponseEntity.ok(groupComments != null ? groupComments : new ArrayList<>());
     }
 	
 	// 댓글 등록

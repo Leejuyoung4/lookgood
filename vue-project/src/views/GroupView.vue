@@ -83,7 +83,7 @@
     </div>
 
     <!-- 글쓰기 모달 -->
-<div v-if="showWriteModal" class="modal">
+    <div v-if="showWriteModal" class="modal">
   <div class="modal-content">
     <h3>글쓰기</h3>
     <form @submit.prevent="submitPost" enctype="multipart/form-data">
@@ -96,17 +96,24 @@
         <textarea v-model="newPostContent" placeholder="내용을 입력하세요" required></textarea>
       </label>
       <label>
-        첨부 파일:
-        <input type="file" @change="handleFileUpload" />
+        첨부 파일 (여러 개 선택 가능):
+        <input type="file" multiple @change="handleFileUpload" />
       </label>
+
+      <!-- 이미지 미리보기 -->
+      <div v-if="filePreviews.length > 0" class="image-previews">
+        <div v-for="(preview, index) in filePreviews" :key="index" class="image-preview">
+          <img :src="preview" alt="미리보기" />
+        </div>
+      </div>
+
       <div class="form-actions">
         <button type="submit">등록</button>
-        <button type="button" @click="showWriteModal = false">취소</button>
+        <button type="button" @click="closeWriteModal">취소</button>
       </div>
     </form>
   </div>
 </div>
-
 
 
    <!-- 게시글 목록 -->
@@ -239,49 +246,73 @@ const showWriteModal = ref(false); // 글쓰기 모달 표시 상태
 const newPostTitle = ref(''); // 새 글 제목
 const newPostContent = ref(''); // 새 글 내용
 
-// 글쓰기 버튼 클릭 이벤트
-const openWriteModal = () => {
-  showWriteModal.value = true;
+// 데이터 초기화 함수
+const resetWriteModalData = () => {
+  newPostTitle.value = ""; // 제목 초기화
+  newPostContent.value = ""; // 내용 초기화
+  selectedFiles.value = []; // 파일 초기화
+  filePreviews.value = []; // 미리보기 초기화
 };
 
-// 파일 업로드 상태
-const selectedFile = ref(null); // 선택된 파일
+// 글쓰기 모달 닫기 및 데이터 초기화
+const closeWriteModal = () => {
+  resetWriteModalData(); // 입력 데이터 초기화
+  showWriteModal.value = false; // 모달 닫기
+};
+
+// 글쓰기 버튼 클릭 이벤트
+const openWriteModal = () => {
+  resetWriteModalData(); // 기존 입력 데이터 초기화
+  showWriteModal.value = true; // 모달 열기
+};
+
+// 여러 파일을 저장할 상태와 미리보기 URL 배열
+const selectedFiles = ref([]); // 선택된 파일 배열
+const filePreviews = ref([]); // 파일 미리보기 URL 배열
 
 // 파일 선택 이벤트 핸들러
 const handleFileUpload = (event) => {
-  selectedFile.value = event.target.files[0];
+  const files = Array.from(event.target.files); // 선택된 파일 배열로 변환
+  selectedFiles.value = files; // 선택된 파일 저장
+
+  // 미리보기 생성 (이미지 파일만 처리)
+  filePreviews.value = files
+    .filter((file) => file.type.startsWith("image/"))
+    .map((file) => URL.createObjectURL(file));
 };
+
 
 // 서버로 글 등록 요청
 const submitPost = async () => {
   try {
-    // FormData 객체 생성
     const formData = new FormData();
-    formData.append('gBoardTitle', newPostTitle.value);
-    formData.append('gBoardContent', newPostContent.value);
+    formData.append("gBoardTitle", newPostTitle.value);
+    formData.append("gBoardContent", newPostContent.value);
 
-    if (selectedFile.value) {
-      formData.append('gBoardFile', selectedFile.value);
+    // 첨부된 파일 추가
+    if (selectedFiles.value.length > 0) {
+      selectedFiles.value.forEach((file) => {
+        formData.append("gBoardFiles", file);
+      });
     }
 
-    // 서버 요청
-    await axios.post('http://localhost:8080/api/group', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
+    // 서버에 데이터 전송
+    const response = await axios.post("http://localhost:8080/api/group", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
     });
 
-    alert('글이 성공적으로 등록되었습니다.');
+    alert("게시글이 성공적으로 등록되었습니다!");
 
-    // 목록 페이지로 이동 후 새로고침
-    await router.push('/community/group');
-    window.location.reload(); // 목록 페이지 새로고침
-
+    // 작성 후 페이지 새로고침
+    const createdPostId = response.data.gBoardNo; // 서버에서 생성된 게시글 ID 반환
+    router.push(`/community/group/detail/${createdPostId}`);
+    window.location.reload(); // 페이지 새로고침
   } catch (error) {
-    console.error('글 등록 중 오류 발생:', error);
-    alert('글 등록에 실패했습니다.');
+    console.error("글 등록 중 오류 발생:", error);
+    alert("게시글 등록에 실패했습니다.");
   }
 };
+
 </script>
 
 
@@ -558,6 +589,22 @@ const submitPost = async () => {
 .modal-content button:hover {
   background-color: #f8cd71;
 }
+
+/* 이미지 미리보기 스타일 */
+.image-previews {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.image-preview img {
+  max-width: 100px;
+  max-height: 100px;
+  border-radius: 5px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+}
+
 
 .list-container {
   display: flex;
