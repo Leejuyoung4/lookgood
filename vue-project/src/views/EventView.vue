@@ -253,6 +253,8 @@ const filterBySubregion = (subregion) => {
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
+  background-color: var(--bg-color);
+  color: var(--text-color);
 }
 
 .event-title {
@@ -271,15 +273,14 @@ const filterBySubregion = (subregion) => {
 
 /* 구분선 스타일 */
 .divider {
-  border: none;
-  border-top: 2px solid #333;
+  border-top: 2px solid var(--border-color);
   /* 상단 구분선 더 두껍게 */
   margin: 8px 0;
   width: 66%;
 }
 
 .divider.thin {
-  border-top: 1px solid #ddd;
+  border-top: 1px solid var(--border-color);
   /* 하단 구분선 얇게 */
 }
 
@@ -301,15 +302,17 @@ const filterBySubregion = (subregion) => {
   display: flex;
   gap: 20px;
   padding: 20px 0;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--border-color);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   text-decoration: none;
   color: inherit;
+  background-color: var(--bg-color);
 }
 
 .event-item:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 8px rgba(255, 255, 255, 0.1);
+  background-color: var(--hover-color);
 }
 
 .event-image {
@@ -323,15 +326,16 @@ const filterBySubregion = (subregion) => {
 .tag-filter {
   width: 25%;
   padding: 25px;
-  background: #f8f9fa;
+  background: var(--hover-color);
   border-radius: 15px;
   position: sticky;
   top: 20px;
   height: fit-content;
+  border: 1px solid var(--border-color);
 }
 
 .tag-filter-item {
-  background: none;
+  background: var(--bg-color);
   border: none;
   display: inline-block;
   padding: 8px 12px;
@@ -339,17 +343,17 @@ const filterBySubregion = (subregion) => {
   border-radius: 6px;
   transition: all 0.2s ease;
   font-size: 14px;
-  color: #666;
+  color: var(--text-color);
 }
 
 .tag-filter-item:hover {
-  background-color: f8cd71(0, 123, 255, 0.1);
-  color: #f8cd71;
+  background-color: var(--hover-color);
+  color: var(--accent-color, #f8cd71);
 }
 
 .tag-filter-item.active {
-  background-color: #ffd987;
-  color: white;
+  background-color: var(--accent-color, #ffd987);
+  color: var(--bg-color);
 }
 
 
@@ -368,17 +372,17 @@ const filterBySubregion = (subregion) => {
   font-size: 18px; /* 폰트 크기 */
   cursor: pointer;
   position: relative;
-  color: #aaa; /* 기본 색상 */
+  color: var(--text-color-secondary, #aaa);
   transition: color 0.3s ease, transform 0.2s ease; /* 부드러운 전환 효과 */
 }
 
 .tab-item:hover {
-  color: #555; /* 호버 색상 */
+  color: var(--text-color);
   transform: translateY(-2px); /* 살짝 위로 이동 */
 }
 
 .tab-item.active {
-  color: #000; /* 활성화된 상태의 색상 */
+  color: var(--text-color);
   font-weight: bold; /* 두껍게 표시 */
 }
 
@@ -389,7 +393,7 @@ const filterBySubregion = (subregion) => {
   left: 10%; /* 양쪽 여백 */
   right: 10%; /* 양쪽 여백 */
   height: 3px; /* 밑줄 두께 */
-  background-color: #ffd987; /* 활성화 밑줄 색상 */
+  background-color: var(--accent-color, #ffd987); /* 활성화 밑줄 색상 */
   border-radius: 2px; /* 둥근 모서리 */
   transition: width 0.3s ease, background-color 0.3s ease; /* 부드러운 효과 */
 }
@@ -445,7 +449,7 @@ const filterBySubregion = (subregion) => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(255, 255, 255, 0.8);
+  background: rgba(0, 0, 0, 0.8);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -455,8 +459,8 @@ const filterBySubregion = (subregion) => {
 .loading-spinner {
   width: 40px;
   height: 40px;
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #ffd987;
+  border: 4px solid #333;
+  border-top: 4px solid var(--accent-color, #ffd987);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -468,7 +472,7 @@ const filterBySubregion = (subregion) => {
 
 /* 거리 정보 스타일 */
 .distance-info {
-  color: #666;
+  color: var(--text-color-secondary, #666);
   font-size: 0.9em;
   margin-top: 5px;
 }

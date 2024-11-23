@@ -42,11 +42,12 @@ onMounted(() => {
 
 <style scoped>
 .info-div {
-  background: #fae4b5;
+  background: var(--bg-color);
   box-sizing: border-box;
   height: 1080px;
   position: relative;
   overflow: hidden;
+  transition: background-color 0.3s ease;
 }
 
 .suggestion {
@@ -58,7 +59,7 @@ onMounted(() => {
   top: 110px;
 }
 .suggestion-info {
-  color: #000000;
+  color: var(--text-color);
   text-align: center;
   font-size: 32px;
   font-weight: 400;
@@ -84,7 +85,7 @@ onMounted(() => {
   font-weight: 600;
 }
 .more-info-black {
-  color: #000000;
+  color: var(--text-color);
 }
 
 .images-container {
@@ -102,7 +103,20 @@ onMounted(() => {
   height: 500px;
   object-fit: cover;
   border-radius: 8px;
-  
+  transition: all 0.3s ease;
+  filter: var(--image-filter, none);
+}
+
+.specific-image {
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: block !important;
+}
+
+:root.dark-mode .event1,
+:root.dark-mode .event2 {
+  --image-filter: brightness(0.8);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
 }
 
 </style>

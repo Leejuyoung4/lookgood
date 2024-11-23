@@ -222,8 +222,9 @@ watch(
 
 <style scoped>
 .video-detail {
-  background: #FFF5E6;
+  background: var(--bg-color);
   min-height: 100vh;
+  transition: background-color 0.3s ease;
 }
 
 .content-wrapper {
@@ -233,7 +234,7 @@ watch(
   max-width: 1600px;
   margin: 0 auto;
   padding: 30px;
-  background: #FFF5E6;
+  background: var(--bg-color);
 }
 
 .video-container {
@@ -259,13 +260,14 @@ watch(
   font-size: 36px;
   font-weight: bold;
   margin-bottom: 15px;
-  color: #4A4A4A;
+  color: var(--text-color);
   line-height: 1.3;
 }
 
 .video-meta {
   font-size: 18px;
-  color: #8B4513;
+  color: var(--text-color);
+  opacity: 0.8;
   margin-bottom: 20px;
 }
 
@@ -280,8 +282,8 @@ watch(
   align-items: center;
   margin: 25px 0;
   padding: 20px 0;
-  border-top: 1px solid #DEB887;
-  border-bottom: 1px solid #DEB887;
+  border-top: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .action-buttons {
@@ -296,16 +298,21 @@ watch(
   padding: 12px 24px;
   border: none;
   border-radius: 25px;
-  background: #DEB887;
-  color: white;
+  background: var(--button-bg, #DEB887);
+  color: var(--button-text, white);
   font-size: 16px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
 }
 
+:root.dark-mode .action-btn {
+  background: #4a4a4a;
+  color: #fff;
+}
+
 .action-btn:hover {
-  background: #CD853F;
+  background: var(--button-hover-bg, #CD853F);
   transform: translateY(-2px);
 }
 
@@ -316,17 +323,17 @@ watch(
 .description {
   font-size: 18px;
   line-height: 1.8;
-  color: #4A4A4A;
+  color: var(--text-color);
   margin: 30px 0;
   padding: 20px;
-  background: #FAEBD7;
+  background: var(--hover-color);
   border-radius: 8px;
 }
 
 .about-speaker {
   margin-top: 40px;
   padding: 30px;
-  background: #FAEBD7;
+  background: var(--hover-color);
   border-radius: 8px;
 }
 
@@ -334,7 +341,7 @@ watch(
   font-size: 28px;
   font-weight: 600;
   margin-bottom: 25px;
-  color: #8B4513;
+  color: var(--text-color);
 }
 
 .speaker-info {
@@ -349,22 +356,27 @@ watch(
   background: #DEB887;
 }
 
+:root.dark-mode .speaker-avatar {
+  filter: brightness(0.8);
+}
+
 .speaker-details h3 {
   font-size: 22px;
   font-weight: 600;
   margin-bottom: 12px;
-  color: #4A4A4A;
+  color: var(--text-color);
 }
 
 .speaker-bio {
   font-size: 17px;
   line-height: 1.6;
-  color: #666;
+  color: var(--text-color);
+  opacity: 0.8;
 }
 
 .sidebar {
   padding: 20px;
-  background: #FAEBD7;
+  background: var(--hover-color);
   border-radius: 8px;
   height: fit-content;
 }
@@ -374,8 +386,8 @@ watch(
   font-weight: 600;
   margin-bottom: 20px;
   padding-bottom: 15px;
-  border-bottom: 2px solid #DEB887;
-  color: #8B4513;
+  border-bottom: 2px solid var(--border-color);
+  color: var(--text-color);
 }
 
 .next-videos {
@@ -394,7 +406,7 @@ watch(
 }
 
 .video-item:hover {
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--hover-color);
 }
 
 .thumbnail {
@@ -411,6 +423,11 @@ watch(
   object-fit: cover;
 }
 
+:root.dark-mode .thumbnail img {
+  filter: brightness(0.8);
+  transition: filter 0.3s ease;
+}
+
 .video-info {
   flex: 1;
   min-width: 0;
@@ -424,18 +441,20 @@ watch(
   display: -webkit-box;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  color: #0f0f0f;
+  color: var(--text-color);
 }
 
 .speaker {
   font-size: 12px;
-  color: #606060;
+  color: var(--text-color);
+  opacity: 0.7;
   margin-bottom: 4px;
 }
 
 .meta {
   font-size: 12px;
-  color: #606060;
+  color: var(--text-color);
+  opacity: 0.7;
 }
 
 .meta span:not(:last-child)::after {
@@ -444,17 +463,19 @@ watch(
 }
 
 .views {
-  color: #606060;
+  color: var(--text-color);
+  opacity: 0.7;
 }
 
 .date {
-  color: #606060;
+  color: var(--text-color);
+  opacity: 0.7;
 }
 
 .no-recommendations {
   padding: 20px;
   text-align: center;
-  color: #8B4513;
+  color: var(--text-color);
 }
 
 @media (max-width: 1200px) {
@@ -465,5 +486,19 @@ watch(
   .sidebar {
     margin-top: 30px;
   }
+}
+
+:root.dark-mode {
+  --button-bg: #4a4a4a;
+  --button-hover-bg: #666;
+  --border-color: #444;
+}
+
+:root.dark-mode .action-btn i {
+  color: #fff;
+}
+
+:root.dark-mode .video-item:hover {
+  background: rgba(255, 255, 255, 0.1);
 }
 </style>

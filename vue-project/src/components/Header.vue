@@ -91,6 +91,7 @@
 import { ref, onMounted } from 'vue';
 import { useThemeStore } from '@/stores/theme'
 import LoginViewModal from '@/views/LoginViewModal.vue';
+import { useRouter, useRoute } from 'vue-router';
 
 import searchImage from '@/assets/img/search1.svg';
 import groupImage from '@/assets/img/group0.svg';
@@ -108,11 +109,22 @@ const rememberMe = ref(false); // 아이디 저장 체크박스 상태
 const showDropdown = ref(false);
 const themeStore = useThemeStore()
 
+// router와 route 설정
+const router = useRouter();
+const route = useRoute();
+
 // 로그아웃
 const logout = () => {
   isLoggedIn.value = false;
   userInfo.value = null;
-  localStorage.removeItem('user'); // 로그인 상태 정보 삭제
+  localStorage.removeItem('user');
+  localStorage.removeItem('savedVideos'); // 저장된 비디오 정보도 삭제
+  
+  // 현재 경로가 마이페이지인 경우 홈으로 이동
+  if (route.path === '/mypage') {
+    router.push('/');
+  }
+  
   alert('로그아웃되었습니다.');
 };
 
@@ -172,6 +184,8 @@ onMounted(() => {
   width: 95%;
   margin-left: auto;
   margin-right: auto;
+  background-color: var(--bg-color);
+  transition: background-color 0.3s;
 }
 
 .logo {
@@ -257,10 +271,10 @@ onMounted(() => {
   height: 40px;
   display: flex;
   align-items: center;
-  background: #f5f5f5;
+  background: var(--hover-color);
   border-radius: 20px;
   padding: 5px 20px;
-  border: 2px solid transparent;
+  border: 1px solid var(--border-color);
   box-sizing: border-box;
 }
 
@@ -270,6 +284,7 @@ onMounted(() => {
   background: transparent;
   font-size: 18px;
   outline: none; /* 기본 포커스 스타일 제거 */
+  color: var(--text-color);
 }
 
 .search-bar:focus-within {
@@ -683,5 +698,165 @@ onMounted(() => {
 .dropdown-item:hover {
   background-color: var(--text-color);
   color: var(--bg-color);
+}
+
+/* 이미지 필터 관련 스타일 추가 */
+.menu-img,
+.user-check,
+.user-plus,
+.my-page-img,
+.search-bar img {
+  transition: filter 0.3s ease;
+}
+
+/* 다크모드일 때 이미지 필터 적용 */
+:root.dark-mode .menu-img,
+:root.dark-mode .user-check,
+:root.dark-mode .user-plus,
+:root.dark-mode .my-page-img,
+:root.dark-mode .search-bar img {
+  filter: invert(1) brightness(0.8);
+}
+
+/* 호버 효과 */
+.menu-item:hover .menu-img,
+.log-item:hover .user-check,
+.log-item:hover .user-plus,
+.log-item:hover .my-page-img {
+  transform: scale(1.1);
+  transition: transform 0.3s ease;
+}
+
+/* 드롭다운 메뉴 다크모드 스타일 개선 */
+.dropdown-menu {
+  background-color: var(--bg-color);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+:root.dark-mode .dropdown-menu {
+  background-color: var(--bg-color);
+  border-color: var(--border-color);
+  box-shadow: 0 2px 5px rgba(255, 255, 255, 0.1);
+}
+
+/* 검색바 스타일 개선 */
+.search-bar {
+  background: var(--hover-color);
+  border: 1px solid var(--border-color);
+}
+
+:root.dark-mode .search-bar {
+  background: var(--hover-color);
+  border-color: var(--border-color);
+}
+
+.search-bar:focus-within {
+  border-color: #ebd03b;
+}
+
+/* 메뉴 아이템 호버 효과 */
+.menu-item:hover,
+.log-item:hover {
+  color: #ebd03b;
+}
+
+/* 로고는 항상 노란색 유지 */
+.logo {
+  color: #ebd03b !important;
+}
+
+/* 다크모드에서의 환영 텍스트 */
+:root.dark-mode .welcome-text {
+  color: var(--text-color);
+}
+
+/* 로고 관련 스타일 수정 및 추가 */
+.logo-item {
+  display: inline-block;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+/* 기본 회전 상태 */
+.logo-item:nth-child(1) { transform: rotate(-10deg); }
+.logo-item:nth-child(2) { transform: rotate(10deg); }
+.logo-item:nth-child(3) { transform: rotate(-10deg); }
+.logo-item:nth-child(4) { transform: rotate(10deg); }
+.logo-item:nth-child(5) { transform: rotate(-10deg); }
+.logo-item:nth-child(6) { transform: rotate(10deg); }
+
+/* 호버 시 애니메이션 효과 */
+.logo:hover .logo-item {
+  animation: wiggleJump 0.8s ease;
+  animation-fill-mode: both;
+}
+
+/* 각 글자별 애니메이션 딜레이 */
+.logo:hover .logo-item:nth-child(1) { animation-delay: 0s; }
+.logo:hover .logo-item:nth-child(2) { animation-delay: 0.1s; }
+.logo:hover .logo-item:nth-child(3) { animation-delay: 0.2s; }
+.logo:hover .logo-item:nth-child(4) { animation-delay: 0.3s; }
+.logo:hover .logo-item:nth-child(5) { animation-delay: 0.4s; }
+.logo:hover .logo-item:nth-child(6) { animation-delay: 0.5s; }
+
+/* 귀여운 통통 튀는 애니메이션 */
+@keyframes wiggleJump {
+  0% {
+    transform: scale(1) rotate(var(--rotation));
+  }
+  10% {
+    transform: scale(1.1) rotate(calc(var(--rotation) - 5deg));
+  }
+  20% {
+    transform: scale(0.9) rotate(calc(var(--rotation) + 5deg));
+  }
+  30% {
+    transform: translateY(-20px) scale(1.1) rotate(calc(var(--rotation) - 3deg));
+  }
+  50% {
+    transform: translateY(0) scale(1.1) rotate(calc(var(--rotation) + 3deg));
+  }
+  70% {
+    transform: translateY(-10px) scale(1.05) rotate(var(--rotation));
+  }
+  100% {
+    transform: translateY(0) scale(1) rotate(var(--rotation));
+  }
+}
+
+/* 각 글자의 회전 각도 설정 */
+.logo-item:nth-child(1) { --rotation: -10deg; }
+.logo-item:nth-child(2) { --rotation: 10deg; }
+.logo-item:nth-child(3) { --rotation: -10deg; }
+.logo-item:nth-child(4) { --rotation: 10deg; }
+.logo-item:nth-child(5) { --rotation: -10deg; }
+.logo-item:nth-child(6) { --rotation: 10deg; }
+
+/* 로고 컨테이너 효과 */
+.logo-container {
+  transition: all 0.3s ease;
+}
+
+/* 글자 색상 효과 */
+.logo:hover .logo-item {
+  text-shadow: 0 0 15px rgba(235, 208, 59, 0.5),
+               0 0 25px rgba(235, 208, 59, 0.3);
+}
+
+/* oo 글자 특별 효과 */
+.logo-item.logo-bold {
+  transition: all 0.3s ease;
+}
+
+.logo:hover .logo-bold {
+  animation: squishyBounce 0.8s ease;
+}
+
+@keyframes squishyBounce {
+  0%, 100% { transform: scale(1) rotate(var(--rotation)); }
+  30% { transform: scaleX(1.2) scaleY(0.8) rotate(calc(var(--rotation) - 5deg)); }
+  50% { transform: scaleX(0.8) scaleY(1.2) rotate(calc(var(--rotation) + 5deg)); }
+  70% { transform: scale(1.1) rotate(var(--rotation)); }
 }
 </style>
