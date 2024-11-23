@@ -217,12 +217,13 @@ const isActiveCategory = (category) => {
 
 <style scoped>
 .video-div {
-  background: #ffffff;
+  background: var(--bg-color);
   box-sizing: border-box;
   height: auto;
   position: relative;
   overflow: hidden;
   padding-bottom: 50px;
+  transition: background-color 0.3s ease;
 }
 
 .video-menu {
@@ -239,12 +240,14 @@ const isActiveCategory = (category) => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  cursor: pointer; /* 클릭 가능하도록 변경 */
+  cursor: pointer;
+  transition: all 0.3s ease;
 }
 
 .menu-item img {
   width: 60px;
   height: auto;
+  transition: filter 0.3s ease;
 }
 
 .menu-item span {
@@ -252,6 +255,8 @@ const isActiveCategory = (category) => {
   font-size: 20px;
   font-family: "Inter-Medium", sans-serif;
   font-weight: 500;
+  color: var(--text-color);
+  transition: color 0.3s ease;
 }
 
 .video-list {
@@ -265,11 +270,12 @@ const isActiveCategory = (category) => {
 .video {
   display: flex;
   flex-direction: column;
-  background: #fff;
+  background: var(--bg-color);
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s ease;
+  transition: transform 0.2s ease, background-color 0.3s ease;
+  border: 1px solid var(--border-color);
 }
 
 .video:hover {
@@ -294,6 +300,7 @@ const isActiveCategory = (category) => {
 
 .video-content {
   padding: 16px;
+  background: var(--bg-color);
 }
 
 .video-title {
@@ -304,16 +311,14 @@ const isActiveCategory = (category) => {
   display: -webkit-box;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  color: #333;
+  color: var(--text-color);
 }
 
 .video-description {
   font-size: 14px;
-  color: #666;
+  color: var(--text-color);
+  opacity: 0.8;
   margin-bottom: 12px;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
 }
 
 .video-info {
@@ -341,12 +346,14 @@ const isActiveCategory = (category) => {
   display: flex;
   justify-content: space-between;
   font-size: 13px;
-  color: #666;
+  color: var(--text-color);
+  opacity: 0.7;
   margin-top: 8px;
 }
 
 .views, .upload-date {
-  color: #666;
+  color: var(--text-color);
+  opacity: 0.7;
 }
 
 .pagination {
@@ -360,16 +367,57 @@ const isActiveCategory = (category) => {
   padding: 10px 20px;
   font-size: 16px;
   cursor: pointer;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  transition: all 0.3s ease;
+}
+
+.pagination button:hover {
+  background-color: var(--hover-color);
+}
+
+.pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .loading, .error {
   text-align: center;
   margin-top: 300px;
   font-size: 18px;
-  color: #666;
+  color: var(--text-color);
 }
 
 .error {
   color: #ff4444;
+}
+
+:root.dark-mode .video-thumbnail img {
+  filter: brightness(0.9);
+}
+
+:root.dark-mode .video {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+:root.dark-mode .menu-item img {
+  filter: invert(1) brightness(0.8);
+}
+
+.menu-item.active img {
+  filter: brightness(1.2);
+}
+
+:root.dark-mode .menu-item.active img {
+  filter: invert(1) brightness(1);
+}
+
+.menu-item:hover img {
+  transform: scale(1.1);
+}
+
+:root.dark-mode .menu-item:hover img {
+  filter: invert(1) brightness(1);
 }
 </style>

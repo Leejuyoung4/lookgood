@@ -23,64 +23,58 @@ onMounted(() => {
 
 <style>
 :root {
-  /* 라이트 모드 (기본) */
-  --bg-primary: #FFF5E6;
-  --bg-secondary: #FAEBD7;
-  --bg-tertiary: #fff;
-  
-  /* 텍스트 색상 */
-  --text-primary: #4A4A4A;
-  --text-secondary: #606060;
-  --text-tertiary: #808080;
-  
-  /* 강조 색상 */
-  --accent-primary: #8B4513;
-  --accent-secondary: #DEB887;
-  
-  /* 테두리 색상 */
-  --border-primary: #DEB887;
-  --border-secondary: #E8E8E8;
+  --bg-color: #ffffff;
+  --text-color: #333333;
+  --border-color: #dddddd;
+  --hover-color: #f5f5f5;
+  --secondary-bg: #f8f8f8;
 }
 
-/* 다크 모드 변수 */
-.dark-mode {
-  /* 배경 색상 */
-  --bg-primary: #1a1a1a;
-  --bg-secondary: #2d2d2d;
-  --bg-tertiary: #333;
-  
-  /* 텍스트 색상 */
-  --text-primary: #e0e0e0;
-  --text-secondary: #b0b0b0;
-  --text-tertiary: #808080;
-  
-  /* 강조 색상 */
-  --accent-primary: #cd853f;
-  --accent-secondary: #8B4513;
-  
-  /* 테두리 색상 */
-  --border-primary: #404040;
-  --border-secondary: #505050;
+:root.dark-mode {
+  --bg-color: #2d2d2d;
+  --text-color: #e0e0e0;
+  --border-color: #4a4a4a;
+  --hover-color: #3d3d3d;
+  --secondary-bg: #363636;
 }
 
-/* 전역 스타일 */
 body {
-  margin: 0;
-  padding: 0;
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
-  transition: background-color 0.3s ease, color 0.3s ease;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  transition: background-color 0.3s, color 0.3s;
+}
+
+/* 공통 스타일 */
+.card, .modal, .dropdown-menu {
+  background-color: var(--bg-color);
+  border-color: var(--border-color);
+}
+
+input, textarea, select {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  border-color: var(--border-color);
+}
+
+a {
+  color: var(--text-color);
+}
+
+button {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  border-color: var(--border-color);
 }
 
 .app-container {
   min-height: 100vh;
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
+  background-color: var(--bg-color);
+  color: var(--text-color);
 }
 
 /* 기본 링크 스타일 */
 a {
-  color: var(--text-primary);
+  color: var(--text-color);
   text-decoration: none;
   transition: color 0.3s ease;
 }
@@ -91,9 +85,9 @@ a:hover {
 
 /* 기본 버튼 스타일 */
 button {
-  background-color: var(--bg-secondary);
-  color: var(--text-primary);
-  border: 1px solid var(--border-primary);
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  border-color: var(--border-color);
   transition: all 0.3s ease;
 }
 
@@ -106,9 +100,9 @@ button:hover {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-primary);
-  color: var(--text-primary);
+  background: var(--bg-color);
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
   padding: 8px 16px;
   border-radius: 20px;
   cursor: pointer;
@@ -117,7 +111,7 @@ button:hover {
 
 .theme-toggle:hover {
   background: var(--accent-secondary);
-  color: var(--bg-primary);
+  color: var(--bg-color);
 }
 
 .theme-toggle i {
@@ -126,10 +120,18 @@ button:hover {
 
 /* 네비게이션 바 스타일 */
 .navbar {
-  background-color: var(--bg-secondary);
+  background-color: var(--bg-color);
   padding: 1rem;
   display: flex;
   justify-content: flex-end;
-  border-bottom: 1px solid var(--border-primary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+/* 이미지 관련 스타일 추가 */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  opacity: 1 !important; /* 이미지 투명도 강제 설정 */
 }
 </style>

@@ -1,15 +1,5 @@
 <template>
   <div class="mypage-container">
-    <!-- 사용자 정보 섹션 -->
-    <section class="user-section">
-      <h2>내 정보</h2>
-      <div class="user-info" v-if="userInfo">
-        <p><strong>이름:</strong> {{ userInfo.userName }}</p>
-        <p><strong>이메일:</strong> {{ userInfo.email }}</p>
-        <p><strong>가입일:</strong> {{ formatDate(userInfo.joinDate) }}</p>
-      </div>
-    </section>
-
     <!-- 저장한 영상 섹션 -->
     <section class="saved-videos-section">
       <h2>저장한 영상</h2>
@@ -26,8 +16,7 @@
               <h3 class="video-title">{{ video.vtitle }}</h3>
               <p class="instructor">{{ video.vinstructor }}</p>
               <div class="video-meta">
-                <span class="views">조회수 {{ video.vviews }}회</span>
-                <span class="saved-date">{{ formatDate(video.savedDate) }}</span>
+                <span class="saved-date">저장일: {{ formatDate(video.savedAt) }}</span>
               </div>
             </div>
           </router-link>
@@ -46,41 +35,30 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import axios from 'axios';
 
 const router = useRouter();
-const userInfo = ref(null);
 const savedVideos = ref([]);
 
-// 사용자 정보 로드
-const loadUserInfo = async () => {
-  try {
-    const response = await axios.get('/api/users/info');
-    userInfo.value = response.data;
-  } catch (error) {
-    console.error('사용자 정보 로드 실패:', error);
-    if (error.response?.status === 401) {
-      alert('로그인이 필요합니다.');
-      router.push('/login');
-    }
-  }
-};
-
 // 저장된 영상 로드
-const loadSavedVideos = async () => {
+const loadSavedVideos = () => {
   try {
-    const response = await axios.get('/api/videos/saved');
-    savedVideos.value = response.data;
+    const savedVideosData = localStorage.getItem('savedVideos');
+    if (savedVideosData) {
+      savedVideos.value = JSON.parse(savedVideosData);
+    }
   } catch (error) {
     console.error('저장된 영상 로드 실패:', error);
+    savedVideos.value = [];
   }
 };
 
 // 저장 취소
-const unsaveVideo = async (vno) => {
+const unsaveVideo = (vno) => {
   try {
-    await axios.delete(`/api/videos/${vno}/save`);
-    await loadSavedVideos(); // 목록 새로고침
+    const savedVideosData = JSON.parse(localStorage.getItem('savedVideos') || '[]');
+    const updatedVideos = savedVideosData.filter(video => video.vno !== vno);
+    localStorage.setItem('savedVideos', JSON.stringify(updatedVideos));
+    loadSavedVideos(); // 목록 새로고침
   } catch (error) {
     console.error('저장 취소 실패:', error);
     alert('저장 취소 중 오류가 발생했습니다.');
@@ -94,7 +72,6 @@ const formatDate = (dateString) => {
 };
 
 onMounted(() => {
-  loadUserInfo();
   loadSavedVideos();
 });
 </script>

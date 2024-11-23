@@ -36,8 +36,10 @@
         </div>
 
         <!-- Map Container -->
-        <div class="map-bubble">
-          <div id="kakao-map"></div>
+        <div class="map-section">
+          <div class="map-bubble">
+            <div id="kakao-map" style="width: 100%; height: 100%; position: relative;"></div>
+          </div>
         </div>
 
         <!-- Details Bubbles -->
@@ -68,7 +70,7 @@
           </div>
           <div class="detail-bubble">
             <i class="bi bi-globe"></i>
-            <a :href="event.websiteUrl" target="_blank">사이트 방문</a>
+            <a :href="event.websiteUrl" target="_blank">트 방문</a>
           </div>
         </div>
 
@@ -91,28 +93,33 @@
     </button>
 
     <!-- Chatbot Window -->
-    <div v-if="isChatbotOpen" class="chatbot-window">
+    <div v-if="isChatbotOpen" class="chatbot-window animate__animated animate__fadeIn">
       <div class="chatbot-header">
         <h3>이벤트 도우미</h3>
         <button class="close-btn" @click="toggleChatbot">
           <i class="bi bi-x-lg"></i>
         </button>
       </div>
-      <Chatbot :event="event" />
+      <div class="chatbot-content">
+        <Chatbot 
+          :event="event" 
+          @close="toggleChatbot"
+        />
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-import { ref, onMounted, watch } from "vue";
+import { ref, onMounted, watch, nextTick, onUnmounted } from "vue";
 import { useRoute } from "vue-router";
 import axios from "axios";
 import Chatbot from '@/components/Chatbot.vue';
 
 
 const currentIP = window.location.hostname;
-console.log('현재 IP:', currentIP);
+console.log(' IP:', currentIP);
 
 const route = useRoute();
 
@@ -132,36 +139,6 @@ const event = ref({
 const comment = ref('');
 const isChatbotOpen = ref(false);
 
-// Fetch event details based on the ID in the route
-onMounted(async () => {
-  const eventId = route.params.id;
-  console.log('요청할 ID:', eventId);
-
-  try {
-    const response = await axios({
-      method: 'get',
-      url: `/api/event-detail/${eventId}`,
-      baseURL: `http://${currentIP}:8080`,
-      withCredentials: false
-    });
-    
-    console.log('서버 응답:', response.data);
-    event.value = response.data;
-  } catch (error) {
-    console.error("이벤트 상세 정보 가져오기 실패:", error);
-  }
-});
-
-// Submit a comment
-const submitComment = () => {
-  if (comment.value.trim()) {
-    console.log("Comment submitted:", comment.value);
-    comment.value = ""; // Clear the comment field after submission
-  } else {
-    alert("댓글을 작성해주세요.");
-  }
-};
-
 // 주소를 기반으로 구글 지도 URL 생성
 const getMapUrl = (address) => {
   if (!address) {
@@ -171,7 +148,7 @@ const getMapUrl = (address) => {
 };
 
 const getEventImage = (description) => {
-  // 설명에 포함된 키워드에 따라 이미지 반환
+  // 설명에 포함된 키워드에 따 이미지 반환
   if (!description) return 'https://via.placeholder.com/800x400';
 
   const keywords = description.toLowerCase();
@@ -200,91 +177,95 @@ const getEventImage = (description) => {
   return 'https://via.placeholder.com/800x400';
 };
 
-// 주소로 지도 표시
-const showMap = async (address) => {
-  console.log('지도 표시 시작:', address);
-  if (!address) return;
+// 맵 관련 상태
+const mapLoaded = ref(false);
+const mapInstance = ref(null);
 
-  // 명동로 5와 같은 도로명 주소를 지역명으로 변환
-  const getSearchableAddress = (addr) => {
-    const parts = addr.split(' ');
-    // 도로명 주소인 경우 구까지만 사용
-    if (addr.includes('로') || addr.includes('길')) {
-      return parts.slice(0, 2).join(' ');
-    }
-    return addr;
+// 카카오맵 초기화 함수
+const initializeKakaoMap = async () => {
+  const container = document.getElementById('kakao-map');
+  const options = {
+    center: new kakao.maps.LatLng(37.5665, 126.9780),
+    level: 3
   };
 
-  try {
-    const container = document.getElementById('kakao-map');
-    if (!container) {
-      console.error('지도를 표시할 div를 찾을 수 없습니다.');
-      return;
-    }
+  const map = new kakao.maps.Map(container, options);
+  mapInstance.value = map;
 
-    const searchAddress = getSearchableAddress(address);
-    console.log('검색할 주소:', searchAddress);
+  const geocoder = new kakao.maps.services.Geocoder();
 
-    const ps = new kakao.maps.services.Places();
-    
-    const searchResult = await new Promise((resolve) => {
-      ps.keywordSearch(searchAddress, (data, status) => {
-        resolve({ data, status });
+  const searchAddressPromise = (address) => {
+    return new Promise((resolve) => {
+      geocoder.addressSearch(address, (result, status) => {
+        resolve({ result, status });
       });
     });
+  };
 
-    if (searchResult.status === kakao.maps.services.Status.OK) {
-      const place = searchResult.data[0];
-      const options = {
-        center: new kakao.maps.LatLng(place.y, place.x),
-        level: 3
-      };
+  if (event.value?.address) {
+    const findLocation = async (address) => {
+      // 1. 정확한 주소로 검색
+      let response = await searchAddressPromise(address);
+      if (response.status === kakao.maps.services.Status.OK) {
+        return response.result[0];
+      }
 
-      const map = new kakao.maps.Map(container, options);
+      // 2. 도로명이나 지역명으로 검색
+      const parts = address.split(' ');
+      if (parts.length >= 2) {
+        // 도로명이나 동네 이름 추출
+        const locationName = parts[parts.length - 1].replace(/[0-9]/g, '');
+        const areaSearch = `${parts[0]} ${parts[1]} ${locationName}`;
+        response = await searchAddressPromise(areaSearch);
+        if (response.status === kakao.maps.services.Status.OK) {
+          return response.result[0];
+        }
+
+        // 3. 주요 지역으로 검색
+        const mainArea = `${parts[0]} ${parts[1]} 중심가`;
+        response = await searchAddressPromise(mainArea);
+        if (response.status === kakao.maps.services.Status.OK) {
+          return response.result[0];
+        }
+      }
+
+      return null;
+    };
+
+    const searchResult = await findLocation(event.value.address);
+    
+    if (searchResult) {
+      const coords = new kakao.maps.LatLng(searchResult.y, searchResult.x);
       
+      // 마커 생성
       const marker = new kakao.maps.Marker({
         map: map,
-        position: new kakao.maps.LatLng(place.y, place.x)
+        position: coords
       });
 
+      // 인포윈도우 생성
       const infowindow = new kakao.maps.InfoWindow({
-        content: `<div style="padding:5px;font-size:12px;">${place.place_name}</div>`
+        content: `<div style="padding:5px;font-size:12px;">
+                  ${event.value.address}
+                  </div>`
       });
-      infowindow.open(map, marker);
 
-      console.log('지도 표시 완료:', place.place_name);
-    } else {
-      // 검색 실패 시 구 중심점으로 표시
-      const districtCoords = {
-        '중구': { lat: 37.5640907, lng: 126.9979403 },
-        '종로구': { lat: 37.5728924, lng: 126.9793169 },
-        '강남구': { lat: 37.5172363, lng: 127.0473248 },
-        // ... 필요한 구 좌표 추가
-      };
+      // 마커 이벤트
+      kakao.maps.event.addListener(marker, 'mouseover', () => infowindow.open(map, marker));
+      kakao.maps.event.addListener(marker, 'mouseout', () => infowindow.close());
 
-      const district = address.split(' ')[1];
-      const defaultCoords = districtCoords[district] || { lat: 37.5665, lng: 126.9780 };
-
-      const options = {
-        center: new kakao.maps.LatLng(defaultCoords.lat, defaultCoords.lng),
-        level: 5
-      };
-
-      const map = new kakao.maps.Map(container, options);
-      console.log('기본 위치로 지도 표시');
+      // 지도 중심 이동
+      map.setCenter(coords);
+      map.setLevel(3);
     }
-
-  } catch (error) {
-    console.error('지도 표시 중 오류:', error);
   }
 };
 
-// API 호출 및 데이터 로드
 onMounted(async () => {
   const eventId = route.params.id;
-  console.log('요청할 ID:', eventId);
-
+  
   try {
+    // 1. 이벤트 데이터 가져오기
     const response = await axios({
       method: 'get',
       url: `/api/event-detail/${eventId}`,
@@ -293,49 +274,54 @@ onMounted(async () => {
     });
     
     event.value = response.data;
-    console.log('이벤트 데이터 로드:', event.value);
+    console.log('서버 응답:', response.data);
 
-    // SDK 로드 확인 후 지도 표시
-    if (event.value.address) {
-      // SDK가 로드될 때까지 기다림
-      const waitForKakaoMaps = setInterval(() => {
+    // 2. DOM 업데이트 대기
+    await nextTick();
+
+    // 3. 카카오맵 초기화
+    if (window.kakao && window.kakao.maps) {
+      initializeKakaoMap();
+    } else {
+      let attempts = 0;
+      const maxAttempts = 20;
+      
+      const checkMap = setInterval(() => {
         if (window.kakao && window.kakao.maps) {
-          clearInterval(waitForKakaoMaps);
-          showMap(event.value.address);
+          clearInterval(checkMap);
+          initializeKakaoMap();
+        } else if (attempts >= maxAttempts) {
+          clearInterval(checkMap);
+          console.error('카카오맵 로드 타임아웃');
         }
-      }, 100);
-
-      // 10초 후에도 로드되지 않으면 중단
-      setTimeout(() => {
-        clearInterval(waitForKakaoMaps);
-        console.error('카카오맵 SDK 로드 타임아웃');
-      }, 10000);
+        attempts++;
+      }, 500);
     }
+
   } catch (error) {
     console.error("이벤트 상세 정보 가져오기 실패:", error);
   }
 });
 
-// 주소가 변경될 때마다 지도 업데이트
-watch(() => event.value.address, (newAddress) => {
-  if (newAddress) {
-    console.log('주소 변경 감지:', newAddress);
-    showMap(newAddress);
+// 컴포넌트 언마운트 시 맵 인스턴스 정리
+onUnmounted(() => {
+  if (mapInstance.value) {
+    mapInstance.value = null;
   }
 });
 
-
-// 주소가 변경될 때마다 지도 업데이트
-watch(() => event.value.address, (newAddress) => {
-  if (newAddress) {
-    console.log('주소 변경 감지:', newAddress);
-    showMap(newAddress);
+// Submit a comment
+const submitComment = () => {
+  if (comment.value.trim()) {
+    console.log("Comment submitted:", comment.value);
+    comment.value = ""; // Clear the comment field after submission
+  } else {
+    alert("댓글을 작성해주세요.");
   }
-});
+};
 
 const toggleChatbot = () => {
   isChatbotOpen.value = !isChatbotOpen.value;
-  console.log('챗봇 상태:', isChatbotOpen.value);
 };
 </script>
 
@@ -344,7 +330,8 @@ const toggleChatbot = () => {
   max-width: 1200px;
   margin: 0 auto;
   padding: 30px;
-  background-color: #FFF5E6;
+  background-color: var(--bg-color);
+  color: var(--text-color);
 }
 
 /* Bubble Navigation */
@@ -360,7 +347,7 @@ const toggleChatbot = () => {
   flex-direction: column;
   align-items: center;
   padding: 15px 25px;
-  background-color: white;
+  background-color: var(--bg-color);
   border-radius: 30px;
   box-shadow: 0 4px 15px rgba(222, 184, 135, 0.2);
   cursor: pointer;
@@ -368,7 +355,7 @@ const toggleChatbot = () => {
 }
 
 .bubble.active {
-  background-color: #FFE4B5;
+  background-color: var(--hover-color);
   transform: translateY(-5px);
 }
 
@@ -399,7 +386,8 @@ const toggleChatbot = () => {
 
 /* Info Bubbles */
 .description-bubble, .detail-bubble, .comment-bubble {
-  background-color: white;
+  background-color: var(--bg-color);
+  color: var(--text-color);
   border-radius: 25px;
   padding: 20px;
   margin-bottom: 20px;
@@ -416,33 +404,54 @@ const toggleChatbot = () => {
 
 .detail-bubble i {
   font-size: 20px;
-  color: #DEB887;
+  color: var(--border-color);
 }
 
 .detail-bubble:hover {
   transform: translateY(-3px);
-  background-color: #FFE4B5;
+  background-color: var(--hover-color);
 }
 
 /* Map Container */
-#kakao-map {
+.map-section {
+  width: 100%;
+  padding: 20px;
+}
+
+.map-bubble {
+  width: 100%;
   height: 400px;
-  border-radius: 25px;
+  background: white;
+  border-radius: 15px;
   overflow: hidden;
-  margin: 20px 0;
-  border: 3px solid #FFE4B5;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  position: relative;
+}
+
+#kakao-map {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+/* 지도 관련 스타일 */
+:deep(.map-bubble *) {
+  width: 100%;
+  height: 100%;
 }
 
 /* Comment Section */
 .comment-bubble textarea {
   width: 100%;
   height: 120px;
-  border: 2px solid #FFE4B5;
+  border: 2px solid var(--border-color);
   border-radius: 20px;
   padding: 15px;
   margin-bottom: 15px;
   font-size: 16px;
   resize: none;
+  background-color: var(--bg-color);
+  color: var(--text-color);
 }
 
 .submit-btn {
@@ -512,20 +521,21 @@ const toggleChatbot = () => {
 .chatbot-window {
   width: 380px !important;
   height: 500px !important;
-  background-color: white;
+  background-color: var(--bg-color);
   border-radius: 20px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   overflow: hidden;
   position: fixed;
   bottom: 100px;
   right: 30px;
+  z-index: 1000;
   display: flex;
   flex-direction: column;
 }
 
 .chatbot-header {
   padding: 15px 20px;
-  background-color: #FFE4B5;
+  background-color: var(--hover-color);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -533,14 +543,14 @@ const toggleChatbot = () => {
 
 .chatbot-header h3 {
   margin: 0;
-  color: #8B4513;
+  color: var(--text-color);
   font-size: 16px;
 }
 
 .close-btn {
   background: none;
   border: none;
-  color: #8B4513;
+  color: var(--text-color);
   cursor: pointer;
   font-size: 20px;
   padding: 5px;
@@ -553,8 +563,13 @@ const toggleChatbot = () => {
 .chatbot-content {
   flex: 1;
   overflow: hidden;
-  min-height: 0;
-  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 애니메이션 추가 */
+.animate__fadeIn {
+  animation-duration: 0.3s;
 }
 
 @media (max-width: 768px) {
@@ -564,5 +579,34 @@ const toggleChatbot = () => {
     bottom: 80px;
     right: 20px;
   }
+}
+
+/* 다크모드 변수 정의 */
+:root {
+  --bg-color: #fff;
+  --text-color: #333;
+  --hover-color: #FFE4B5;
+  --border-color: #DEB887;
+}
+
+:root.dark-mode {
+  --bg-color: #1a1a1a;
+  --text-color: #e0e0e0;
+  --hover-color: #4a3f35;
+  --border-color: #5a4f45;
+}
+
+/* 링크 색상은 그대로 유지 */
+a {
+  color: #DEB887;
+}
+
+a:hover {
+  color: #BC8F8F;
+}
+
+/* 아이콘 색상 */
+.detail-bubble i {
+  color: var(--border-color);
 }
 </style>
