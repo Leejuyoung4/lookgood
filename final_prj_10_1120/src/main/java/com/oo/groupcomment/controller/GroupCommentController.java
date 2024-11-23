@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 @RestController
 @RequestMapping("/api/group/comment")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "*", allowCredentials = "false")
 public class GroupCommentController {
 	// 서비스 의존성 주입
 	private final GroupCommentService groupCommentService;

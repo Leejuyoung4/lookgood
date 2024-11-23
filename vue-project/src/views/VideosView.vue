@@ -1,11 +1,23 @@
 <template>
   <div class="video-div">
     <div class="video-menu">
-      <!-- 메뉴바 아이템들 -->
-      <div class="menu-item" v-for="(icon, index) in icons" :key="index" @click="filterVideos(icon.category)">
+      <div 
+        v-for="(icon, index) in icons" 
+        :key="index"
+        class="menu-item"
+        :class="{ active: isActiveCategory(icon.category) }"
+        @click="filterVideos(icon.category)"
+      >
         <img :src="icon.src" />
         <span>{{ icon.name }}</span>
       </div>
+    </div>
+    
+    <!-- 디버깅용 정보 표시 (개발 중에만 사용) -->
+    <div v-if="false" style="margin-top: 20px; padding: 20px;">
+      <p>Selected Category: {{ selectedCategory }}</p>
+      <p>Total Videos: {{ videos.length }}</p>
+      <p>Filtered Videos: {{ filteredVideos.length }}</p>
     </div>
 
     <!-- 로딩 상태 표시 -->
@@ -29,10 +41,8 @@
         </div>
         <div class="video-content">
           <h3 class="video-title">{{ video.title || '제목 없음' }}</h3>
-          <p class="video-description">{{ video.description || '설명 없음' }}</p>
           <div class="video-info">
             <span class="instructor">{{ video.instructor || '강사 미정' }}</span>
-            <p class="instructor-intro">{{ video.instructorIntro }}</p>
             <div class="stats">
               <span class="views">조회수 {{ video.views }}회</span>
               <span class="upload-date">{{ video.uploadDate }}</span>
@@ -70,11 +80,11 @@ const error = ref(null);
 // 메뉴 아이콘 리스트
 const icons = [
   { src: allIcon, name: '전체', category: 'all' },
-  { src: healthIcon, name: '헬스', category: 'health' },
-  { src: yogaIcon, name: '요가', category: 'yoga' },
-  { src: pilatesIcon, name: '필라테스', category: 'pilates' },
-  { src: dancingIcon, name: '댄스', category: 'dancing' },
-  { src: boxingIcon, name: '복싱', category: 'boxing' }
+  { src: healthIcon, name: '헬스', category: '헬스' },
+  { src: yogaIcon, name: '요가', category: '요가' },
+  { src: pilatesIcon, name: '필라테스', category: '필라테스' },
+  { src: dancingIcon, name: '댄스', category: '댄스' },
+  { src: boxingIcon, name: '복싱', category: '복싱' }
 ];
 
 // 비디오 데이터 가져오기
@@ -82,21 +92,23 @@ const fetchVideos = async () => {
   try {
     loading.value = true;
     const response = await axios.get('/api/videos');
-    console.log('Raw response:', response.data); // 데이터 확인용
-
+    
     videos.value = response.data.map(video => ({
-      id: video.vno,                     // vno로 수정
-      title: video.vtitle,               // vtitle로 수정
-      description: video.vdescription,    // vdescription로 수정
-      image: ex,                         // 임시 이미지 사용
-      category: video.vcategoryName,     // vcategoryName로 수정
-      uploadDate: formatDate(video.vuploadDate), // vuploadDate로 수정
-      views: video.vviews,               // vviews로 수정
-      instructor: video.vinstructor,     // vinstructor로 수정
-      instructorIntro: video.vinstructorIntro // vinstructorIntro로 수정
+      id: video.vno,
+      title: video.vtitle,
+      description: video.vdescription,
+      image: `https://img.youtube.com/vi/${video.videoId}/mqdefault.jpg`,
+      category: video.vcategoryName,
+      uploadDate: formatDate(video.vuploadDate),
+      views: formatViews(video.vviews),
+      instructor: video.vinstructor
     }));
 
-    console.log('Mapped videos:', videos.value); // 매핑된 데이터 확인
+    console.log('Videos with categories:', videos.value.map(v => ({
+      id: v.id,
+      category: v.category,
+      title: v.title
+    })));
   } catch (err) {
     error.value = '비디오 데이터를 불러오는데 실패했습니다.';
     console.error('Error fetching videos:', err);
@@ -121,6 +133,17 @@ const formatDate = (dateString) => {
   }
 };
 
+// 조회수 포맷팅 함수 추가
+const formatViews = (views) => {
+  if (!views) return '0';
+  if (views >= 10000) {
+    return `${Math.floor(views / 10000)}만`;
+  } else if (views >= 1000) {
+    return `${Math.floor(views / 1000)}천`;
+  }
+  return views.toString();
+};
+
 // 비디오 상세 페이지로 이동
 const goToVideoDetail = (videoId) => {
   router.push(`/videos/${videoId}`);
@@ -137,10 +160,22 @@ const itemsPerPage = 8;
 const selectedCategory = ref('all');
 
 const filteredVideos = computed(() => {
+  console.log('Current selected category:', selectedCategory.value);
+  console.log('Available categories:', [...new Set(videos.value.map(v => v.category))]);
+  
   if (selectedCategory.value === 'all') {
     return videos.value;
   }
-  return videos.value.filter(video => video.category === selectedCategory.value);
+  
+  const filtered = videos.value.filter(video => {
+    const videoCategory = video.category;
+    const selectedCat = selectedCategory.value;
+    console.log(`Comparing video category: ${videoCategory} with selected: ${selectedCat}`);
+    return videoCategory === selectedCat;
+  });
+
+  console.log('Filtered results:', filtered.length);
+  return filtered;
 });
 
 const totalPages = computed(() => Math.ceil(filteredVideos.value.length / itemsPerPage));
@@ -164,14 +199,20 @@ const prevPage = () => {
 };
 
 const filterVideos = (category) => {
+  console.log('Filtering by category:', category);
   selectedCategory.value = category;
-  currentPage.value = 1; // 페이지를 1로 초기화
+  currentPage.value = 1;
 };
 
 // formatDate 함수를 template에서 사용할 수 있도록 내보내기
 defineExpose({
   formatDate
 });
+
+// 템플릿에서 현재 선택된 카테고리 시각적 표시를 위한 computed 속성 추가
+const isActiveCategory = (category) => {
+  return selectedCategory.value === category;
+};
 </script>
 
 <style scoped>

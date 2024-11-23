@@ -16,7 +16,7 @@ import com.oo.event.model.service.EventService;
 
 @RestController
 @RequestMapping("/api/event")
-@CrossOrigin(origins = "*") // 모든 출처 허용
+@CrossOrigin(origins = "*", allowCredentials = "false")
 public class EventController {
 	
 	@Autowired

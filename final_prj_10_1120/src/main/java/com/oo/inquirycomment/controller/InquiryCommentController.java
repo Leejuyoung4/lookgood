@@ -19,7 +19,7 @@ import com.oo.inquirycomment.model.service.InquiryCommentService;
 
 @RestController
 @RequestMapping("/api/")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "*", allowCredentials = "false")
 public class InquiryCommentController {
 	// 서비스 의존성 주입
 	private final InquiryCommentService inquiryCommentService;

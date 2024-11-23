@@ -13,7 +13,10 @@
         <div class="video-info">
           <h1 class="video-title">{{ video.vtitle }}</h1>
           <div class="video-meta">
-            <span class="views">조회수 {{ formatViews(video.vviews) }}회</span>
+
+            <span class="views">조회수 {{ formatViewsDetail(video.vviews) }}회</span>
+
+ 
           </div>
 
           <!-- 액션 버튼 -->
@@ -23,7 +26,7 @@
                 <i class="bi bi-share"></i>
                 공유하기
               </button>
-              <button class="action-btn save">
+              <button class="action-btn save" @click="handleSave">
                 <i class="bi bi-bookmark"></i>
                 저장하기
               </button>
@@ -67,7 +70,7 @@
               <h3 class="video-title">{{ recommendedVideo.vtitle }}</h3>
               <p class="speaker">{{ recommendedVideo.vinstructor }}</p>
               <p class="meta">
-                <span class="views">조회수 {{ formatViews(recommendedVideo.vviews) }}회</span>
+                <span class="views">조회수 {{ formatViewsDetail(recommendedVideo.vviews) }}회</span>
                 <span class="dot">•</span>
                 <span class="date">{{ formatDate(recommendedVideo.vuploadDate) }}</span>
               </p>
@@ -91,6 +94,7 @@ const route = useRoute()
 const router = useRouter()
 const video = ref(null)
 const recommendedVideos = ref([])
+const isSaved = ref(false)
 
 const fetchVideoDetails = async () => {
   try {
@@ -123,14 +127,10 @@ const fetchRecommendedVideos = async () => {
   }
 };
 
-const formatViews = (views) => {
+const formatViewsDetail = (views) => {
   if (!views) return '0';
-  if (views >= 10000) {
-    return `${Math.floor(views / 10000)}만`;
-  } else if (views >= 1000) {
-    return `${Math.floor(views / 1000)}천`;
-  }
-  return views.toString();
+  // 천 단위 콤마 추가
+  return views.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 };
 
 const formatDate = (dateString) => {
@@ -169,6 +169,40 @@ const handleVideoClick = async (videoNo) => {
   } catch (error) {
     console.error('비디오 이동 중 오류:', error);
   }
+};
+
+// 저장하기 함수
+const handleSave = () => {
+  if (!video.value) return;
+  
+  const savedVideos = JSON.parse(localStorage.getItem('savedVideos') || '[]');
+  const videoData = {
+    vno: video.value.vno,
+    videoId: video.value.videoId,
+    vtitle: video.value.vtitle,
+    vinstructor: video.value.vinstructor,
+    savedAt: new Date().toISOString()
+  };
+
+  if (isSaved.value) {
+    // 저장 취소
+    const filteredVideos = savedVideos.filter(v => v.vno !== video.value.vno);
+    localStorage.setItem('savedVideos', JSON.stringify(filteredVideos));
+    isSaved.value = false;
+  } else {
+    // 새로 저장
+    savedVideos.unshift(videoData);
+    localStorage.setItem('savedVideos', JSON.stringify(savedVideos));
+    isSaved.value = true;
+  }
+};
+
+// 저장 상태 확인
+const checkSavedStatus = () => {
+  if (!video.value?.vno) return;
+  
+  const savedVideos = JSON.parse(localStorage.getItem('savedVideos') || '[]');
+  isSaved.value = savedVideos.some(v => v.vno === video.value.vno);
 };
 
 onMounted(() => {

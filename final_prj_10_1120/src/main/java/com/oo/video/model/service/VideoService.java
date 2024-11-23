@@ -13,5 +13,14 @@ public interface VideoService {
 	boolean incrementViews(int id);
 
 	List<Video> getRecommendedVideos(Long currentVideoId, String category, int limit);
+
+	int updateLikes(int videoId);
+
+	int updateHates(int videoId);
+
+	void saveVideo(int userNo, int vNo);
+    void unsaveVideo(int userNo, int vNo);
+    boolean checkSaveStatus(int userNo, int vNo);
+    List<Video> getSavedVideos(int userNo);
 	
 }

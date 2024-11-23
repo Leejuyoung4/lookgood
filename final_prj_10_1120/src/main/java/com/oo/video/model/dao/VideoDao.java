@@ -41,4 +41,13 @@ public interface VideoDao {
     List<Video> findPopularVideosExcept(@Param("currentVideoId") Integer currentVideoId, 
             @Param("excludeIds") List<Integer> excludeIds, 
             @Param("limit") int limit);
+
+	int updateLikes(int videoId);
+
+	int updateHates(int videoId);
+	
+	void saveVideo(int userNo, int vNo);
+    void unsaveVideo(int userNo, int vNo);
+    boolean checkSaveStatus(int userNo, int vNo);
+    List<Video> getSavedVideos(int userNo);
 }
