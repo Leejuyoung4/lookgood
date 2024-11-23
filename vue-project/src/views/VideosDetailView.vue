@@ -13,7 +13,10 @@
         <div class="video-info">
           <h1 class="video-title">{{ video.vtitle }}</h1>
           <div class="video-meta">
+
             <span class="views">조회수 {{ formatViewsDetail(video.vviews) }}회</span>
+
+ 
           </div>
 
           <!-- 액션 버튼 -->
