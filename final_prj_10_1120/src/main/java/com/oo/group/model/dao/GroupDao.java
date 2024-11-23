@@ -21,5 +21,20 @@ public interface GroupDao {
 	// 게시글 수정
 	public void modifyGroup(Group group);
 
+	// 게시글 검색
+	public List<Group> searchPosts(String keyword);
+
+	// 조회수 증가
+	public void incrementViewCount(int gBoardNo);
+
+	// 좋아요수 증가
+	public void incrementLikeCount(int gBoardNo);
+
+	public boolean isUserLiked(int gBoardNo, int userNo);
+
+	public void deleteLike(int gBoardNo, int userNo);
+
+	public void addLike(int gBoardNo, int userNo);
+
 
 }

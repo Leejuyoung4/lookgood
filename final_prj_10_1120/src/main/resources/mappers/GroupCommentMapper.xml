@@ -24,12 +24,20 @@
             g_board_comment_reg_date ASC              -- 댓글 등록 날짜 기준 오름차순 정렬
 	</select>
 
+	<!-- 댓글 등록 -->
+	<insert id="insertComment" parameterType="GroupComment">
+	    INSERT INTO group_board_comment (g_board_comment_content, g_board_no, user_no)
+	    VALUES (#{gBoardCommentContent}, #{gBoardNo}, #{userNo});
+	</insert>
+	
+	
 	<!-- 댓글 삭제 -->
 	<delete id="removeComment" parameterType="int">
 		DELETE FROM group_board_comment
 		WHERE g_board_comment_no = #{gBoardCommentNo}
 	</delete>
 
+	<!-- 댓글 수정 -->
 	<update id="modifyComment" parameterType="map">
 	    UPDATE group_board_comment
 	    SET 

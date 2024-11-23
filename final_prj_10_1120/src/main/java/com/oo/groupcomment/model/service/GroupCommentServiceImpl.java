@@ -21,6 +21,12 @@ public class GroupCommentServiceImpl implements GroupCommentService {
 		return groupCommentDao.findBygBoardNo(gBoardNo);
 	}
 
+	// 댓글 등록
+	@Override
+	public void addComment(GroupComment groupComment) {
+		groupCommentDao.insertComment(groupComment);
+	}
+	
 	// 댓글 삭제
 	@Override
 	public boolean deleteComment(int gBoardCommentNo) {
@@ -45,17 +51,8 @@ public class GroupCommentServiceImpl implements GroupCommentService {
 		return false;
 	}
 
-	@Override
-	public boolean addDislike(int gBoardCommentNo, int userNo) {
-		// TODO Auto-generated method stub
-		return false;
-	}
 
-	@Override
-	public boolean removeDislike(int commentNo, int userNo) {
-		// TODO Auto-generated method stub
-		return false;
-	}
+
 	
 	
 }
