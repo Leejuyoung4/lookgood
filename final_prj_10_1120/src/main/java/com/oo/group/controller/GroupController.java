@@ -1,5 +1,10 @@
 package com.oo.group.controller;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays; // 추가
+import java.util.Collections; // 추가
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +26,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 import com.oo.group.model.dto.Group;
 import com.oo.group.model.service.GroupService;
+
 
 
 @RestController
@@ -50,27 +56,45 @@ public class GroupController {
     @GetMapping("{gBoardNo}")
     public ResponseEntity<Group> detail(@PathVariable("gBoardNo") int gBoardNo) {
         Group group = groupService.readGroup(gBoardNo);
-        
         if (group != null) {
+            // gBoardFiles가 있는 경우 콤마로 분리하여 리스트로 변환
+            if (group.getgBoardFiles() != null && !group.getgBoardFiles().isEmpty()) {
+                group.setgBoardFilesList(Arrays.asList(group.getgBoardFiles().split(",")));
+                System.out.println(group.getgBoardFilesList());
+            } else {
+                group.setgBoardFilesList(Collections.emptyList()); // 빈 리스트로 설정
+            }
             return ResponseEntity.ok(group);
         }
         return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }
+
+
     
     // 게시글 등록
     @PostMapping(consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
     public ResponseEntity<?> createGroup(
         @RequestPart("gBoardTitle") String gBoardTitle,
         @RequestPart("gBoardContent") String gBoardContent,
-        @RequestPart(value = "gBoardFile", required = false) MultipartFile gBoardFile) {
+        @RequestPart(value = "gBoardFiles", required = false) List<MultipartFile> gBoardFiles) {
 
         try {
+            // Group 객체 생성 및 데이터 설정
             Group group = new Group();
             group.setgBoardTitle(gBoardTitle);
             group.setgBoardContent(gBoardContent);
-            group.setgBoardFile(gBoardFile != null ? gBoardFile.getOriginalFilename() : null);
 
-            // 파일 저장 로직 추가 필요
+            // 파일 저장 처리
+            List<String> fileNames = new ArrayList<>();
+            if (gBoardFiles != null) {
+                for (MultipartFile file : gBoardFiles) {
+                    String savedFileName = saveFile(file); // 파일 저장 메서드 호출
+                    fileNames.add(savedFileName);
+                }
+            }
+            group.setgBoardFiles(String.join(",", fileNames)); // 파일명 콤마로 연결
+
+            // 그룹 데이터 저장
             groupService.createGroup(group);
 
             return new ResponseEntity<>(group, HttpStatus.CREATED);
@@ -79,6 +103,23 @@ public class GroupController {
             return new ResponseEntity<>("게시글 등록 실패", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+    private String saveFile(MultipartFile file) throws IOException {
+        String uploadDir = "C:/SSAFY_prj/uploads/"; // 절대 경로로 설정
+        String originalFilename = file.getOriginalFilename();
+        String savedFileName = System.currentTimeMillis() + "_" + originalFilename;
+
+        File saveFile = new File(uploadDir + savedFileName);
+        if (!saveFile.getParentFile().exists()) {
+            saveFile.getParentFile().mkdirs(); // 디렉토리가 없으면 생성
+        }
+        file.transferTo(saveFile);
+
+        return savedFileName; // 저장된 파일명 반환
+    }
+
+
+
 
     
     // 게시글 삭제
@@ -134,14 +175,18 @@ public class GroupController {
     // 좋아요수 증가
     @PutMapping("/{gBoardNo}/like")
     public ResponseEntity<Boolean> toggleLike(@PathVariable int gBoardNo, @RequestParam int userNo) {
+        if (userNo <= 0) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED); // 로그인 안 된 사용자
+        }
         try {
             boolean isLiked = groupService.toggleLike(gBoardNo, userNo);
-            return new ResponseEntity<>(isLiked, HttpStatus.OK); // 좋아요 상태 반환
+            return new ResponseEntity<>(isLiked, HttpStatus.OK);
         } catch (Exception e) {
             e.printStackTrace();
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
 
     @GetMapping("/{gBoardNo}/like")
     public ResponseEntity<Boolean> isUserLiked(@PathVariable int gBoardNo, @RequestParam int userNo) {

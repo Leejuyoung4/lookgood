@@ -27,7 +27,7 @@
 		INSERT INTO group_board (
 			g_board_title,
 			g_board_content,
-			g_board_file,
+			g_board_files,
 			g_board_reg_date,
 			g_board_views,
 			g_board_is_resolved,
@@ -38,7 +38,7 @@
 		) VALUES (
 			#{gBoardTitle},
 			#{gBoardContent},
-			#{gBoardFile},
+			#{gBoardFiles},
 			CURRENT_TIMESTAMP, -- 등록 날짜는 DB에서 자동으로 생성
 			#{gBoardViews}, -- 조회수 기본값 0
 			#{gBoardIsResolved},
@@ -48,7 +48,19 @@
 			#{userNo}
 		);
 	</insert>
+	
+	<insert id="createGroup">
+	  INSERT INTO group_table (gBoardTitle, gBoardContent, gBoardFiles)
+	  VALUES (#{gBoardTitle}, #{gBoardContent}, #{gBoardFiles})
+	</insert>
+	
+	<select id="readGroup" resultType="Group">
+	  SELECT gBoardNo, gBoardTitle, gBoardContent, gBoardFiles
+	  FROM group_table
+	  WHERE gBoardNo = #{gBoardNo}
+	</select>
 
+	
 
 
 	<!-- 게시글 삭제 -->
@@ -63,7 +75,7 @@
 		SET
 			g_board_title = #{gBoardTitle},
 			g_board_content = #{gBoardContent},
-			g_board_file = #{gBoardFile},
+			g_board_file = #{gBoardFiles},
 			g_board_is_resolved = #{gBoardIsResolved}
 		WHERE g_board_no = #{gBoardNo};
 	</update>
@@ -90,6 +102,14 @@
 	    SET g_board_like_count = g_board_like_count + 1
 	    WHERE g_board_no = #{gBoardNo};
 	</update>
+	
+	<!-- 좋아요 감소 -->
+<update id="decrementLikeCount" parameterType="int">
+    UPDATE group_board
+    SET g_board_like_count = g_board_like_count - 1
+    WHERE g_board_no = #{gBoardNo};
+</update>
+	
 	
 	<!-- 좋아요 여부 확인 -->
 	<select id="isUserLiked" parameterType="map" resultType="boolean">

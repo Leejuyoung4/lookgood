@@ -36,5 +36,7 @@ public interface GroupDao {
 
 	public void addLike(int gBoardNo, int userNo);
 
+	public void decrementLikeCount(int gBoardNo);
+
 
 }
