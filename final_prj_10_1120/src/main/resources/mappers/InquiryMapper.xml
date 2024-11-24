@@ -21,6 +21,12 @@
 		FROM inquiry_board
 		WHERE i_no = #{iNo};
 	</select>
+	
+	<!-- 게시글 등록 -->
+	<insert id="insertInquiry" parameterType="Inquiry">
+	   INSERT INTO inquiry_board (i_title, i_contents, i_files, i_reg_date, i_views, i_is_resolved, i_comments_count, i_category_name, user_no)
+	   VALUES (#{iTitle}, #{iContents}, #{iFiles}, NOW(), 0, false, 0, #{iCategoryName}, 1);
+	</insert>
 
 	<!-- 게시글 삭제 -->
 	<delete id="removeInquiry" parameterType="int">

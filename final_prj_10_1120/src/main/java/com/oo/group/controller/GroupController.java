@@ -146,20 +146,6 @@ public class GroupController {
         }
     }
 
-    // 게시글 검색
-    @GetMapping("/search")
-    public ResponseEntity<List<Group>> searchPosts(
-        @RequestParam(value = "keyword", required = false) String keyword) {
-        try {
-        	System.out.println(groupService.searchPosts(keyword));
-            List<Group> posts = groupService.searchPosts(keyword);
-            return new ResponseEntity<>(posts, HttpStatus.OK);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
     // 조회수 증가
     @PutMapping("/{gBoardNo}/view")
     public ResponseEntity<Void> incrementViewCount(@PathVariable int gBoardNo) {

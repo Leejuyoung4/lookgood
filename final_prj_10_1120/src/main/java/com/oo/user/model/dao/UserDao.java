@@ -64,4 +64,11 @@ public interface UserDao {
      * @return 중복된 아이디의 수
      */
     int countByUserId(String userId);
+
+    /**
+     * 사용자 ID로 사용자 정보를 조회합니다.
+     * @param userId 조회할 사용자 ID
+     * @return 사용자 정보
+     */
+    User selectUserByUserId(String userId);
 }

@@ -65,4 +65,6 @@ public interface UserService {
      * @return 중복 여부 (true: 중복)
      */
     boolean isUserIdDuplicate(String userId);
+    
+    User findUserById(String userId);
 }
