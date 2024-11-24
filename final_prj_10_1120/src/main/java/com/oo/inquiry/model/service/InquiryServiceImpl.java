@@ -49,6 +49,12 @@ public class InquiryServiceImpl implements InquiryService {
 		inquiryDao.modifyInquiry(inquiry);
 	}
 
+	// 조회수 증가
+	@Override
+	public void incrementViews(int iNo) {
+		inquiryDao.increaseViews(iNo);
+	}
+
 	
 	
 	

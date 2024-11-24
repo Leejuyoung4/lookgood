@@ -24,6 +24,9 @@ public interface InquiryDao {
 	// 게시글 수정
 	public void modifyInquiry(Inquiry inquiry);
 
+	// 조회수 증가
+	public void increaseViews(int iNo);
+
 
 
 }

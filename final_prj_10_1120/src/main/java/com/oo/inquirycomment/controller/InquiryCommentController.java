@@ -31,13 +31,14 @@ public class InquiryCommentController {
 	
 		// 해당 게시글의 댓글 목록 가져오기
 		@GetMapping("{iNo}")
-		 public ResponseEntity<?> getCommentsBygINo(@PathVariable("iNo") int iNo) {
-	        List<InquiryComment> inquiryComments = inquiryCommentService.getCommentsBygINo(iNo);
-	        if (!inquiryComments.isEmpty()) {
-	            return ResponseEntity.ok(inquiryComments); // 댓글 목록 반환
-	        }
-	        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("댓글이 존재하지 않습니다."); // 에러 메시지 반환
-	    }
+		public ResponseEntity<?> getCommentsBygINo(@PathVariable("iNo") int iNo) {
+		    List<InquiryComment> inquiryComments = inquiryCommentService.getCommentsBygINo(iNo);
+		    if (!inquiryComments.isEmpty()) {
+		        return ResponseEntity.ok(inquiryComments); // 댓글 목록 반환
+		    }
+		    return ResponseEntity.status(HttpStatus.NOT_FOUND).body("댓글이 존재하지 않습니다."); // 에러 메시지 반환
+		}
+
 		
 		// 댓글 등록
 		@PostMapping("{iNo}")

@@ -42,4 +42,12 @@
 			i_contents = #{iContents}
 		WHERE i_no = #{iNo};
 	</update>
+	
+	<!-- 조회수 증가 -->
+	<update id="increaseViews" parameterType="int">
+	    UPDATE inquiry_board
+	    SET i_views = i_views + 1
+	    WHERE i_no = #{iNo};
+	</update>
+	
 </mapper>
