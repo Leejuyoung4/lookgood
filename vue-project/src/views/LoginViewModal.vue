@@ -59,14 +59,16 @@
 
 <script setup>
 import { ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import axios from 'axios';
 
 const router = useRouter();
+const route = useRoute();
 const userId = ref('');
 const password = ref('');
 const errorMessage = ref('');
 const isLoading = ref(false);
+const rememberMe = ref(false);
 
 const emit = defineEmits(['close', 'login-success', 'open-signup']);
 
@@ -160,6 +162,44 @@ const showSuccessMessage = () => {
 const switchToSignup = () => {
   emit('open-signup');
   emit('close');
+};
+
+const handleLoginSuccess = async (userData) => {
+  try {
+    // 로컬 스토리지에 사용자 정보 저장
+    localStorage.setItem('userInfo', JSON.stringify(userData));
+    
+    // 리다이렉트 경로 확인
+    const redirectPath = route.query.redirect;
+    console.log('리다이렉트 경로:', redirectPath);
+
+    if (redirectPath) {
+      // 리다이렉트 경로가 있으면 해당 경로로 이동
+      await router.replace(redirectPath);
+    } else {
+      // 없으면 홈으로 이동
+      await router.replace('/');
+    }
+  } catch (error) {
+    console.error('리다이렉트 오류:', error);
+  }
+};
+
+const onSubmit = async () => {
+  try {
+    // 로그인 처리
+    const response = await axios.post('/api/users/login', {
+      userId: userId.value,
+      password: password.value
+    });
+
+    if (response.data) {
+      await handleLoginSuccess(response.data);
+    }
+  } catch (error) {
+    console.error('로그인 실패:', error);
+    alert('로그인에 실패했습니다.');
+  }
 };
 </script>
 

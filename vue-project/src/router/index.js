@@ -28,9 +28,8 @@ const routes = [
   },
   {
     path: '/videos/:id',
-    name: 'video-detail',
-    component: VideosDetailView,
-    props: true
+    name: 'VideoDetail',
+    component: () => import('@/views/VideosDetailView.vue')
   },
   {
     path: '/event',
