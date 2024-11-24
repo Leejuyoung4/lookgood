@@ -25,46 +25,14 @@ public class SavedVideoController {
     }
 
     /**
-     * 저장된 영상 목록 조회
-     */
-    @GetMapping
-    public ResponseEntity<Map<String, Object>> getSavedVideos(HttpSession session) {
-        Map<String, Object> response = new HashMap<>();
-        try {
-            Integer userNo = (Integer) session.getAttribute("userNo");
-            if (userNo == null) {
-                response.put("success", false);
-                response.put("message", "로그인이 필요합니다.");
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
-            }
-
-            List<Video> savedVideos = savedVideoService.getSavedVideos(userNo);
-            response.put("success", true);
-            response.put("videos", savedVideos);
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            response.put("success", false);
-            response.put("message", "저장된 영상 목록 조회 중 오류가 발생했습니다.");
-            return ResponseEntity.internalServerError().body(response);
-        }
-    }
-
-    /**
      * 영상 저장하기
      */
     @PostMapping("/{videoNo}")
     public ResponseEntity<Map<String, Object>> saveVideo(
             @PathVariable int videoNo,
-            HttpSession session) {
+            @RequestParam int userNo) {  // HttpSession 대신 userNo 파라미터 사용
         Map<String, Object> response = new HashMap<>();
         try {
-            Integer userNo = (Integer) session.getAttribute("userNo");
-            if (userNo == null) {
-                response.put("success", false);
-                response.put("message", "로그인이 필요합니다.");
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
-            }
-
             // 이미 저장된 영상인지 확인
             if (savedVideoService.isVideoSaved(userNo, videoNo)) {
                 response.put("success", false);
@@ -90,21 +58,34 @@ public class SavedVideoController {
     }
 
     /**
+     * 영상 저장 여부 확인
+     */
+    @GetMapping("/{videoNo}/check")
+    public ResponseEntity<Map<String, Object>> checkSavedVideo(
+            @PathVariable int videoNo,
+            @RequestParam int userNo) {  // HttpSession 대신 userNo 파라미터 사용
+        Map<String, Object> response = new HashMap<>();
+        try {
+            boolean isSaved = savedVideoService.isVideoSaved(userNo, videoNo);
+            response.put("success", true);
+            response.put("isSaved", isSaved);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "저장 상태 확인 중 오류가 발생했습니다.");
+            return ResponseEntity.internalServerError().body(response);
+        }
+    }
+
+    /**
      * 저장된 영상 삭제
      */
     @DeleteMapping("/{videoNo}")
     public ResponseEntity<Map<String, Object>> unsaveVideo(
             @PathVariable int videoNo,
-            HttpSession session) {
+            @RequestParam int userNo) {  // HttpSession 대신 userNo 파라미터 사용
         Map<String, Object> response = new HashMap<>();
         try {
-            Integer userNo = (Integer) session.getAttribute("userNo");
-            if (userNo == null) {
-                response.put("success", false);
-                response.put("message", "로그인이 필요합니다.");
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
-            }
-
             boolean result = savedVideoService.unsaveVideo(userNo, videoNo);
             if (result) {
                 response.put("success", true);
@@ -121,30 +102,17 @@ public class SavedVideoController {
             return ResponseEntity.internalServerError().body(response);
         }
     }
-
-    /**
-     * 영상 저장 여부 확인
-     */
-    @GetMapping("/{videoNo}/check")
-    public ResponseEntity<Map<String, Object>> checkSavedVideo(
-            @PathVariable int videoNo,
-            HttpSession session) {
+    @GetMapping("/user/{userNo}")  // URL 경로 수정
+    public ResponseEntity<Map<String, Object>> getSavedVideos(@PathVariable int userNo) {
         Map<String, Object> response = new HashMap<>();
         try {
-            Integer userNo = (Integer) session.getAttribute("userNo");
-            if (userNo == null) {
-                response.put("success", true);
-                response.put("isSaved", false);
-                return ResponseEntity.ok(response);
-            }
-
-            boolean isSaved = savedVideoService.isVideoSaved(userNo, videoNo);
+            List<Video> savedVideos = savedVideoService.getSavedVideos(userNo);
             response.put("success", true);
-            response.put("isSaved", isSaved);
+            response.put("videos", savedVideos);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             response.put("success", false);
-            response.put("message", "저장 상태 확인 중 오류가 발생했습니다.");
+            response.put("message", "저장된 영상 목록 조회 중 오류가 발생했습니다.");
             return ResponseEntity.internalServerError().body(response);
         }
     }

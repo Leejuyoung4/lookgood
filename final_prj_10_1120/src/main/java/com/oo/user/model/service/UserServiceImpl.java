@@ -1,8 +1,6 @@
 package com.oo.user.model.service;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,6 +32,17 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public User getUserByUserId(String userId) {
+        try {
+            return userDao.selectUserByUserId(userId);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    @Override
     public boolean signup(User user) {
         try {
             // 필수 필드 검증
@@ -47,8 +56,10 @@ public class UserServiceImpl implements UserService {
                 return false;
             }
 
-            // 비밀번호 암호화
-            user.setPassword(PasswordUtil.encrypt(user.getPassword()));
+            // 비밀번호가 암호화되지 않은 경우에만 암호화
+            if (!user.getPassword().contains(":")) {
+                user.setPassword(PasswordUtil.encrypt(user.getPassword()));
+            }
 
             // 회원 등록
             return userDao.insertUser(user) > 0;
@@ -62,11 +73,18 @@ public class UserServiceImpl implements UserService {
     @Transactional(readOnly = true)
     public User login(String userId, String password) {
         try {
-            Map<String, String> params = new HashMap<>();
-            params.put("userId", userId);
-            params.put("password", PasswordUtil.encrypt(password));
+            // 사용자 조회
+            User user = userDao.selectUserByUserId(userId);
+            if (user == null) {
+                return null;
+            }
+
+            // 비밀번호 검증
+            if (PasswordUtil.verify(password, user.getPassword())) {
+                return user;
+            }
             
-            return userDao.selectOne(params);
+            return null;
         } catch (Exception e) {
             e.printStackTrace();
             return null;
@@ -77,7 +95,8 @@ public class UserServiceImpl implements UserService {
     public boolean modify(User user) {
         try {
             // 비밀번호가 변경되는 경우에만 암호화
-            if (user.getPassword() != null && !user.getPassword().trim().isEmpty()) {
+            if (user.getPassword() != null && !user.getPassword().trim().isEmpty() 
+                && !user.getPassword().contains(":")) {
                 user.setPassword(PasswordUtil.encrypt(user.getPassword()));
             }
             return userDao.updateUser(user) > 0;

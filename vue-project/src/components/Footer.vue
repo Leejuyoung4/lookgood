@@ -377,4 +377,91 @@ const scrollToTop = () => {
     gap: 15px;
   }
 }
+
+/* 로고 관련 스타일 수정 및 추가 */
+.logo-item {
+  display: inline-block;
+  transition: all 0.3s ease;
+  position: relative;
+  --rotation: 0deg; /* 기본 회전값 설정 */
+}
+
+/* 기본 회전 상태 */
+.logo-item:nth-child(1) { --rotation: -10deg; }
+.logo-item:nth-child(2) { --rotation: 10deg; }
+.logo-item:nth-child(3) { --rotation: -10deg; }
+.logo-item:nth-child(4) { --rotation: 10deg; }
+.logo-item:nth-child(5) { --rotation: -10deg; }
+.logo-item:nth-child(6) { --rotation: 10deg; }
+
+/* 호버 시 애니메이션 효과 */
+.logo:hover .logo-item {
+  animation: wiggleJump 0.8s ease;
+  animation-fill-mode: both;
+}
+
+/* 각 글자별 애니메이션 딜레이 */
+.logo:hover .logo-item:nth-child(1) { animation-delay: 0s; }
+.logo:hover .logo-item:nth-child(2) { animation-delay: 0.1s; }
+.logo:hover .logo-item:nth-child(3) { animation-delay: 0.2s; }
+.logo:hover .logo-item:nth-child(4) { animation-delay: 0.3s; }
+.logo:hover .logo-item:nth-child(5) { animation-delay: 0.4s; }
+.logo:hover .logo-item:nth-child(6) { animation-delay: 0.5s; }
+
+/* 귀여운 통통 튀는 애니메이션 */
+@keyframes wiggleJump {
+  0% {
+    transform: scale(1) rotate(var(--rotation));
+  }
+  10% {
+    transform: scale(1.1) rotate(calc(var(--rotation) - 5deg));
+  }
+  20% {
+    transform: scale(0.9) rotate(calc(var(--rotation) + 5deg));
+  }
+  30% {
+    transform: translateY(-20px) scale(1.1) rotate(calc(var(--rotation) - 3deg));
+  }
+  50% {
+    transform: translateY(0) scale(1.1) rotate(calc(var(--rotation) + 3deg));
+  }
+  70% {
+    transform: translateY(-10px) scale(1.05) rotate(var(--rotation));
+  }
+  100% {
+    transform: translateY(0) scale(1) rotate(var(--rotation));
+  }
+}
+
+/* oo 글자 특별 효과 */
+.logo-item.logo-bold {
+  transition: all 0.3s ease;
+}
+
+.logo:hover .logo-bold {
+  animation: squishyBounce 0.8s ease;
+}
+
+@keyframes squishyBounce {
+  0%, 100% { transform: scale(1) rotate(var(--rotation)); }
+  30% { transform: scaleX(1.2) scaleY(0.8) rotate(calc(var(--rotation) - 5deg)); }
+  50% { transform: scaleX(0.8) scaleY(1.2) rotate(calc(var(--rotation) + 5deg)); }
+  70% { transform: scale(1.1) rotate(var(--rotation)); }
+}
+
+/* 로고 컨테이너에 발광 효과 추가 */
+.logo:hover {
+  text-shadow: 0 0 15px rgba(235, 208, 59, 0.5),
+               0 0 25px rgba(235, 208, 59, 0.3);
+}
+
+/* 로고 컨테이너 전체 효과 */
+.logo-container {
+  transition: all 0.3s ease;
+  padding: 10px;
+}
+
+.logo-container:hover {
+  transform: scale(1.02);
+}
 </style>
