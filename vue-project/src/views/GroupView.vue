@@ -36,11 +36,13 @@
     <!-- 검색 바 -->
     <div class="search-wrapper">
       <div class="search-bar">
-        <router-link to="/search">
           <img :src="searchImage" alt="Search Icon" />
-        </router-link>
-        <input type="text" placeholder="검색어를 입력하세요" />
-        <button class="search-button">검색</button>
+        <input
+          type="text"
+          v-model="searchQuery"
+          placeholder="검색어를 입력하세요"
+        />
+        <button class="search-button" @click="searchPosts">검색</button>
       </div>
     </div>
     
@@ -81,11 +83,31 @@
     <div v-if="showWriteModal" class="modal">
       <div class="modal-content">
         <h3>글쓰기</h3>
-        <form @submit.prevent="submitPost">
-          <input type="text" v-model="newPostTitle" placeholder="제목" required />
-          <textarea v-model="newPostContent" placeholder="내용" required></textarea>
-          <button type="submit">등록</button>
-          <button type="button" @click="showWriteModal = false">닫기</button>
+        <form @submit.prevent="submitPost" enctype="multipart/form-data">
+          <label>
+            제목:
+            <input type="text" v-model="newPostTitle" placeholder="제목을 입력하세요" required />
+          </label>
+          <label>
+            내용:
+            <textarea v-model="newPostContent" placeholder="내용을 입력하세요" required></textarea>
+          </label>
+          <label>
+            첨부 파일 (여러 개 선택 가능):
+            <input type="file" multiple @change="handleFileUpload" />
+          </label>
+
+          <!-- 이미지 미리보기 -->
+          <div v-if="filePreviews.length > 0" class="image-previews">
+            <div v-for="(preview, index) in filePreviews" :key="index" class="image-preview">
+              <img :src="preview" alt="미리보기" />
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit">등록</button>
+            <button type="button" @click="closeWriteModal">취소</button>
+          </div>
         </form>
       </div>
     </div>
@@ -176,8 +198,11 @@ const filteredPosts = computed(() => {
 
   // 검색어 필터링
   if (searchQuery.value) {
-    filtered = filtered.filter(post => post.gBoardTitle.includes(searchQuery.value));
-  }
+      const sanitizedQuery = searchQuery.value.trim();
+      filtered = filtered.filter(post =>
+        post.gBoardTitle.includes(sanitizedQuery) || post.gBoardContent.includes(sanitizedQuery)
+      );
+    }
 
   // 정렬 기준 적용
   if (sortBy.value === 'latest') {
@@ -197,7 +222,15 @@ const filterCategory = category => {
 
 // 게시글 검색
 const searchPosts = () => {
-  // 이미 computed에서 searchQuery를 활용하므로 별도 동작 불필요
+  const sanitizedKeyword = searchQuery.value.trim();
+  if (!sanitizedKeyword) {
+    alert("검색어를 입력해주세요.");
+    return;
+  }
+  
+  console.log('검색 버튼 클릭:', sanitizedKeyword);
+  // `searchQuery`를 업데이트하면 `filteredPosts`가 자동으로 재계산됨
+  searchQuery.value = sanitizedKeyword;
 };
 
 // 게시글 정렬
@@ -210,46 +243,75 @@ const showWriteModal = ref(false); // 글쓰기 모달 표시 상태
 const newPostTitle = ref(''); // 새 글 제목
 const newPostContent = ref(''); // 새 글 내용
 
+// 데이터 초기화 함수
+const resetWriteModalData = () => {
+  newPostTitle.value = ""; // 제목 초기화
+  newPostContent.value = ""; // 내용 초기화
+  selectedFiles.value = []; // 파일 초기화
+  filePreviews.value = []; // 미리보기 초기화
+};
+
+// 글쓰기 모달 닫기 및 데이터 초기화
+const closeWriteModal = () => {
+  resetWriteModalData(); // 입력 데이터 초기화
+  showWriteModal.value = false; // 모달 닫기
+};
+
 // 글쓰기 버튼 클릭 이벤트
 const openWriteModal = () => {
-  showWriteModal.value = true;
+  resetWriteModalData(); // 기존 입력 데이터 초기화
+  showWriteModal.value = true; // 모달 열기
 };
+
+// 여러 파일을 저장할 상태와 미리보기 URL 배열
+const selectedFiles = ref([]); // 선택된 파일 배열
+const filePreviews = ref([]); // 파일 미리보기 URL 배열
+
+// 파일 선택 이벤트 핸들러
+const handleFileUpload = (event) => {
+  const files = Array.from(event.target.files); // 선택된 파일 배열로 변환
+  selectedFiles.value = files; // 선택된 파일 저장
+
+  // 미리보기 생성 (이미지 파일만 처리)
+  filePreviews.value = files
+    .filter((file) => file.type.startsWith("image/"))
+    .map((file) => URL.createObjectURL(file));
+};
+
 
 // 서버로 글 등록 요청
 const submitPost = async () => {
   try {
-    const newPost = {
-      gBoardTitle: newPostTitle.value,
-      gBoardContent: newPostContent.value,
-      gBoardFile: 'default.jpg',
-      gBoardViews: 0,
-      gBoardIsResolved: false,
-      gBoardCommentsCount: 0,
-      gBoardLikeCount: 0,
-      gBoardHateCount: 0,
-      userNo: 1,
-    };
+    const formData = new FormData();
+    formData.append("gBoardTitle", newPostTitle.value);
+    formData.append("gBoardContent", newPostContent.value);
 
-    const response = await axios.post('http://localhost:8080/api/group', newPost);
+    // 첨부된 파일 추가
+    if (selectedFiles.value.length > 0) {
+      selectedFiles.value.forEach((file) => {
+        formData.append("gBoardFiles", file);
+      });
+    }
 
-    alert('글이 성공적으로 등록되었습니다.');
-
-    // 목록 페이지로 이동 후 새로고침
-    router.push('/community/group').then(() => {
-      window.location.reload(); // 목록 페이지 새로고침
+    // 서버에 데이터 전송
+    const response = await axios.post("http://localhost:8080/api/group", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
     });
 
+    alert("게시글이 성공적으로 등록되었습니다!");
+
+    // 작성 후 페이지 새로고침
+    const createdPostId = response.data.gBoardNo; // 서버에서 생성된 게시글 ID 반환
+    router.push(`/community/group/detail/${createdPostId}`);
+    window.location.reload(); // 페이지 새로고침
   } catch (error) {
-    console.error('글 등록 중 오류 발생:', error);
-    alert('글 등록에 실패했습니다.');
+    console.error("글 등록 중 오류 발생:", error);
+    alert("게시글 등록에 실패했습니다.");
   }
 };
 
-
-
-
-
 </script>
+
 
 
 <style scoped>
@@ -496,6 +558,50 @@ const submitPost = async () => {
   width: 400px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
+.modal-content input,
+.modal-content textarea {
+  width: 100%;
+  padding: 10px;
+  margin-top: 5px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.modal-content .form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.modal-content button {
+  padding: 10px 20px;
+  background-color: #ffd987;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.modal-content button:hover {
+  background-color: #f8cd71;
+}
+
+/* 이미지 미리보기 스타일 */
+.image-previews {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.image-preview img {
+  max-width: 100px;
+  max-height: 100px;
+  border-radius: 5px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+}
+
 
 .list-container {
   display: flex;

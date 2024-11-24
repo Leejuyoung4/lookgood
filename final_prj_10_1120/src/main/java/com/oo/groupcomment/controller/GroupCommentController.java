@@ -1,5 +1,6 @@
 package com.oo.groupcomment.controller;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +22,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 @RestController
 @RequestMapping("/api/group/comment")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "*", allowCredentials = "false")
 public class GroupCommentController {
 	// 서비스 의존성 주입
 	private final GroupCommentService groupCommentService;
@@ -38,9 +39,22 @@ public class GroupCommentController {
         if (!groupComments.isEmpty()) {
             return ResponseEntity.ok(groupComments); // 댓글 목록 반환
         }
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("댓글이 존재하지 않습니다."); // 에러 메시지 반환
+        return ResponseEntity.ok(groupComments != null ? groupComments : new ArrayList<>());
     }
 	
+	// 댓글 등록
+	@PostMapping("/{gBoardNo}")
+	public ResponseEntity<?> addComment(@PathVariable("gBoardNo") int gBoardNo, @RequestBody GroupComment groupComment) {
+	    try {
+	        groupComment.setgBoardNo(gBoardNo); // 게시글 번호 설정
+	        groupCommentService.addComment(groupComment);
+	        return ResponseEntity.status(HttpStatus.CREATED).body("댓글이 작성되었습니다.");
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("댓글 작성에 실패했습니다.");
+	    }
+	}
+
 	// 댓글 삭제
 	@DeleteMapping("{gBoardCommentNo}")
 	public ResponseEntity<?> deleteComment(@PathVariable("gBoardCommentNo") int gBoardCommentNo) {
@@ -73,15 +87,7 @@ public class GroupCommentController {
 	    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("이미 좋아요를 눌렀습니다.");
 	}
 
-	// 댓글 싫어요
-	@PostMapping("{gBoardCommentNo}/dislike")
-	public ResponseEntity<?> dislikeComment(@PathVariable int gBoardCommentNo, @RequestBody int userNo) {
-	    boolean disliked = groupCommentService.addDislike(gBoardCommentNo, userNo);
-	    if (disliked) {
-	        return ResponseEntity.ok("싫어요 성공");
-	    }
-	    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("이미 싫어요를 눌렀습니다.");
-	}
+	
 
 	
 	

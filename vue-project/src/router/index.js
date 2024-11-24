@@ -1,7 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import MainView from '@/views/MainView.vue'; // 홈 페이지 컴포넌트
-import LoginView from '@/views/LoginView.vue'; // 로그인 페이지 컴포넌트
-import SignupView from '@/views/SignupView.vue'; // 회원가입 페이지 컴포넌트
 import VideosView from '@/views/VideosView.vue';
 import EventView from '@/views/EventView.vue';
 import EventDetailView from '@/views/EventDetailView.vue';
@@ -12,6 +10,9 @@ import UpdateGroupView from '@/views/UpdateGroupView.vue'
 import InquiryView from '@/views/InquiryView.vue';
 import InquiryDetailView from '@/views/InquiryDetailView.vue';
 import UpdateInquiryView from '@/views/UpdateInquiryView.vue';
+import MyPage from '@/views/MyPage.vue'
+import LoginViewModal from '@/views/LoginViewModal.vue';    // 모달 컴포넌트 import
+import SignupViewModal from '@/views/SignupViewModal.vue';  // 모달 컴포넌트 import
 
 
 const routes = [
@@ -20,17 +21,6 @@ const routes = [
     name: 'main', 
     component: MainView 
   },
-
-  { 
-    path: '/login', 
-    name: 'login', 
-    component: LoginView 
-  },
-  { 
-    path: '/signup', 
-    name: 'signup', 
-    component: SignupView 
-  },
   {
     path: '/videos',
     name: 'videos',
@@ -38,9 +28,8 @@ const routes = [
   },
   {
     path: '/videos/:id',
-    name: 'video-detail',
-    component: VideosDetailView,
-    props: true
+    name: 'VideoDetail',
+    component: () => import('@/views/VideosDetailView.vue')
   },
   {
     path: '/event',
@@ -83,6 +72,22 @@ const routes = [
   path: '/community/inquiries/edit/:iNo',
   name: 'updateInquiriesDetail',
   component: UpdateInquiryView
+},
+{
+  path: '/mypage',
+  name: 'mypage',
+  component: MyPage,
+  meta: { requiresAuth: true }  // 로그인 필요
+},
+{
+  path: '/login',
+  name: 'login',
+  component: LoginViewModal
+},
+{
+  path: '/signup',
+  name: 'signup',
+  component: SignupViewModal
 },
 
 

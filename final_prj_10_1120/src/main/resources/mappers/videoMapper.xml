@@ -2,106 +2,185 @@
 <!DOCTYPE mapper
   PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
-    
+
 <mapper namespace="com.oo.video.model.dao.VideoDao">
-    <!-- 전체 비디오 목록 조회 -->
-    <select id="selectAll" resultType="Video">
-        SELECT 
-            v_no as vNo,
-            v_title as vTitle,
-            v_description as vDescription,
-            v_upload_date as vUploadDate,
-            v_views as vViews,
-            v_likes as vLikes,
-            v_hates as vHates,
-            v_instructor as vInstructor,
-            v_instructor_intro as vInstructorIntro,
-            v_category_name as vCategoryName,
-            saved_no as savedNo,
-            video_id as videoId
-        FROM 
-            videos 
-        ORDER BY 
-            v_no DESC
-    </select>
+	<!-- 1. 전체 비디오 목록 가져오기 -->
+	<select id="selectAll" resultType="Video">
+		SELECT
+		v_no as vNo,
+		v_title as
+		vTitle,
+		v_description as vDescription,
+		v_upload_date as vUploadDate,
+		v_views as vViews,
+		v_likes as vLikes,
+		v_hates as vHates,
+		v_instructor as
+		vInstructor,
+		v_instructor_intro as vInstructorIntro,
+		v_category_name as
+		vCategoryName,
+		saved_no as savedNo,
+		video_id as videoId
+		FROM videos
+		ORDER
+		BY v_no DESC
+	</select>
 
-    <!-- 특정 ID의 비디오 조회 -->
-    <select id="selectById" parameterType="int" resultType="Video">
-        SELECT 
-            v_no as vNo,
-            v_title as vTitle,
-            v_description as vDescription,
-            v_upload_date as vUploadDate,
-            v_views as vViews,
-            v_likes as vLikes,
-            v_hates as vHates,
-            v_instructor as vInstructor,
-            v_instructor_intro as vInstructorIntro,
-            v_category_name as vCategoryName,
-            saved_no as savedNo,
-            video_id as videoId
-        FROM 
-            videos 
-        WHERE 
-            v_no = #{id}
-    </select>
+	<!-- 2. 특정 비디오 한개 가져오기 -->
+	<select id="selectById" parameterType="int" resultType="Video">
+		SELECT
+		v_no as vNo,
+		v_title as vTitle,
+		v_description as vDescription,
+		v_upload_date as vUploadDate,
+		v_views as vViews,
+		v_likes as vLikes,
+		v_hates as vHates,
+		v_instructor as vInstructor,
+		v_instructor_intro as
+		vInstructorIntro,
+		v_category_name as vCategoryName,
+		saved_no as savedNo,
+		video_id as videoId
+		FROM videos
+		WHERE v_no = #{id}
+	</select>
 
-    <!-- 조회수 증가 -->
-    <update id="updateViews" parameterType="int">
-        UPDATE videos 
-        SET v_views = v_views + 1 
-        WHERE v_no = #{id}
-    </update>
-    
-    
-<!-- 추천 비디오 찾기 -->
-<select id="findRecommendedVideos" resultType="Video">
-    SELECT 
-        v_no as vNo,
-        v_title as vTitle,
-        v_description as vDescription,
-        v_upload_date as vUploadDate,
-        v_views as vViews,
-        v_likes as vLikes,
-        v_hates as vHates,
-        v_instructor as vInstructor,
-        v_instructor_intro as vInstructorIntro,
-        v_category_name as vCategoryName,
-        saved_no as savedNo,
-        video_id as videoId
-    FROM videos
-    WHERE v_no != #{currentVideoId}
-    <if test="category != null and category != ''">
-        AND v_category_name = #{category}
-    </if>
-    ORDER BY v_views DESC, v_upload_date DESC
-    LIMIT #{limit}
-</select>
+	<!-- 3. 조회수 증가 -->
+	<update id="updateViews">
+		UPDATE videos
+		SET v_views = v_views + 1
+		WHERE v_no =
+		#{id}
+	</update>
 
-<!-- 인기 있는 비디오 찾기 -->
-<select id="findPopularVideosExcept" resultType="Video">
-    SELECT 
-        v_no as vNo,
-        v_title as vTitle,
-        v_description as vDescription,
-        v_upload_date as vUploadDate,
-        v_views as vViews,
-        v_likes as vLikes,
-        v_hates as vHates,
-        v_instructor as vInstructor,
-        v_instructor_intro as vInstructorIntro,
-        v_category_name as vCategoryName,
-        saved_no as savedNo,
-        video_id as videoId
-    FROM videos
-    WHERE v_no != #{currentVideoId}
-    <if test="excludeIds != null and excludeIds.size() > 0">
-        AND v_no NOT IN
-        <foreach item="id" collection="excludeIds" open="(" separator="," close=")">
-            #{id}
-        </foreach>
-    </if>
-    ORDER BY v_views DESC, v_upload_date DESC
-    LIMIT #{limit}
-</select>
+	<!-- 4. 좋아요 증가 -->
+	<update id="updateLikes">
+		UPDATE videos
+		SET v_likes = v_likes + 1
+		WHERE v_no =
+		#{videoId}
+	</update>
+
+	<!-- 5. 싫어요 증가 -->
+	<update id="updateHates">
+		UPDATE videos
+		SET v_hates = v_hates + 1
+		WHERE v_no =
+		#{videoId}
+	</update>
+
+	<!-- 6. 추천 비디오 찾기 (같은 카테고리) -->
+	<select id="findRecommendedVideos" resultType="Video">
+		SELECT
+		v_no as vNo,
+		v_title as vTitle,
+		v_description as vDescription,
+		v_upload_date as vUploadDate,
+		v_views as vViews,
+		v_likes as vLikes,
+		v_hates as vHates,
+		v_instructor as vInstructor,
+		v_instructor_intro as
+		vInstructorIntro,
+		v_category_name as vCategoryName,
+		saved_no as savedNo,
+		video_id as videoId
+		FROM videos
+		WHERE v_no != #{currentVideoId}
+		<if test="category != null and category != ''">
+			AND v_category_name = #{category}
+		</if>
+		ORDER BY v_views DESC, v_upload_date DESC
+		LIMIT #{limit}
+	</select>
+
+	<!-- 7. 인기 비디오 찾기 -->
+	<select id="findPopularVideosExcept" resultType="Video">
+		SELECT
+		v_no as vNo,
+		v_title as vTitle,
+		v_description as vDescription,
+		v_upload_date as vUploadDate,
+		v_views as vViews,
+		v_likes as vLikes,
+		v_hates as vHates,
+		v_instructor as vInstructor,
+		v_instructor_intro as
+		vInstructorIntro,
+		v_category_name as vCategoryName,
+		saved_no as savedNo,
+		video_id as videoId
+		FROM videos
+		WHERE v_no != #{currentVideoId}
+		<if test="excludeIds != null and excludeIds.size() > 0">
+			AND v_no NOT IN
+			<foreach item="id" collection="excludeIds" open="("
+				separator="," close=")">
+				#{id}
+			</foreach>
+		</if>
+		ORDER BY v_views DESC, v_upload_date DESC
+		LIMIT #{limit}
+	</select>
+
+	<!-- 8. 비디오 저장하기 -->
+	<insert id="saveVideo">
+		INSERT INTO saved_videos (user_no, v_no)
+		VALUES
+		(#{userNo}, #{vNo})
+	</insert>
+
+	<!-- 9. 저장한 비디오 삭제하기 -->
+	<delete id="unsaveVideo">
+		DELETE FROM saved_videos
+		WHERE user_no = #{userNo} AND
+		v_no = #{vNo}
+	</delete>
+
+	<!-- 10. 비디오 저장 여부 확인 -->
+	<select id="checkSaveStatus" resultType="boolean">
+		SELECT COUNT(*) > 0
+		FROM
+		saved_videos
+		WHERE user_no = #{userNo} AND v_no = #{vNo}
+	</select>
+
+	<!-- 11. 저장한 비디오 목록 가져오기 -->
+	<select id="getSavedVideos" resultType="Video">
+		SELECT
+		v.v_no as vNo,
+		v.v_title as vTitle,
+		v.v_description as vDescription,
+		v.v_upload_date as
+		vUploadDate,
+		v.v_views as vViews,
+		v.v_likes as vLikes,
+		v.v_hates as
+		vHates,
+		v.v_instructor as vInstructor,
+		v.v_instructor_intro as
+		vInstructorIntro,
+		v.v_category_name as vCategoryName,
+		v.saved_no as
+		savedNo,
+		v.video_id as videoId
+		FROM videos v
+		JOIN saved_videos sv ON
+		v.v_no = sv.v_no
+		WHERE sv.user_no = #{userNo}
+		ORDER BY sv.saved_date
+		DESC
+	</select>
+
+	<!-- 사용자의 저장된 비디오를 플레이리스트처럼 조회 -->
+	<select id="getUserPlaylists" parameterType="int"
+		resultType="string">
+		SELECT DISTINCT v.v_category_name as playlist_name
+		FROM videos v
+		JOIN saved_videos sv ON v.v_no = sv.v_no
+		WHERE sv.user_no = #{userNo}
+		ORDER BY v.v_category_name
+	</select>
 </mapper>

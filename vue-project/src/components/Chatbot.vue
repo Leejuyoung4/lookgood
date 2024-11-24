@@ -51,50 +51,47 @@ const scrollToBottom = async () => {
 };
 
 const getBotResponse = (input) => {
-  console.log('입력된 질문:', input); // 디버깅용
   console.log('이벤트 데이터:', props.event); // 디버깅용
   
   const lowerInput = input.toLowerCase();
   
   // 이벤트 소개
   if (lowerInput.includes('소개') || lowerInput.includes('이벤트') || lowerInput.includes('뭐하는')) {
-    return `${props.event.title || '이벤트'} 소개입니다!\n\n${props.event.description || '상세 내용 준비중입니다.'}`;
+    return props.event.description || '죄송합니다. 이벤트 정보를 불러올 수 없습니다.';
   }
   
-  // 날짜/시간
-  if (lowerInput.includes('날짜') || lowerInput.includes('시간') || lowerInput.includes('언제')) {
-    const date = props.event.eventDate ? new Date(props.event.eventDate).toLocaleDateString() : '날짜 미정';
-    const time = props.event.eventTime || '시간 미정';
-    return `행사 일정 안내입니다!\n\n📅 날짜: ${date}\n⏰ 시간: ${time}`;
+  // 시간 관련
+  if (lowerInput.includes('시간') || lowerInput.includes('언제')) {
+    return `운영 시간 안내입니다!\n\n⏰ 입장: ${props.event.checkInTime}\n⏰ 퇴장: ${props.event.checkOutTime}`;
   }
   
   // 장소/위치
   if (lowerInput.includes('장소') || lowerInput.includes('위치') || lowerInput.includes('어디')) {
-    return `행사 장소 안내입니다!\n\n📍 ${props.event.address || '장소 미정'}\n\n* 상단 지도에서 자세한 위치를 확인하실 수 있습니다.`;
+    return `행사 장소 안내입니다!\n\n📍 주소: ${props.event.address}\n\n* 상단 지도에서 자세한 위치를 확인하실 수 있습니다.`;
   }
   
   // 참가비
   if (lowerInput.includes('참가비') || lowerInput.includes('비용') || lowerInput.includes('금액')) {
-    const fee = props.event.entryFee ? `${props.event.entryFee.toLocaleString()}원` : '무료';
-    return `참가비 안내입니다!\n\n💰 참가비: ${fee}\n\n* 현장 카드결제 가능합니다.`;
+    return `참가비 안내입니다!\n\n💰 참가비: ${props.event.entryFee?.toLocaleString()}원`;
   }
   
-  // 참가 인원
-  if (lowerInput.includes('인원') || lowerInput.includes('신청')) {
-    const max = props.event.maxParticipants || '인원제한 없음';
-    const current = props.event.currentParticipants || 0;
-    return `참가 인원 안내입니다!\n\n👥 최대 인원: ${max}\n현재 신청: ${current}명`;
+  // 주차
+  if (lowerInput.includes('주차')) {
+    return `주차 안내입니다!\n\n🚗 주차 ${props.event.parkingAvailable ? '가능' : '불가능'}합니다.`;
   }
   
-  // 준비물
-  if (lowerInput.includes('준비물') || lowerInput.includes('챙길')) {
-    return props.event.preparations 
-      ? `준비물 안내입니다!\n\n${props.event.preparations}`
-      : '특별한 준비물은 없습니다. 편하게 오시면 됩니다! 😊';
+  // 시설
+  if (lowerInput.includes('시설') || lowerInput.includes('편의')) {
+    return `시설 안내입니다!\n\n🏢 제공 시설:\n${props.event.facilities}`;
   }
 
-  // 기본 응답 (키워드를 찾지 못했을 때)
-  return `안내 가능한 정보입니다! 😊\n\n🔍 이벤트 소개\n📅 날짜/시간\n📍 장소/위치\n💰 참가비\n👥 참가 인원\n🎒 준비물\n\n궁금하신 내용을 선택해서 물어보세요!`;
+  // 문의
+  if (lowerInput.includes('문의') || lowerInput.includes('연락') || lowerInput.includes('전화')) {
+    return `문의처 안내입니다!\n\n📞 문의 전화: ${props.event.inquiryNumber}\n🌐 웹사이트: ${props.event.websiteUrl}`;
+  }
+
+  // 기본 응답
+  return `안내 가능한 정보입니다! 😊\n\n🔍 이벤트 소개\n⏰ 운영 시간\n📍 장소/위치\n💰 참가비\n🚗 주차\n🏢 시설\n🌐 문의\n\n궁금하신 내용을 선택해서 물어보세요!`;
 };
 
 const sendMessage = () => {

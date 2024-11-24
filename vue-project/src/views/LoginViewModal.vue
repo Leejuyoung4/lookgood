@@ -1,120 +1,258 @@
 <template>
   <div class="login-modal">
-    <div class="login-logo">로그인</div>
+    <button class="close-button" @click="$emit('close')">×</button>
+    
+    <div class="login-header">
+      <div class="login-logo">로그인</div>
+      <div class="login-subtitle">Look Good과 함께 운동해요! 🏃‍♂️</div>
+    </div>
 
     <div class="login-menu">
       <div class="form-group">
-        <label class="login-text">아이디</label>
-        <input type="text" class="login-border" v-model="userId" />
+        <label class="login-text">아이디 <span class="required">*</span></label>
+        <input 
+          type="text" 
+          class="login-border" 
+          v-model="userId"
+          placeholder="아이디를 입력해주세요" 
+        />
       </div>
 
       <div class="form-group">
-        <label class="login-text">비밀번호</label>
-        <input type="password" class="login-border" v-model="password" />
+        <label class="login-text">비밀번호 <span class="required">*</span></label>
+        <input 
+          type="password" 
+          class="login-border" 
+          v-model="password"
+          placeholder="비밀번호를 입력해주세요" 
+        />
+      </div>
+
+      <div class="login-options">
+        <label class="login-remember-container">
+          <input type="checkbox" class="login-remember-check" v-model="rememberMe" />
+          <span class="login-remember">아이디 저장</span>
+        </label>
       </div>
     </div>
 
-    <div class="login-remember-container">
-      <input type="checkbox" class="login-remember-check" v-model="rememberMe" />
-      <label for="login-remember-check" class="login-remember">아이디 저장</label>
-    </div>
-
-    <!-- 실패 메시지 표시 -->
     <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
 
-    <button class="login-button" @click="handleLogin">로그인</button>
+    <button class="login-button" @click="handleLogin">
+      로그인하기
+      <span class="button-emoji">👊</span>
+    </button>
 
-    <div class="login-bar">
-      <router-link to="/signup" class="login-link">아이디 찾기</router-link>
-      <router-link to="/signup" class="login-link">비밀번호 찾기</router-link>
-      <router-link to="/signup" class="login-link">회원가입</router-link>
+    <div class="login-links">
+      <a href="#" class="login-link">아이디 찾기</a>
+      <div class="divider"></div>
+      <a href="#" class="login-link">비밀번호 찾기</a>
+      <div class="divider"></div>
+      <a href="#" class="login-link" @click.prevent="switchToSignup">회원가입</a>
     </div>
 
-    <button class="close-button" @click="$emit('close')">X</button>
+    <div v-if="isLoading" class="loading-overlay">
+      <div class="loading-spinner"></div>
+    </div>
   </div>
 </template>
 
-
 <script setup>
 import { ref } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
+const router = useRouter();
+const route = useRoute();
 const userId = ref('');
 const password = ref('');
+const errorMessage = ref('');
+const isLoading = ref(false);
 const rememberMe = ref(false);
-const errorMessage = ref(''); // 실패 메시지 상태
 
-const emit = defineEmits(['close', 'login-success']);
+const emit = defineEmits(['close', 'login-success', 'open-signup']);
 
 const handleLogin = async () => {
-  errorMessage.value = '';
-
   try {
-    console.log('로그인 시도:', {
-      userId: userId.value,
-      password: password.value
+    if (!userId.value || !password.value) {
+      errorMessage.value = '아이디와 비밀번호를 모두 입력해주세요.';
+      return;
+    }
+
+    const response = await axios({
+      method: 'POST',
+      url: '/api/user/login',
+      data: {
+        userId: userId.value.trim(),
+        password: password.value.trim()
+      }
     });
 
-    const response = await axios.post('/api/user/login', {
-      userId: userId.value,
-      password: password.value
-    });
+    console.log('로그인 응답:', response.data);
 
-    console.log('서버 응답:', response);
-
-    if (response.data.success) {
-      alert(`${response.data.user.userId}님 환영합니다!`);
-      emit('login-success', response.data.user);
+    if (response.data && response.data.success) {
+      // 토큰 저장
+      if (response.data.token) {
+        localStorage.setItem('token', response.data.token);
+      }
+      
+      // 사용자 정보 저장 - response.data.user 구조 확인
+      const userData = response.data.user;
+      console.log('받은 사용자 데이터:', userData); // 디버깅용
+      
+      const userInfo = {
+        id: userData.user_no || userData.userNo, // DB 컬럼명에 맞춰서
+        userNo: userData.user_no || userData.userNo,
+        userId: userData.user_id || userData.userId,
+        userName: userData.user_name || userData.userName,
+        email: userData.email,
+        phoneNum: userData.phone_num || userData.phoneNum,
+        joinDate: userData.join_date || userData.joinDate
+      };
+      
+      console.log('저장할 사용자 정보:', userInfo); // 디버깅용
+      
+      // localStorage와 sessionStorage 모두에 저장
+      localStorage.setItem('userInfo', JSON.stringify(userInfo));
+      sessionStorage.setItem('userInfo', JSON.stringify(userInfo));
+      
+      // 로그인 성공 알림
+      alert('환영합니다! 로그인에 성공했습니다.');
+      
+      // 로그인 성공 이벤트 발생
+      emit('login-success', userInfo);
+      emit('close');
+      
+      // 페이지 새로고침
+      window.location.reload();
     } else {
-      errorMessage.value = response.data.message || '아이디 또는 비밀번호가 잘못되었습니다.';
+      errorMessage.value = response.data.message || '로그인에 실패했습니다.';
+      alert('로그인에 실패했습니다. 다시 시도해주세요.');
     }
   } catch (error) {
-    console.error('로그인 에러 상세:', error);
-    errorMessage.value = '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+    console.error('로그인 에러:', error);
+    console.log('에러 응답:', error.response); // 디버깅용
+    
+    if (error.response?.status === 401) {
+      errorMessage.value = '아이디 또는 비밀번호가 일치하지 않습니다.';
+      alert('아이디 또는 비밀번호가 일치하지 않습니다.');
+    } else {
+      errorMessage.value = '서버와의 통신 중 오류가 발생했습니다.';
+      alert('서버와의 통신 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+    }
   }
 };
 
+const showSuccessMessage = () => {
+  const successElement = document.createElement('div');
+  successElement.className = 'login-success-message';
+  successElement.innerHTML = `
+    <div class="success-content">
+      <i class="bi bi-check-circle-fill"></i>
+      <span>로그인 성공!</span>
+    </div>
+  `;
+  document.body.appendChild(successElement);
 
+  setTimeout(() => {
+    successElement.remove();
+  }, 1500);
+};
 
+const switchToSignup = () => {
+  emit('open-signup');
+  emit('close');
+};
+
+const handleLoginSuccess = async (userData) => {
+  try {
+    // 로컬 스토리지에 사용자 정보 저장
+    localStorage.setItem('userInfo', JSON.stringify(userData));
+    
+    // 리다이렉트 경로 확인
+    const redirectPath = route.query.redirect;
+    console.log('리다이렉트 경로:', redirectPath);
+
+    if (redirectPath) {
+      // 리다이렉트 경로가 있으면 해당 경로로 이동
+      await router.replace(redirectPath);
+    } else {
+      // 없으면 홈으로 이동
+      await router.replace('/');
+    }
+  } catch (error) {
+    console.error('리다이렉트 오류:', error);
+  }
+};
+
+const onSubmit = async () => {
+  try {
+    // 로그인 처리
+    const response = await axios.post('/api/users/login', {
+      userId: userId.value,
+      password: password.value
+    });
+
+    if (response.data) {
+      await handleLoginSuccess(response.data);
+    }
+  } catch (error) {
+    console.error('로그인 실패:', error);
+    alert('로그인에 실패했습니다.');
+  }
+};
 </script>
-
 
 <style scoped>
 .login-modal {
   background: #ffffff;
-  border: 1px solid;
-  border-radius: 28px;
-  width: 400px;
-  height: 700px;
-  /* Increased height for a taller modal */
+  border-radius: 30px;
+  width: 460px;
+  min-height: 600px;
   padding: 50px 40px;
-  /* Increased padding for a taller modal */
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   z-index: 2000;
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 40px;
 }
 
 .login-logo {
-  color: #000000;
+  color: #ebd03b;
   font-size: 48px;
   font-weight: 600;
-  margin-bottom: 40px;
-  /* Increased margin for more spacing */
-  padding-bottom: 40px;
+  margin-bottom: 20px;
+  transition: all 0.3s ease;
+}
+
+.login-logo:hover {
+  transform: scale(1.05);
+  text-shadow: 0 0 15px rgba(235, 208, 59, 0.3);
+}
+
+.login-subtitle {
+  font-size: 18px;
+  color: #7c6e1b;
+  transition: all 0.3s ease;
+}
+
+.login-subtitle:hover {
+  transform: translateY(-2px);
+  color: #ebd03b;
 }
 
 .login-menu {
   display: flex;
   flex-direction: column;
   gap: 20px;
-  /* Increased gap for more spacing between fields */
   width: 100%;
   align-items: flex-start;
-  /* Align labels and inputs to the left */
 }
 
 .form-group {
@@ -127,90 +265,251 @@ const handleLogin = async () => {
   font-size: 18px;
   font-weight: bold;
   margin-bottom: 5px;
-  /* Space between label and input */
 }
 
 .login-border {
   background: #ffffff;
-  border: 1px solid;
-  border-radius: 10px;
-  height: 43px;
-  width: 90%;
-  /* Reduced width for smaller input fields */
+  border: 2px solid #eee;
+  border-radius: 14px;
+  height: 48px;
+  width: 100%;
   padding: 0 15px;
+  font-size: 15px;
+  transition: all 0.3s ease;
+}
+
+.login-border:focus {
+  border-color: #FFE066;
+  box-shadow: 0 0 0 3px rgba(255, 224, 102, 0.2);
+  outline: none;
 }
 
 .login-button {
-  background: #ebd03b;
-  border-radius: 10px;
+  background: #FFE082;
+  color: #B7791F;
+  border-radius: 16px;
   width: 100%;
-  height: 50px;
-  /* Increased height for better visual balance */
+  height: 54px;
   font-size: 24px;
   border: none;
-  transition: background-color 0.3s ease, transform 0.2s ease;
+  transition: all 0.3s ease;
   cursor: pointer;
   margin-top: 30px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 8px rgba(255, 193, 7, 0.2);
 }
 
 .login-button:hover {
-  background-color: #d1b031;
-  transform: scale(1.05);
+  background: #FFD54F;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 15px rgba(255, 193, 7, 0.3);
+}
+
+.login-button:active {
+  transform: translateY(-1px);
 }
 
 .login-remember-container {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-top: 10px;
-  margin-left: -285px;
+  gap: 8px;
+  margin-top: 15px;
+  cursor: pointer;
 }
 
-.login-remember {
-  font-size: 16px;
+.login-remember-check {
+  width: 18px;
+  height: 18px;
+  accent-color: #ebd03b;
 }
 
-.login-bar {
+.login-links {
   display: flex;
-  gap: 20px;
+  align-items: center;
+  gap: 15px;
   margin-top: 30px;
-  font-size: 16px;
-  justify-content: center;
-  width: 100%;
-  color: #7c6e1b;
+  font-size: 15px;
 }
 
 .login-link {
-  color: #6a5acd;
+  color: #B7791F;
   text-decoration: none;
+  transition: all 0.3s ease;
+  padding: 5px 10px;
+  border-radius: 8px;
+}
+
+.login-link:hover {
+  color: #ebd03b;
+  background: rgba(235, 208, 59, 0.1);
+  transform: translateY(-2px);
+}
+
+.divider {
+  width: 1px;
+  height: 12px;
+  background: #ddd;
 }
 
 .close-button {
   position: absolute;
-  top: 10px;
-  right: 10px;
-  background: none;
+  right: 25px;
+  top: 25px;
+  width: 40px;
+  height: 40px;
   border: none;
+  border-radius: 12px;
+  background: #FFF3BF;
+  color: #B7791F;
   font-size: 24px;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  box-shadow: 0 3px 6px rgba(183, 121, 31, 0.1);
 }
 
-.login-link:visited {
-  color: inherit;
+.close-button:hover {
+  background: #FFE066;
+  transform: rotate(90deg) scale(1.1);
+  box-shadow: 0 5px 12px rgba(183, 121, 31, 0.2);
 }
 
-.login-icons img {
-    padding-top: 50px;
-    padding-right: 20px;
-    width: 80px;
-    height: 80px;
-    object-fit: cover; 
-  }
-  .error-message {
+:root[class='dark-mode'] .login-modal {
+  background: var(--bg-color);
+  color: var(--text-color);
+}
+
+:root[class='dark-mode'] .login-logo {
+  color: #ebd03b;
+}
+
+:root[class='dark-mode'] .login-subtitle {
+  color: #999;
+}
+
+:root[class='dark-mode'] .login-border {
+  background: var(--bg-color);
+  border-color: #444;
+  color: var(--text-color);
+}
+
+:root[class='dark-mode'] .login-border::placeholder {
+  color: #666;
+}
+
+:root[class='dark-mode'] .login-button {
+  background: #2a2a2a;
+  color: #ebd03b;
+}
+
+:root[class='dark-mode'] .login-button:hover {
+  background: #333;
+}
+
+:root[class='dark-mode'] .login-link {
+  color: #ebd03b;
+}
+
+:root[class='dark-mode'] .divider {
+  background: #444;
+}
+
+:root[class='dark-mode'] .close-button {
+  background: #2a2a2a;
+  color: var(--text-color);
+}
+
+:root[class='dark-mode'] .close-button:hover {
+  background: #333;
+}
+
+.error-message {
   color: red;
   font-size: 14px;
   margin-top: 10px;
   text-align: center;
+}
+
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #ebd03b;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.login-success-message {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: #4CAF50;
+  color: white;
+  padding: 15px 25px;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  animation: slideIn 0.5s ease-out;
+  z-index: 2000;
+}
+
+.success-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 16px;
+}
+
+.success-content i {
+  font-size: 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.error-message {
+  color: #ff4444;
+  margin-top: 10px;
+  text-align: center;
+  font-size: 14px;
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
 }
 
 </style>

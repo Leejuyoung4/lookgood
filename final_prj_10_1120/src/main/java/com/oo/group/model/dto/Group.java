@@ -1,12 +1,14 @@
 package com.oo.group.model.dto;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public class Group {
 	private int gBoardNo;
     private String gBoardTitle;
     private String gBoardContent;
-    private String gBoardFile;
+    private String gBoardFiles;
+    private List<String> gBoardFilesList; // 파일명을 리스트로 저장
     private LocalDateTime gBoardRegDate;
     private int gBoardViews;
     private boolean gBoardIsResolved;
@@ -17,13 +19,15 @@ public class Group {
  
 	public Group() {}
 
-	public Group(int gBoardNo, String gBoardTitle, String gBoardContent, String gBoardFile, LocalDateTime gBoardRegDate,
-			int gBoardViews, boolean gBoardIsResolved, int gBoardCommentsCount, int gBoardLikeCount,
-			int gBoardHateCount, int userNo) {
+	public Group(int gBoardNo, String gBoardTitle, String gBoardContent, String gBoardFiles,
+			List<String> gBoardFilesList, LocalDateTime gBoardRegDate, int gBoardViews, boolean gBoardIsResolved,
+			int gBoardCommentsCount, int gBoardLikeCount, int gBoardHateCount, int userNo) {
+		super();
 		this.gBoardNo = gBoardNo;
 		this.gBoardTitle = gBoardTitle;
 		this.gBoardContent = gBoardContent;
-		this.gBoardFile = gBoardFile;
+		this.gBoardFiles = gBoardFiles;
+		this.gBoardFilesList = gBoardFilesList;
 		this.gBoardRegDate = gBoardRegDate;
 		this.gBoardViews = gBoardViews;
 		this.gBoardIsResolved = gBoardIsResolved;
@@ -57,12 +61,20 @@ public class Group {
 		this.gBoardContent = gBoardContent;
 	}
 
-	public String getgBoardFile() {
-		return gBoardFile;
+	public String getgBoardFiles() {
+		return gBoardFiles;
 	}
 
-	public void setgBoardFile(String gBoardFile) {
-		this.gBoardFile = gBoardFile;
+	public void setgBoardFiles(String gBoardFiles) {
+		this.gBoardFiles = gBoardFiles;
+	}
+
+	public List<String> getgBoardFilesList() {
+		return gBoardFilesList;
+	}
+
+	public void setgBoardFilesList(List<String> gBoardFilesList) {
+		this.gBoardFilesList = gBoardFilesList;
 	}
 
 	public LocalDateTime getgBoardRegDate() {
@@ -124,9 +136,13 @@ public class Group {
 	@Override
 	public String toString() {
 		return "Group [gBoardNo=" + gBoardNo + ", gBoardTitle=" + gBoardTitle + ", gBoardContent=" + gBoardContent
-				+ ", gBoardFile=" + gBoardFile + ", gBoardRegDate=" + gBoardRegDate + ", gBoardViews=" + gBoardViews
-				+ ", gBoardIsResolved=" + gBoardIsResolved + ", gBoardCommentsCount=" + gBoardCommentsCount
-				+ ", gBoardLikeCount=" + gBoardLikeCount + ", gBoardHateCount=" + gBoardHateCount + ", userNo=" + userNo
-				+ "]";
+				+ ", gBoardFiles=" + gBoardFiles + ", gBoardFilesList=" + gBoardFilesList + ", gBoardRegDate="
+				+ gBoardRegDate + ", gBoardViews=" + gBoardViews + ", gBoardIsResolved=" + gBoardIsResolved
+				+ ", gBoardCommentsCount=" + gBoardCommentsCount + ", gBoardLikeCount=" + gBoardLikeCount
+				+ ", gBoardHateCount=" + gBoardHateCount + ", userNo=" + userNo + "]";
 	}
+
+	
+
+	
 }
