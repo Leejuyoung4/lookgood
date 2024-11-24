@@ -6,7 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.oo.video.model.dao.SavedVideoDao;
-import com.oo.video.model.dto.Video;
+import com.oo.video.model.dto.SavedVideo;
 
 @Service
 @Transactional
@@ -20,7 +20,7 @@ public class SavedVideoServiceImpl implements SavedVideoService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<Video> getSavedVideos(int userNo) {
+    public List<SavedVideo> getSavedVideos(int userNo) {
         try {
             return savedVideoDao.selectSavedVideos(userNo);
         } catch (Exception e) {
@@ -30,13 +30,12 @@ public class SavedVideoServiceImpl implements SavedVideoService {
     }
 
     @Override
-    public boolean saveVideo(int userNo, int videoNo) {
+    public boolean saveVideo(SavedVideo savedVideo) {
         try {
-            // 이미 저장된 영상인지 확인
-            if (isVideoSaved(userNo, videoNo)) {
+            if (isVideoSaved(savedVideo.getUserNo(), savedVideo.getVNo())) {
                 return false;
             }
-            return savedVideoDao.insertSavedVideo(userNo, videoNo) > 0;
+            return savedVideoDao.insertSavedVideo(savedVideo) > 0;
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException("영상 저장 중 오류가 발생했습니다.", e);
@@ -44,9 +43,9 @@ public class SavedVideoServiceImpl implements SavedVideoService {
     }
 
     @Override
-    public boolean unsaveVideo(int userNo, int videoNo) {
+    public boolean unsaveVideo(SavedVideo savedVideo) {
         try {
-            return savedVideoDao.deleteSavedVideo(userNo, videoNo) > 0;
+            return savedVideoDao.deleteSavedVideo(savedVideo) > 0;
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException("영상 삭제 중 오류가 발생했습니다.", e);
@@ -61,6 +60,50 @@ public class SavedVideoServiceImpl implements SavedVideoService {
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException("저장 상태 확인 중 오류가 발생했습니다.", e);
+        }
+    }
+
+    @Override
+    public boolean updateProgress(SavedVideo savedVideo) {
+        try {
+            return savedVideoDao.updateProgress(savedVideo) > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("진도율 업데이트 중 오류가 발생했습니다.", e);
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<SavedVideo> getCompletedVideos(int userNo) {
+        try {
+            return savedVideoDao.selectCompletedVideos(userNo);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("완료된 영상 목록 조회 중 오류가 발생했습니다.", e);
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<SavedVideo> getInProgressVideos(int userNo) {
+        try {
+            return savedVideoDao.selectInProgressVideos(userNo);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("진행 중인 영상 목록 조회 중 오류가 발생했습니다.", e);
+        }
+    }
+    
+    @Override
+    public boolean completeVideo(SavedVideo savedVideo) {
+        try {
+            savedVideo.setProgressRate(100);
+            savedVideo.setCompleted(true);  // completed 대신 isCompleted 사용
+            return savedVideoDao.updateProgress(savedVideo) > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
         }
     }
 }
