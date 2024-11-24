@@ -72,4 +72,5 @@ public interface UserDao {
      * @param userId 조회할 사용자 ID
      * @return 사용자 정보
      */
+
 }

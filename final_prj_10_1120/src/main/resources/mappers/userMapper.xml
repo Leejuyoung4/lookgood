@@ -101,9 +101,4 @@
 		FROM user
 		WHERE phone_num = #{phoneNum}
 	</select>
-
-
-
-
-
 </mapper>
