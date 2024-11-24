@@ -150,7 +150,17 @@ public class InquiryController {
 		}
 	}
 	
-	
+	// 조회수 증가
+	@PutMapping("{iNo}/view")
+	public ResponseEntity<?> increaseViewCount(@PathVariable int iNo) {
+	    try {
+	        inquiryService.incrementViews(iNo);
+	        return ResponseEntity.ok("조회수 증가 성공");
+	    } catch (Exception e) {
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("조회수 증가 실패");
+	    }
+	}
+
 	
 	
 	

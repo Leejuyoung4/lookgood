@@ -20,6 +20,9 @@ public interface InquiryService {
 	// 게시글 수정
 	public void updateInquiry(Inquiry inquiry);
 
+	// 조회수 증가
+	public void incrementViews(int iNo);
+
 	
 	
 }

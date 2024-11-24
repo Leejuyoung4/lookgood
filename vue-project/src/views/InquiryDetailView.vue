@@ -46,6 +46,7 @@ const inquiry = ref({});
 onMounted(async () => {
   const iNo = route.params.iNo; // 라우터에서 iNo 파라미터 가져오기
   try {
+    await axios.put(`http://localhost:8080/api/inquiry/${iNo}/view`);
     const response = await axios.get(`http://localhost:8080/api/inquiry/${iNo}`);
     inquiry.value = response.data;
 
