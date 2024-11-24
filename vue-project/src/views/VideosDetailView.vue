@@ -32,9 +32,13 @@
                 <i class="bi bi-share"></i>
                 공유하기
               </button>
-              <button class="action-btn save" @click="handleSaveClick">
-                <i class="bi bi-bookmark"></i>
-                저장하기
+              <button 
+                class="action-btn save" 
+                @click="handleSaveClick"
+                :class="{ 'saved': isSaved }"
+              >
+                <i class="bi" :class="isSaved ? 'bi-bookmark-fill' : 'bi-bookmark'"></i>
+                {{ isSaved ? '저장됨' : '저장하기' }}
               </button>
               <button class="action-btn like">
                 <i class="bi bi-hand-thumbs-up"></i>
@@ -66,19 +70,21 @@
       <div class="sidebar">
         <h2 class="watch-next">다음 동영상</h2>
         <div v-if="recommendedVideos.length > 0" class="next-videos">
-          <div v-for="recommendedVideo in recommendedVideos" :key="recommendedVideo.vNo" class="video-item"
-            @click="handleVideoClick(recommendedVideo.vNo)">
+          <div v-for="video in recommendedVideos" 
+               :key="video.vNo" 
+               class="video-item"
+               @click="handleVideoClick(video.vNo)">
             <div class="thumbnail">
-              <img :src="`https://img.youtube.com/vi/${recommendedVideo.videoId}/mqdefault.jpg`"
-                :alt="recommendedVideo.vTitle">
+              <img :src="`https://img.youtube.com/vi/${video.videoId}/mqdefault.jpg`"
+                   :alt="video.vTitle">
             </div>
             <div class="video-info">
-              <h3 class="video-title">{{ recommendedVideo.vTitle }}</h3>
-              <p class="speaker">{{ recommendedVideo.vInstructor }}</p>
+              <h3 class="video-title">{{ video.vTitle }}</h3>
+              <p class="speaker">{{ video.vInstructor }}</p>
               <p class="meta">
-                <span class="views">조회수 {{ formatViewsDetail(recommendedVideo.vViews) }}회</span>
+                <span class="views">조회수 {{ formatViewsDetail(video.vViews) }}회</span>
                 <span class="dot">•</span>
-                <span class="date">{{ formatDate(recommendedVideo.vUploadDate) }}</span>
+                <span class="date">{{ formatDate(video.vUploadDate) }}</span>
               </p>
             </div>
           </div>
@@ -89,55 +95,19 @@
       </div>
     </div>
 
-    <!-- 플레이리스트 모달 -->
-    <div v-if="showPlaylistModal" class="playlist-modal">
-      <div class="playlist-modal-content">
-        <h3>저장할 플레이리스트 선택</h3>
-        
-        <div v-if="!isLoggedIn" class="login-required">
-          <p>플레이리스트 기능을 사용하려면 로그인이 필요합니다.</p>
-          <button @click="goToLogin" class="login-btn">로그인하기</button>
-        </div>
-        
-        <div v-else>
-          <!-- 기존 플레이리스트 목록 -->
-          <div class="playlist-list">
-            <div v-for="playlist in playlists" 
-                 :key="playlist.playlistId" 
-                 class="playlist-item">
-              <label>
-                <input type="checkbox" 
-                       :checked="playlist.isSelected"
-                       @change="toggleVideoInPlaylist(playlist.playlistName)">
-                {{ playlist.playlistName }}
-              </label>
-            </div>
-          </div>
-
-          <!-- 새 플레이리스트 생성 -->
-          <div class="create-playlist">
-            <input v-model="newPlaylistName" 
-                   placeholder="새 플레이리스트 이름"
-                   @keyup.enter="createPlaylist">
-            <button @click="createPlaylist" 
-                    :disabled="!newPlaylistName.trim()"
-                    class="create-btn">
-              새 플레이리스트 만들기
-            </button>
-          </div>
-        </div>
-
-        <div class="modal-buttons">
-          <button @click="showPlaylistModal = false" class="close-btn">닫기</button>
-        </div>
-      </div>
-    </div>
+    <!-- 로인 모달 추가 -->
+    <LoginViewModal 
+      v-if="showLoginModal" 
+      @close="showLoginModal = false"
+      @login-success="handleLoginSuccess"
+    />
   </div>
 </template>
 <script setup>
 import { ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
+import LoginViewModal from '../views/LoginViewModal.vue'; // 경로 수정
 
 const route = useRoute()
 const router = useRouter()
@@ -150,6 +120,7 @@ const newPlaylistName = ref('')
 const loading = ref(false)
 const error = ref(null)
 const isLoggedIn = ref(false)
+const showLoginModal = ref(false)
 
 const fetchVideoDetails = async () => {
   const videoId = route.params.id;
@@ -179,7 +150,7 @@ const fetchRecommendedVideos = async () => {
   try {
     if (!video.value?.vNo) return;
 
-    console.log('추천 오 요청:', {
+    console.log('추천 비디오 요청:', {
       currentVideoId: video.value.vNo,
       category: video.value.vCategoryName
     });
@@ -194,17 +165,8 @@ const fetchRecommendedVideos = async () => {
 
     console.log('추천 비디오 응답:', response.data);
 
-    // 응답 데이터 매핑
-    recommendedVideos.value = response.data.map(video => ({
-      vNo: video.vNo,
-      title: video.vTitle,
-      description: video.vDescription,
-      instructor: video.vInstructor,
-      views: video.vViews,
-      uploadDate: video.vUploadDate,
-      videoId: video.videoId,
-      image: `https://img.youtube.com/vi/${video.videoId}/mqdefault.jpg`
-    }));
+    // 응답 데이터를 직접 할당
+    recommendedVideos.value = response.data;
 
   } catch (error) {
     console.error('추천 비디오 로딩 실패:', error);
@@ -254,26 +216,38 @@ const handleVideoClick = async (videoNo) => {
   }
 };
 
-// 저장하기 함수 수정
-const handleSave = async () => {
+// 저장하기 관련 코드만 남기고 나머지 제거
+const handleSaveClick = async () => {
   try {
     const userInfo = JSON.parse(localStorage.getItem('userInfo'));
-    if (!userInfo || !userInfo.userNo) {
-      alert('로그인이 필요한 서비스입니다.');
+    if (!userInfo) {
+      showLoginModal.value = true;  // 로그인 모달 표시
       return;
     }
 
-    const response = await axios.post(`/api/saved-videos/${video.value.vno}`, null, {
-      params: { userNo: userInfo.userNo }
-    });
-
-    if (response.data.success) {
-      alert('영상이 저장되었습니다.');
-      isSaved.value = true;
+    // 이미 저장된 경우 저장 취소
+    if (isSaved.value) {
+      const response = await axios.delete(`/api/saved-videos/${video.value.vNo}`, {
+        params: { userNo: userInfo.userNo }
+      });
+      if (response.data.success) {
+        isSaved.value = false;
+        alert('저장이 취소되었습니다.');
+      }
+    } else {
+      // 저장하기
+      const response = await axios.post(`/api/saved-videos/${video.value.vNo}`, null, {
+        params: { userNo: userInfo.userNo }
+      });
+      if (response.data.success) {
+        isSaved.value = true;
+        alert('영상이 저장되었습니다.');
+        router.push('/mypage');  // 마이페이지로 이동
+      }
     }
   } catch (error) {
-    console.error('저장 처리 중 오 발생:', error);
-    alert(error.response?.data?.message || '저장 처리 중 오류가 발생했습니.');
+    console.error('저장 처리 중 오류 발생:', error);
+    alert('저장 처리 중 오류가 발생했습니다.');
   }
 };
 
@@ -328,141 +302,28 @@ const getAuthHeader = () => {
   };
 };
 
-// 플레이리스트 관련 함수들 수정
-const fetchPlaylists = async () => {
-  try {
-    const userInfo = localStorage.getItem('userInfo');
-    if (!userInfo) {
-      console.log('로그인 정보 없음');
-      playlists.value = [];
-      return;
-    }
-
-    const user = JSON.parse(userInfo);
-    const response = await axios.get('/api/videos/playlists', {
-      params: { userNo: user.userNo },
-      headers: getAuthHeader()
-    });
-
-    if (response.data.success) {
-      playlists.value = response.data.playlists.map(name => ({
-        playlistId: name,
-        playlistName: name
-      }));
-    }
-  } catch (error) {
-    console.error('플레이리스트 로딩 실패:', error);
-    playlists.value = [];
-  }
-};
-
-// 로그인 페이지로 이동하는 함수 수정
-const goToLogin = () => {
-  const currentPath = router.currentRoute.value.fullPath;
-  console.log('현재 경로:', currentPath);
-  
-  // 현재 모달 닫기
-  showPlaylistModal.value = false;
-  
-  // 로그인 페이지로 이동
-  router.push({
-    path: '/login',
-    query: { redirect: currentPath }
-  });
-};
-
-// 플레이리스트 토글 수 수정
-const toggleVideoInPlaylist = async (playlistName) => {
-  try {
-    const response = await axios.put(`/api/videos/${video.value.vNo}/playlist`, {
-      playlistName: playlistName
-    }, {
-      headers: getAuthHeader()
-    });
-
-    if (response.data.success) {
-      alert(response.data.message);
-    }
-  } catch (error) {
-    console.error('플레이리스트 업데이트 실패:', error);
-    if (error.response?.status === 401) {
-      alert('로그인이 필요한 서비스입니다.');
-      showLoginModal.value = true;
-    } else {
-      alert('플레이리스트 업데이트 중 오류가 발생했습니다.');
-    }
-  }
-};
-
-// 새 플레이리스트 생성 함수 수정 (에러 처리 추가)
-const createPlaylist = async () => {
-  try {
-    if (!checkLoginStatus()) {
-      alert('로그인이 필요한 서비스입니다.');
-      showLoginModal.value = true;
-      return;
-    }
-
-    if (!newPlaylistName.value.trim()) {
-      alert('플레이리스트 이름을 입력해주세요.');
-      return;
-    }
-
-    console.log('인증 헤더:', getAuthHeader()); // 디버깅용
-
-    const response = await axios.put(`/api/videos/${video.value.vNo}/playlist`, {
-      playlistName: newPlaylistName.value
-    }, {
-      headers: getAuthHeader()
-    });
-
-    if (response.data.success) {
-      await fetchPlaylists();
-      newPlaylistName.value = '';
-      alert('새 플레이리스트가 생성되었습니다.');
-    }
-  } catch (error) {
-    console.error('플레이리스트 생성 실패:', error);
-    if (error.response?.status === 401) {
-      alert('로그인이 필요하거나 세션이 만료되었습니다.');
-      showLoginModal.value = true;
-    } else {
-      alert('플레이리스트 생성에 실패했습니다.');
-    }
-  }
-};
-
-// 비디오가 플레이리스트에 있는지 확인
-const isVideoInPlaylist = async (playlistName) => {
-  try {
-    const response = await axios.get('/api/videos/playlist', {
-      params: {
-        playlistName: playlistName
-      }
-    });
-
-    if (response.data.success) {
-      return response.data.videos.some(v => v.vNo === video.value.vNo);
-    }
-    return false;
-  } catch (error) {
-    console.error('플레이리스트 확인 실패:', error);
-    return false;
-  }
-};
-
-// 컴포넌트 마운트 시점에서 데이터 로딩
+// onMounted에서 플레이리스트 관련 코드 제거
 onMounted(async () => {
-  console.log('컴포넌트 마운트, route.params:', route.params); // 디버깅용
-  checkLoginStatus(); // 로그인 상태 체크 추가
+  console.log('컴포넌트 마운트, route.params:', route.params);
+  checkLoginStatus();
   await fetchVideoDetails();
   await checkSavedStatus();
-  await fetchPlaylists();
+});
+
+// 로그인 상태 변경 감지를 위한 watch 추가
+watch(() => checkLoginStatus(), async (isLoggedIn) => {
+  if (isLoggedIn) {
+    const returnUrl = localStorage.getItem('returnAfterLogin');
+    if (returnUrl) {
+      localStorage.removeItem('returnAfterLogin');
+      router.push(returnUrl);
+    }
+  }
 });
 
 // route params가 변경될 때마다 데이터 다시 로딩
 watch(() => route.params.id, async (newId) => {
-  console.log('route params 변경:', newId); // 디버깅용
+  console.log('route params 변경:', newId); // 디버용
   if (newId) {
     await fetchVideoDetails();
     await checkSavedStatus();
@@ -481,7 +342,7 @@ const saveVideo = async () => {
     }
   } catch (error) {
     if (error.response?.status === 401) {
-      // 로그인 필요시 모달 표시
+      // 로그인 필요시 모달 표
       showLoginModal.value = true;
     } else {
       alert('영상 저장에 실패했습니다: ' + (error.response?.data || error.message));
@@ -490,22 +351,12 @@ const saveVideo = async () => {
   }
 }
 
-// 저장하기 버튼 클릭 핸들러
-const handleSaveClick = () => {
-  if (!checkLoginStatus()) {
-    goToLogin();
-    return;
-  }
+// 로그인 성공 핸들러
+const handleLoginSuccess = () => {
+  showLoginModal.value = false;
+  checkLoginStatus();
   showPlaylistModal.value = true;
   fetchPlaylists();
-};
-
-// 로그인 성공 핸들러 수정
-const handleLoginSuccess = async () => {
-  showLoginModal.value = false;
-  isLoggedIn.value = true;
-  await fetchPlaylists();
-  router.go(0); // 현재 페이지 새로고침
 };
 
 // rememberMe 관련 경고를 해결하기 위해 추가
@@ -808,46 +659,155 @@ const rememberMe = ref(false);
 }
 
 .playlist-modal-content {
-  background: var(--bg-color);
+  background: white;
   padding: 30px;
-  border-radius: 8px;
+  border-radius: 12px;
   width: 90%;
   max-width: 500px;
   max-height: 80vh;
   overflow-y: auto;
-  position: relative;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }
 
 .playlist-modal-content h3 {
+  font-size: 20px;
+  font-weight: 600;
   margin-bottom: 20px;
-  color: var(--text-color);
+  color: #333;
 }
 
 .playlist-list {
   max-height: 300px;
   overflow-y: auto;
   margin: 20px 0;
+  border: 1px solid #eee;
+  border-radius: 8px;
+}
+
+.playlist-item {
+  padding: 12px 16px;
+  border-bottom: 1px solid #eee;
+  transition: background-color 0.2s;
+}
+
+.playlist-item:last-child {
+  border-bottom: none;
+}
+
+.playlist-item:hover {
+  background-color: #f8f8f8;
+}
+
+.playlist-item label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  color: #333;
+  font-size: 14px;
+}
+
+.create-playlist {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+  padding: 15px;
+  border-top: 1px solid #eee;
+}
+
+.create-playlist input {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #333;
+}
+
+.create-btn {
+  padding: 10px 20px;
+  background-color: #DEB887;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.create-btn:hover:not(:disabled) {
+  background-color: #CD853F;
+}
+
+.create-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: #ccc;
+}
+
+/* 다크 모드 대응 */
+:root.dark-mode .create-btn {
+  background-color: #4a4a4a;
+}
+
+:root.dark-mode .create-btn:hover:not(:disabled) {
+  background-color: #666;
 }
 
 .modal-buttons {
-  margin-top: 20px;
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px solid #eee;
 }
 
 .close-btn {
-  padding: 8px 16px;
+  padding: 8px 20px;
+  background-color: #f0f0f0;
+  color: #333;
   border: none;
-  border-radius: 4px;
-  background: var(--button-bg);
-  color: white;
+  border-radius: 6px;
   cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
 }
 
 .close-btn:hover {
-  opacity: 0.9;
+  background-color: #e0e0e0;
+}
+
+:root.dark-mode .playlist-modal-content {
+  background: #2d2d2d;
+  color: #fff;
+}
+
+:root.dark-mode .playlist-modal-content h3 {
+  color: #fff;
+}
+
+:root.dark-mode .playlist-item {
+  border-color: #404040;
+}
+
+:root.dark-mode .playlist-item:hover {
+  background-color: #3d3d3d;
+}
+
+:root.dark-mode .playlist-item label {
+  color: #fff;
+}
+
+:root.dark-mode .create-playlist input {
+  background-color: #3d3d3d;
+  border-color: #404040;
+  color: #fff;
+}
+
+:root.dark-mode .close-btn {
+  background-color: #404040;
+  color: #fff;
 }
 
 .loading-state, .error-state {
@@ -898,38 +858,6 @@ const rememberMe = ref(false);
   transform: translateY(-1px);
 }
 
-.playlist-item {
-  padding: 12px;
-  border-bottom: 1px solid var(--border-color);
-  transition: background-color 0.2s;
-}
-
-.playlist-item:hover {
-  background-color: var(--hover-color);
-}
-
-.playlist-item label {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  cursor: pointer;
-  color: var(--text-color);
-}
-
-.create-playlist input {
-  flex: 1;
-  padding: 8px 12px;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  background-color: var(--bg-color);
-  color: var(--text-color);
-}
-
-.create-playlist input:focus {
-  outline: none;
-  border-color: var(--button-bg);
-}
-
 .modal-backdrop {
   position: fixed;
   top: 0;
@@ -941,5 +869,38 @@ const rememberMe = ref(false);
   justify-content: center;
   align-items: center;
   z-index: 1000;
+}
+
+.no-playlists {
+  padding: 20px;
+  text-align: center;
+  color: #666;
+  font-size: 14px;
+}
+
+.playlist-list {
+  max-height: 300px;
+  overflow-y: auto;
+  margin: 20px 0;
+  border: 1px solid #eee;
+  border-radius: 8px;
+}
+
+.playlist-item {
+  padding: 12px 16px;
+  border-bottom: 1px solid #eee;
+}
+
+.playlist-item label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.playlist-item input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
 }
 </style>
