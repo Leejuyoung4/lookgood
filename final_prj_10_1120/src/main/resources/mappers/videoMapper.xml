@@ -4,7 +4,7 @@
   "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="com.oo.video.model.dao.VideoDao">
-	<!-- 전체 비디오 목록 조회 -->
+	<!-- 1. 전체 비디오 목록 가져오기 -->
 	<select id="selectAll" resultType="Video">
 		SELECT
 		v_no as vNo,
@@ -22,14 +22,12 @@
 		vCategoryName,
 		saved_no as savedNo,
 		video_id as videoId
-		FROM
-		videos
+		FROM videos
 		ORDER
-		BY
-		v_no DESC
+		BY v_no DESC
 	</select>
 
-	<!-- 특정 ID의 비디오 조회 -->
+	<!-- 2. 특정 비디오 한개 가져오기 -->
 	<select id="selectById" parameterType="int" resultType="Video">
 		SELECT
 		v_no as vNo,
@@ -45,22 +43,35 @@
 		v_category_name as vCategoryName,
 		saved_no as savedNo,
 		video_id as videoId
-		FROM
-		videos
-		WHERE
-		v_no = #{id}
+		FROM videos
+		WHERE v_no = #{id}
 	</select>
 
-	<!-- 조회수 증가 -->
-	<update id="updateViews" parameterType="int">
+	<!-- 3. 조회수 증가 -->
+	<update id="updateViews">
 		UPDATE videos
-		SET v_views
-		= v_views + 1
-		WHERE v_no = #{id}
+		SET v_views = v_views + 1
+		WHERE v_no =
+		#{id}
 	</update>
 
+	<!-- 4. 좋아요 증가 -->
+	<update id="updateLikes">
+		UPDATE videos
+		SET v_likes = v_likes + 1
+		WHERE v_no =
+		#{videoId}
+	</update>
 
-	<!-- 추천 비디오 찾기 -->
+	<!-- 5. 싫어요 증가 -->
+	<update id="updateHates">
+		UPDATE videos
+		SET v_hates = v_hates + 1
+		WHERE v_no =
+		#{videoId}
+	</update>
+
+	<!-- 6. 추천 비디오 찾기 (같은 카테고리) -->
 	<select id="findRecommendedVideos" resultType="Video">
 		SELECT
 		v_no as vNo,
@@ -85,7 +96,7 @@
 		LIMIT #{limit}
 	</select>
 
-	<!-- 인기 있는 비디오 찾기 -->
+	<!-- 7. 인기 비디오 찾기 -->
 	<select id="findPopularVideosExcept" resultType="Video">
 		SELECT
 		v_no as vNo,
@@ -114,45 +125,62 @@
 		LIMIT #{limit}
 	</select>
 
-	<update id="updateLikes" parameterType="int">
-		UPDATE videos
-		SET v_likes = v_likes + 1
-		WHERE v_no = #{videoId}
-	</update>
-
-	<update id="updateHates" parameterType="int">
-		UPDATE videos
-		SET v_hates = v_hates + 1
-		WHERE v_no = #{videoId}
-	</update>
-
-	<!-- 영상 저장 -->
-	<insert id="saveVideo" parameterType="map">
+	<!-- 8. 비디오 저장하기 -->
+	<insert id="saveVideo">
 		INSERT INTO saved_videos (user_no, v_no)
-		VALUES (#{userNo}, #{vNo})
+		VALUES
+		(#{userNo}, #{vNo})
 	</insert>
 
-	<!-- 저장 취소 -->
-	<delete id="unsaveVideo" parameterType="map">
+	<!-- 9. 저장한 비디오 삭제하기 -->
+	<delete id="unsaveVideo">
 		DELETE FROM saved_videos
-		WHERE user_no = #{userNo} AND v_no = #{vNo}
+		WHERE user_no = #{userNo} AND
+		v_no = #{vNo}
 	</delete>
 
-	<!-- 저장 여부 확인 -->
-	<select id="checkSaveStatus" parameterType="map"
-		resultType="boolean">
+	<!-- 10. 비디오 저장 여부 확인 -->
+	<select id="checkSaveStatus" resultType="boolean">
 		SELECT COUNT(*) > 0
-		FROM saved_videos
+		FROM
+		saved_videos
 		WHERE user_no = #{userNo} AND v_no = #{vNo}
 	</select>
 
-	<!-- 저장된 영상 목록 조회 -->
-	<select id="getSavedVideos" parameterType="int"
-		resultType="Video">
-		SELECT v.*, sv.saved_date
+	<!-- 11. 저장한 비디오 목록 가져오기 -->
+	<select id="getSavedVideos" resultType="Video">
+		SELECT
+		v.v_no as vNo,
+		v.v_title as vTitle,
+		v.v_description as vDescription,
+		v.v_upload_date as
+		vUploadDate,
+		v.v_views as vViews,
+		v.v_likes as vLikes,
+		v.v_hates as
+		vHates,
+		v.v_instructor as vInstructor,
+		v.v_instructor_intro as
+		vInstructorIntro,
+		v.v_category_name as vCategoryName,
+		v.saved_no as
+		savedNo,
+		v.video_id as videoId
+		FROM videos v
+		JOIN saved_videos sv ON
+		v.v_no = sv.v_no
+		WHERE sv.user_no = #{userNo}
+		ORDER BY sv.saved_date
+		DESC
+	</select>
+
+	<!-- 사용자의 저장된 비디오를 플레이리스트처럼 조회 -->
+	<select id="getUserPlaylists" parameterType="int"
+		resultType="string">
+		SELECT DISTINCT v.v_category_name as playlist_name
 		FROM videos v
 		JOIN saved_videos sv ON v.v_no = sv.v_no
 		WHERE sv.user_no = #{userNo}
-		ORDER BY sv.saved_date DESC
+		ORDER BY v.v_category_name
 	</select>
 </mapper>

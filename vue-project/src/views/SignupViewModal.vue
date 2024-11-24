@@ -12,16 +12,20 @@
       <div class="form-group">
         <label for="userId">아이디 <span class="required">*</span></label>
         <div class="input-group">
-          <input type="text" id="userId" v-model="userId" 
+          <input 
+            type="text" 
+            id="userId" 
+            v-model="userId" 
             class="input-field" 
             placeholder="아이디를 입력하세요"
-            @input="resetCheckMessage" />
+            @input="resetCheckMessage" 
+          />
           <button class="check-button" @click="checkUserId">
             중복 확인 <span class="button-emoji">🔍</span>
           </button>
         </div>
-        <p v-if="checkedUserId !== null" :class="['check-message', isDuplicate ? 'error' : 'success']">
-          {{ isDuplicate ? '❌ 이미 사용 중인 아이디입니다.' : '✅ 사용 가능한 아이디입니다.' }}
+        <p v-if="idCheckMessage" :class="['check-message', idCheckStatus]">
+          {{ idCheckMessage }}
         </p>
       </div>
 
@@ -95,7 +99,7 @@
             id="userName" 
             v-model="userName"
             class="input-field"
-            placeholder="이름을 입력하세요" 
+            placeholder="이름을 입력세요" 
           />
         </div>
       </div>
@@ -206,8 +210,6 @@ import eyeOpen from '@/assets/img/user/open_eye.png';
 import eyeClosed from '@/assets/img/user/closed_eye.png';
 
 const router = useRouter();
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://192.168.0.103:8080';
-
 const emit = defineEmits(['close']);
 
 // State variables
@@ -221,26 +223,53 @@ const phoneThird = ref('');
 const emailFirst = ref('');
 const emailSecond = ref('');
 const marketingAgree = ref(false);
+
+// 아이디 중복 체크 관련 상태
+const idCheckMessage = ref('');
+const idCheckStatus = ref('');
 const hasCheckedDuplicate = ref(false);
 
 // UI state
 const showPassword = ref(false);
 const showConfirmPassword = ref(false);
-const checkedUserId = ref(null);
-const isDuplicate = ref(null);
 
-// Placeholders
-const placeholders = ref({
-  userId: '아이디를 입력하세요',
-  password: '비밀번호를 입력하세요',
-  confirmPassword: '비밀번호를 다시 입력하세요',
-  userName: '이름을 입력하세요',
-  phoneFirst: '010',
-  phoneSecond: 'XXXX',
-  phoneThird: 'XXXX',
-  emailFirst: '예: marketkurly',
-  emailSecond: 'gmail.com'
-});
+// 아이디 중복 확인 함수
+const checkUserId = async () => {
+  if (!userId.value?.trim()) {
+    idCheckMessage.value = '❌ 아이디를 입력해주세요.';
+    idCheckStatus.value = 'error';
+    return;
+  }
+
+  try {
+    const response = await axios.get(`/api/user/check-id`, {
+      params: { userId: userId.value }
+    });
+    
+    if (response.data.success) {
+      if (response.data.isDuplicate) {
+        idCheckMessage.value = '❌ 이미 사용 중인 아이디입니다.';
+        idCheckStatus.value = 'error';
+        hasCheckedDuplicate.value = false;
+      } else {
+        idCheckMessage.value = '✅ 사용 가능한 아이디입니다.';
+        idCheckStatus.value = 'success';
+        hasCheckedDuplicate.value = true;
+      }
+    }
+  } catch (error) {
+    console.error('중복 확인 중 오류가 발생했습니다.', error);
+    idCheckMessage.value = '❌ 중복 확인 중 오류가 발생했습니다.';
+    idCheckStatus.value = 'error';
+  }
+};
+
+// 아이디 입력값 변경 시 메시지 초기화
+const resetCheckMessage = () => {
+  idCheckMessage.value = '';
+  idCheckStatus.value = '';
+  hasCheckedDuplicate.value = false;
+};
 
 // 비밀번호 유효성 검사 상태
 const lengthValid = ref(false);
@@ -301,10 +330,6 @@ const restorePlaceholder = (field, defaultValue) => {
   }
 };
 
-const resetCheckMessage = () => {
-  checkedUserId.value = null;
-};
-
 const togglePasswordVisibility = (field) => {
   if (field === 'password') {
     showPassword.value = !showPassword.value;
@@ -313,52 +338,24 @@ const togglePasswordVisibility = (field) => {
   }
 };
 
-// 아이디 중복 확인 함수
-const checkUserId = async () => {
-  try {
-    const response = await axios.get(`/api/user/check-id`, {
-      params: { userId: userId.value }
-    });
-    checkedUserId.value = true;
-    isDuplicate.value = response.data.isDuplicate;
-    if (isDuplicate.value) {
-      alert('이미 사용 중인 아이디입니다. 다른 아이디를 입력해주세요.');
-      userId.value = '';
-      hasCheckedDuplicate.value = false;
-    } else {
-      alert('사용 가능한 아이디입니다');
-      hasCheckedDuplicate.value = true;
-    }
-  } catch (error) {
-    console.error('중복 확인 중 오류가 발생했습니다.', error);
-    alert('중복 확인 중 오류가 발생했습니다.');
-  }
-};
-
 // 회원가입 함수
 const signup = async () => {
   try {
-    // 아이디 중복확인 여부 검사
-    if (!hasCheckedDuplicate.value) {
-      alert('아이디 중복확인을 해주세요.');
-      return;
-    }
-
     // 필수 입력값 검증
     if (!userId.value?.trim()) {
       alert('아이디를 입력해주세요.');
       return;
     }
+
+    // 아이디 중복 확인 검증
+    if (!hasCheckedDuplicate.value) {
+      alert('아이디 중복 확인이 필요합니다.');
+      return;
+    }
+
+    // 나머지 필수 입력값 검증
     if (!password.value?.trim()) {
       alert('비밀번호를 입력해주세요.');
-      return;
-    }
-    if (!isPasswordValid.value) {
-      alert('비밀번호가 조건을 만족하지 않습니다.');
-      return;
-    }
-    if (!passwordMatch.value) {
-      alert('비밀번호가 일치하지 않습니다.');
       return;
     }
     if (!userName.value?.trim()) {
@@ -374,16 +371,9 @@ const signup = async () => {
       return;
     }
 
-    // 이용약관 동의 체크
+    // 이용약관 동의 체크 검증 추가
     if (!marketingAgree.value) {
       alert('이용약관에 동의해주세요.');
-      return;
-    }
-
-    // 아이디가 중복확인 후 변경되었는지 확인
-    if (userId.value !== checkedUserId.value) {
-      alert('아이디가 변경되었습니다. 다시 중복확인을 해주세요.');
-      hasCheckedDuplicate.value = false;
       return;
     }
 
@@ -395,32 +385,32 @@ const signup = async () => {
       email: `${emailFirst.value.trim()}@${emailSecond.value.trim()}`
     };
 
-    console.log('전송할 데이터:', requestData);
-
-    const response = await axios({
-      method: 'POST',
-      url: '/api/user/signup',
-      data: requestData,
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
+    const response = await axios.post('/api/user/signup', requestData);
 
     if (response.data.success) {
       alert('회원가입이 완료되었습니다!');
       emit('close');
       router.push('/');
-    } else {
-      throw new Error(response.data.message);
     }
   } catch (error) {
-    console.error('전체 에러:', error);
-    console.error('요청 데이터:', error.config?.data);
-    console.error('응답 데이터:', error.response?.data);
-
-    alert(error.response?.data?.message || '회원가입 처리 중 오류가 발생했습니다.');
+    console.error('회원가입 오류:', error);
+    // 전화번호 중복 에러 메시지 처리 추가
+    if (error.response?.status === 400) {
+      if (error.response.data.message.includes('전화번호')) {
+        alert('이미 등록된 전화번호입니다.');
+      } else {
+        alert(error.response.data.message || '회원가입 처리 중 오류가 발생했습니다.');
+      }
+    } else {
+      alert('회원가입 처리 중 오류가 발생했습니다.');
+    }
   }
 };
+
+// 아이디 입력값 변경 감지
+watch(userId, () => {
+  resetCheckMessage();
+});
 
 // 서버 필수값 검증을 위한 computed 속성
 const isValidForm = computed(() => {
@@ -456,13 +446,6 @@ const handleEmailDomainChange = (event) => {
     emailSecond.value = value;
   }
 };
-
-// 아이디 변경 감지
-watch(userId, (newValue) => {
-  hasCheckedDuplicate.value = false;
-  checkedUserId.value = null;
-  isDuplicate.value = null;
-});
 </script>
 
 <style scoped>
@@ -490,7 +473,6 @@ watch(userId, (newValue) => {
   transition: all 0.3s ease;
   cursor: default;
 }
-
 .signup-logo:hover {
   color: #B7791F;
   transform: scale(1.05);
@@ -577,10 +559,7 @@ watch(userId, (newValue) => {
 .check-message {
   font-size: 13px;
   margin-top: 6px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  position: static;
+  padding-left: 4px;
 }
 
 .success {
@@ -915,7 +894,7 @@ option {
   transform: rotate(90deg) scale(0.95);
 }
 
-/* 다크모드 스타일 */
+/* 크모드 스타일 */
 :root[class='dark-mode'] .signup-modal {
   background: var(--bg-color);
   color: var(--text-color);

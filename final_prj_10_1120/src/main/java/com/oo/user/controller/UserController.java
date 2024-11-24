@@ -37,15 +37,33 @@ public class UserController {
     /**
      * 회원가입
      */
+    /**
+     * 회원가입
+     */
     @PostMapping("/signup")
     public ResponseEntity<Map<String, Object>> signup(@RequestBody User user) {
         Map<String, Object> response = new HashMap<>();
         try {
             // 필수 필드 검증
             if (user.getUserId() == null || user.getPassword() == null || 
-                user.getUserName() == null || user.getEmail() == null) {
+                user.getUserName() == null || user.getEmail() == null || 
+                user.getPhoneNum() == null) {  // phoneNum 검증 추가
                 response.put("success", false);
                 response.put("message", "필수 정보를 모두 입력해주세요.");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            // 아이디 중복 검사
+            if (userService.isUserIdDuplicate(user.getUserId())) {
+                response.put("success", false);
+                response.put("message", "이미 사용중인 아이디입니다.");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            // 전화번호 중복 검사
+            if (userService.isPhoneNumDuplicate(user.getPhoneNum())) {
+                response.put("success", false);
+                response.put("message", "이미 등록된 전화번호입니다.");
                 return ResponseEntity.badRequest().body(response);
             }
 
@@ -160,6 +178,21 @@ public class UserController {
         Map<String, Object> response = new HashMap<>();
         try {
             boolean isDuplicate = userService.isUserIdDuplicate(userId);
+            response.put("success", true);
+            response.put("isDuplicate", isDuplicate);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "서버 오류가 발생했습니다.");
+            return ResponseEntity.internalServerError().body(response);
+        }
+    }
+    
+    @GetMapping("/check-phone")
+    public ResponseEntity<Map<String, Object>> checkPhone(@RequestParam String phoneNum) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            boolean isDuplicate = userService.isPhoneNumDuplicate(phoneNum);
             response.put("success", true);
             response.put("isDuplicate", isDuplicate);
             return ResponseEntity.ok(response);
