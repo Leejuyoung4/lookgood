@@ -1,112 +1,136 @@
 package com.oo.inquiry.model.dto;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public class Inquiry {
     private int iNo; // 게시글 번호
     private String iTitle; // 제목
     private String iContents; // 내용
-    private String iFile; // 파일 경로
+    private String iFiles; // 파일 경로
+    private List<String> iFilesList;
     private LocalDateTime iRegDate; // 등록일
     private int iViews; // 조회수
     private boolean iIsResolved; // 해결 여부
     private int iCommentsCount; // 댓글 수
     private String iCategoryName; // 카테고리 이름
+    private Integer userNo;
 
     // 기본 생성자
     public Inquiry() {}
 
-    // 전체 필드를 포함한 생성자
-    public Inquiry(int iNo, String iTitle, String iContents, String iFile, LocalDateTime iRegDate, int iViews,
-                   boolean iIsResolved, int iCommentsCount, String iCategoryName) {
-        this.iNo = iNo;
-        this.iTitle = iTitle;
-        this.iContents = iContents;
-        this.iFile = iFile;
-        this.iRegDate = iRegDate;
-        this.iViews = iViews;
-        this.iIsResolved = iIsResolved;
-        this.iCommentsCount = iCommentsCount;
-        this.iCategoryName = iCategoryName;
-    }
+	public Inquiry(int iNo, String iTitle, String iContents, String iFiles, List<String> iFilesList,
+			LocalDateTime iRegDate, int iViews, boolean iIsResolved, int iCommentsCount, String iCategoryName,
+			int userNo) {
+		super();
+		this.iNo = iNo;
+		this.iTitle = iTitle;
+		this.iContents = iContents;
+		this.iFiles = iFiles;
+		this.iFilesList = iFilesList;
+		this.iRegDate = iRegDate;
+		this.iViews = iViews;
+		this.iIsResolved = iIsResolved;
+		this.iCommentsCount = iCommentsCount;
+		this.iCategoryName = iCategoryName;
+		this.userNo = userNo;
+	}
 
-    // Getter and Setter methods
-    public int getiNo() {
-        return iNo;
-    }
+	public int getiNo() {
+		return iNo;
+	}
 
-    public void setiNo(int iNo) {
-        this.iNo = iNo;
-    }
+	public void setiNo(int iNo) {
+		this.iNo = iNo;
+	}
 
-    public String getiTitle() {
-        return iTitle;
-    }
+	public String getiTitle() {
+		return iTitle;
+	}
 
-    public void setiTitle(String iTitle) {
-        this.iTitle = iTitle;
-    }
+	public void setiTitle(String iTitle) {
+		this.iTitle = iTitle;
+	}
 
-    public String getiContents() {
-        return iContents;
-    }
+	public String getiContents() {
+		return iContents;
+	}
 
-    public void setiContents(String iContents) {
-        this.iContents = iContents;
-    }
+	public void setiContents(String iContents) {
+		this.iContents = iContents;
+	}
 
-    public String getiFile() {
-        return iFile;
-    }
+	public String getiFiles() {
+		return iFiles;
+	}
 
-    public void setiFile(String iFile) {
-        this.iFile = iFile;
-    }
+	public void setiFiles(String iFiles) {
+		this.iFiles = iFiles;
+	}
 
-    public LocalDateTime getiRegDate() {
-        return iRegDate;
-    }
+	public List<String> getiFilesList() {
+		return iFilesList;
+	}
 
-    public void setiRegDate(LocalDateTime iRegDate) {
-        this.iRegDate = iRegDate;
-    }
+	public void setiFilesList(List<String> iFilesList) {
+		this.iFilesList = iFilesList;
+	}
 
-    public int getiViews() {
-        return iViews;
-    }
+	public LocalDateTime getiRegDate() {
+		return iRegDate;
+	}
 
-    public void setiViews(int iViews) {
-        this.iViews = iViews;
-    }
+	public void setiRegDate(LocalDateTime iRegDate) {
+		this.iRegDate = iRegDate;
+	}
 
-    public boolean isiIsResolved() {
-        return iIsResolved;
-    }
+	public int getiViews() {
+		return iViews;
+	}
 
-    public void setiIsResolved(boolean iIsResolved) {
-        this.iIsResolved = iIsResolved;
-    }
+	public void setiViews(int iViews) {
+		this.iViews = iViews;
+	}
 
-    public int getiCommentsCount() {
-        return iCommentsCount;
-    }
+	public boolean isiIsResolved() {
+		return iIsResolved;
+	}
 
-    public void setiCommentsCount(int iCommentsCount) {
-        this.iCommentsCount = iCommentsCount;
-    }
+	public void setiIsResolved(boolean iIsResolved) {
+		this.iIsResolved = iIsResolved;
+	}
 
-    public String getiCategoryName() {
-        return iCategoryName;
-    }
+	public int getiCommentsCount() {
+		return iCommentsCount;
+	}
 
-    public void setiCategoryName(String iCategoryName) {
-        this.iCategoryName = iCategoryName;
-    }
+	public void setiCommentsCount(int iCommentsCount) {
+		this.iCommentsCount = iCommentsCount;
+	}
 
-    @Override
-    public String toString() {
-        return "Inquiry [iNo=" + iNo + ", iTitle=" + iTitle + ", iContents=" + iContents + ", iFile=" + iFile
-                + ", iRegDate=" + iRegDate + ", iViews=" + iViews + ", iIsResolved=" + iIsResolved
-                + ", iCommentsCount=" + iCommentsCount + ", iCategoryName=" + iCategoryName + "]";
-    }
+	public String getiCategoryName() {
+		return iCategoryName;
+	}
+
+	public void setiCategoryName(String iCategoryName) {
+		this.iCategoryName = iCategoryName;
+	}
+
+	public Integer getUserNo() {
+		return userNo;
+	}
+
+	public void setUserNo(Integer userNo) {
+		this.userNo = userNo;
+	}
+
+	@Override
+	public String toString() {
+		return "Inquiry [iNo=" + iNo + ", iTitle=" + iTitle + ", iContents=" + iContents + ", iFiles=" + iFiles
+				+ ", iFilesList=" + iFilesList + ", iRegDate=" + iRegDate + ", iViews=" + iViews + ", iIsResolved="
+				+ iIsResolved + ", iCommentsCount=" + iCommentsCount + ", iCategoryName=" + iCategoryName + ", userNo="
+				+ userNo + "]";
+	}
+
+	
 }

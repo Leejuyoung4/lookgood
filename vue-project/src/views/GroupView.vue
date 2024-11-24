@@ -36,16 +36,13 @@
     <!-- 검색 바 -->
     <div class="search-wrapper">
       <div class="search-bar">
-        <router-link to="/search">
           <img :src="searchImage" alt="Search Icon" />
-        </router-link>
         <input
           type="text"
           v-model="searchQuery"
           placeholder="검색어를 입력하세요"
         />
         <button class="search-button" @click="searchPosts">검색</button>
-
       </div>
     </div>
     
@@ -84,36 +81,36 @@
 
     <!-- 글쓰기 모달 -->
     <div v-if="showWriteModal" class="modal">
-  <div class="modal-content">
-    <h3>글쓰기</h3>
-    <form @submit.prevent="submitPost" enctype="multipart/form-data">
-      <label>
-        제목:
-        <input type="text" v-model="newPostTitle" placeholder="제목을 입력하세요" required />
-      </label>
-      <label>
-        내용:
-        <textarea v-model="newPostContent" placeholder="내용을 입력하세요" required></textarea>
-      </label>
-      <label>
-        첨부 파일 (여러 개 선택 가능):
-        <input type="file" multiple @change="handleFileUpload" />
-      </label>
+      <div class="modal-content">
+        <h3>글쓰기</h3>
+        <form @submit.prevent="submitPost" enctype="multipart/form-data">
+          <label>
+            제목:
+            <input type="text" v-model="newPostTitle" placeholder="제목을 입력하세요" required />
+          </label>
+          <label>
+            내용:
+            <textarea v-model="newPostContent" placeholder="내용을 입력하세요" required></textarea>
+          </label>
+          <label>
+            첨부 파일 (여러 개 선택 가능):
+            <input type="file" multiple @change="handleFileUpload" />
+          </label>
 
-      <!-- 이미지 미리보기 -->
-      <div v-if="filePreviews.length > 0" class="image-previews">
-        <div v-for="(preview, index) in filePreviews" :key="index" class="image-preview">
-          <img :src="preview" alt="미리보기" />
-        </div>
-      </div>
+          <!-- 이미지 미리보기 -->
+          <div v-if="filePreviews.length > 0" class="image-previews">
+            <div v-for="(preview, index) in filePreviews" :key="index" class="image-preview">
+              <img :src="preview" alt="미리보기" />
+            </div>
+          </div>
 
-      <div class="form-actions">
-        <button type="submit">등록</button>
-        <button type="button" @click="closeWriteModal">취소</button>
+          <div class="form-actions">
+            <button type="submit">등록</button>
+            <button type="button" @click="closeWriteModal">취소</button>
+          </div>
+        </form>
       </div>
-    </form>
-  </div>
-</div>
+    </div>
 
 
    <!-- 게시글 목록 -->

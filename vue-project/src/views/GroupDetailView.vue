@@ -18,10 +18,11 @@
         <img
           v-for="(file, index) in group.gBoardFilesList"
           :key="index"
-          :src="`/uploads/${file}`"
+          :src="`http://localhost:8080/uploads/${file}`"
           alt="첨부 이미지"
           class="uploaded-image"
         />
+
       </div>
     </li>
 
@@ -207,6 +208,7 @@ onMounted(async () => {
      // 게시글 데이터 로드
      const response = await axios.get(`http://localhost:8080/api/group/${gBoardNo}`);
     group.value = response.data;
+    console.log(response.data.gBoardFilesList)
 
     // 첨부 파일을 배열로 처리
     if (group.value.gBoardFile) {

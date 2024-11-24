@@ -8,6 +8,21 @@
         <li><strong>등록일:</strong> {{ inquiry.iRegDate }}</li>
         <li><strong>조회수:</strong> {{ inquiry.iViews }}</li>
       </ul>
+      <div v-if="inquiry.images && inquiry.images.length > 0" class="image-gallery">
+  <h3>첨부 이미지</h3>
+  <div
+    class="image-wrapper"
+    v-for="(image, index) in inquiry.images"
+    :key="index"
+  >
+    <img
+      :src="`http://localhost:8080/uploads/${image}`" 
+      alt="첨부 이미지"
+      class="uploaded-image"
+    />
+  </div>
+</div>
+
     </div>
 
     <!-- 삭제 및 수정 버튼 -->
@@ -33,6 +48,11 @@ onMounted(async () => {
   try {
     const response = await axios.get(`http://localhost:8080/api/inquiry/${iNo}`);
     inquiry.value = response.data;
+
+    // 이미지 배열 추가
+    if (!Array.isArray(inquiry.value.images)) {
+      inquiry.value.images = inquiry.value.iFiles?.split(',') || []; // 파일 필드에서 이미지 배열 생성
+    }
   } catch (error) {
     console.error('상세 조회 API 오류:', error);
     alert('게시글을 불러오는 중 문제가 발생했습니다.');
@@ -60,6 +80,7 @@ const deletePost = async () => {
 };
 </script>
 
+
 <style scoped>
 .inquiry-detail {
   padding: 20px;
@@ -73,4 +94,21 @@ const deletePost = async () => {
   display: flex;
   gap: 10px;
 }
+
+/* 이미지 */
+.image-gallery {
+  margin-top: 20px;
+}
+
+.image-wrapper {
+  margin-bottom: 15px;
+}
+
+.image-wrapper img {
+  max-width: 100%;
+  height: auto;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+}
+
 </style>

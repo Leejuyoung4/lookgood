@@ -50,4 +50,10 @@ public class JwtUtil {
                 .parseClaimsJws(token)
                 .getBody();
     }
+    
+ // 토큰에서 userId 추출
+    public String extractUsername(String token) {
+        Claims claims = getClaims(token);
+        return claims.get("userId", String.class);
+    }
 }

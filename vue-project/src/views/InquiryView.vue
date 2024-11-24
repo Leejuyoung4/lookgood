@@ -21,11 +21,13 @@
     <!-- 검색 바 -->
     <div class="search-wrapper">
       <div class="search-bar">
-        <router-link to="/search">
           <img :src="searchImage" alt="Search Icon" />
-        </router-link>
-        <input type="text" placeholder="검색어를 입력하세요" />
-        <button class="search-button" @click="searchPost">검색</button>
+        <input
+          type="text"
+          v-model="searchQuery"
+          placeholder="검색어를 입력하세요"
+        />
+        <button class="search-button" @click="searchPosts">검색</button>
       </div>
     </div>
     
@@ -47,7 +49,6 @@
 
     <!-- 글쓰기 버튼 -->
     <div class="write-wrapper">
-      <!-- 글쓰기 버튼 -->
       <button class="write-button" @click="openWriteModal">
         <img :src="penImg" class="button-icon" />
         글쓰기
@@ -56,16 +57,55 @@
 
 <!-- 글쓰기 모달 -->
 <div v-if="showWriteModal" class="modal">
-  <div class="modal-content">
-    <h3>글쓰기</h3>
-    <form @submit.prevent="submitPost">
-      <input type="text" v-model="newPostTitle" placeholder="제목" required />
-      <textarea v-model="newPostContent" placeholder="내용" required></textarea>
-      <button type="submit">등록</button>
-      <button type="button" @click="showWriteModal = false">닫기</button>
-    </form>
-  </div>
-</div>
+      <div class="modal-content">
+        <h3>글쓰기</h3>
+          <form @submit.prevent="submitPost" enctype="multipart/form-data">
+            <label>
+              제목:
+              <input type="text" v-model="newPostTitle" placeholder="제목을 입력하세요" required />
+            </label>
+            <label>
+              내용:
+              <textarea v-model="newPostContent" placeholder="내용을 입력하세요" required></textarea>
+            </label>
+            
+            <!-- 카테고리 선택 -->
+            <label>
+              카테고리:
+              <div class="category-toggle">
+                <button 
+                  v-for="category in categories" 
+                  :key="category.value" 
+                  :class="{ active: selectedCategory === category.value }"
+                  @click.prevent="setCategory(category.value)"
+                >
+                  {{ category.label }}
+                </button>
+              </div>
+            </label>
+
+            <!-- 첨부 파일 -->
+            <label>
+              첨부 파일 (여러 개 선택 가능):
+              <input type="file" multiple @change="handleFileUpload" />
+            </label>
+
+            <!-- 미리보기 -->
+            <div v-if="filePreviews.length > 0" class="image-previews">
+              <div v-for="(preview, index) in filePreviews" :key="index" class="image-preview">
+                <img :src="preview" alt="미리보기" />
+                <button @click="removeFile(index)">삭제</button>
+              </div>
+            </div>
+
+            <!-- 버튼 -->
+            <div class="form-actions">
+              <button type="submit" :disabled="!selectedCategory">등록</button>
+              <button type="button" @click="closeWriteModal">취소</button>
+            </div>
+          </form>
+      </div>
+    </div>
 
 
    <!-- 게시글 목록 -->
@@ -110,6 +150,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'; 
 import axios from 'axios';
+import router from '@/router';
 
 import searchImage from '@/assets/img/search1.svg';
 import penImg from '@/assets/img/pen.svg';
@@ -124,16 +165,44 @@ const searchQuery = ref('');
 const sortBy = ref('latest');
 
 // API 호출 함수
-onMounted(async () => {
-  try {
-    const response = await axios.get('http://localhost:8080/api/inquiry');
-    posts.value = response.data; // 데이터를 성공적으로 저장
-  } catch (error) {
-    console.error('API 호출 오류:', error);
-    alert('게시글을 불러오는 중 문제가 발생했습니다. 다시 시도해주세요.');
-  }
-});
+// 현재 로그인된 사용자 정보
+const currentUser = ref(null);
 
+// onMounted에서 사용자 정보를 가져옵니다.
+onMounted(async () => {
+  // try {
+  //   const token = localStorage.getItem("authToken"); // 로컬 스토리지에서 JWT 토큰 가져오기
+  //   if (!token) {
+  //     throw new Error("로그인 토큰이 없습니다. 다시 로그인해주세요.");
+  //   }
+
+    // const response = await axios.get("http://localhost:8080/api/inquiry/me", {
+      // headers: {
+      //   Authorization: `Bearer ${jwtToken}` // 헤더에 JWT 토큰 추가
+      // }
+    // });
+
+    axios.get("http://localhost:8080/api/inquiry")
+    .then(response => {
+      console.log("API 데이터:", response.data); // 데이터 확인
+      posts.value = response.data;
+
+      // 데이터 로드 후 최신순으로 정렬
+      posts.value.sort((a, b) => new Date(b.iRegDate) - new Date(a.iRegDate));
+    })
+    .catch(error => {
+      console.error("데이터 가져오기 실패:", error);
+    });
+
+
+
+  //   currentUser.value = response.data; // 사용자 정보 저장
+  // } catch (error) {
+  //   console.error("사용자 정보를 가져오는 중 오류 발생:", error);
+  //   alert("로그인이 필요합니다.");
+  //   router.push("/login"); // 로그인 페이지로 리디렉션
+  // }
+});
 
 
 const filteredPosts = computed(() => {
@@ -145,30 +214,43 @@ const filteredPosts = computed(() => {
   }
 
   // 검색어 필터링
-  if (searchQuery.value) {
-    filtered = filtered.filter(post => post.iTitle.includes(searchQuery.value));
-  }
-
-  // 정렬 기준
-  if (sortBy.value === 'latest') {
-    return filtered.sort((a, b) => new Date(b.iRegDate) - new Date(a.iRegDate)); // 최신순
-  } else if (sortBy.value === 'comments') {
-    return filtered.sort((a, b) => b.iCommentsCount - a.iCommentsCount); // 댓글 많은 순
+  if (searchQuery.value.trim()) {
+    filtered = filtered.filter(post =>
+      post.iTitle.includes(searchQuery.value.trim()) || 
+      post.iContents.includes(searchQuery.value.trim())
+    );
   }
 
   return filtered;
 });
 
 
+
 // 게시글 검색
 const searchPosts = () => {
-  // 이미 computed에서 searchQuery를 활용하므로 별도 동작 불필요
+  const sanitizedKeyword = searchQuery.value.trim();
+  if (!sanitizedKeyword) {
+    alert("검색어를 입력해주세요.");
+    return;
+  }
+  
+  console.log('검색 버튼 클릭:', sanitizedKeyword);
+  // `searchQuery`를 업데이트하면 `filteredPosts`가 자동으로 재계산됨
+  searchQuery.value = sanitizedKeyword;
 };
 
 // 게시글 정렬
-const sortPosts = criteria => {
+const sortPosts = (criteria) => {
   sortBy.value = criteria;
+
+  // 정렬 로직 추가
+  if (criteria === 'latest') {
+    posts.value.sort((a, b) => new Date(b.iRegDate) - new Date(a.iRegDate)); // 최신순
+  } else if (criteria === 'comments') {
+    posts.value.sort((a, b) => b.iCommentsCount - a.iCommentsCount); // 댓글 많은 순
+  }
 };
+
 
 // 탭 데이터 설정
 const tabs = ref([
@@ -189,40 +271,109 @@ const showWriteModal = ref(false); // 글쓰기 모달 표시 상태
 const newPostTitle = ref(''); // 새 글 제목
 const newPostContent = ref(''); // 새 글 내용
 
+const categories = ref([
+  { label: "회원", value: "회원" },
+  { label: "영상", value: "영상" },
+  { label: "모임", value: "모임" },
+  { label: "기타", value: "기타" },
+]); // 카테고리 목록
+const selectedCategory = ref(""); // 선택된 카테고리
+
+// 카테고리 설정 함수
+const setCategory = (category) => {
+  selectedCategory.value = category; // 선택된 카테고리 업데이트
+};
+
+// 데이터 초기화 함수
+const resetWriteModalData = () => {
+  newPostTitle.value = ""; // 제목 초기화
+  newPostContent.value = ""; // 내용 초기화
+  selectedFiles.value = []; // 파일 초기화
+  filePreviews.value = []; // 미리보기 초기화
+};
+
+// 글쓰기 모달 닫기 및 데이터 초기화
+const closeWriteModal = () => {
+  resetWriteModalData(); // 입력 데이터 초기화
+  showWriteModal.value = false; // 모달 닫기
+};
+
 // 글쓰기 버튼 클릭 이벤트
 const openWriteModal = () => {
-  showWriteModal.value = true; // 모달 표시 상태를 true로 변경
+  resetWriteModalData(); // 기존 입력 데이터 초기화
+  showWriteModal.value = true; // 모달 열기
 };
 
+// 여러 파일을 저장할 상태와 미리보기 URL 배열
+const selectedFiles = ref([]); // 선택된 파일 배열
+const filePreviews = ref([]); // 파일 미리보기 URL 배열
+
+// 파일 선택 이벤트 핸들러
+const handleFileUpload = (event) => {
+  const files = Array.from(event.target.files); // 선택된 파일 배열로 변환
+  selectedFiles.value = files; // 선택된 파일 저장
+
+  // 미리보기 생성 (이미지 파일만 처리)
+  filePreviews.value = files
+    .filter((file) => file.type.startsWith("image/"))
+    .map((file) => URL.createObjectURL(file));
+};
+
+// 파일 삭제 함수
+const removeFile = (index) => {
+  selectedFiles.value.splice(index, 1); // 선택된 파일 배열에서 제거
+  filePreviews.value.splice(index, 1); // 미리보기에서도 제거
+};
+
+// 서버로 글 등록 요청
 const submitPost = async () => {
-    try {
-        const newPost = {
+  if (!selectedCategory.value) {
+    alert("카테고리를 선택해주세요!");
+    return;
+  }
+
+  try {
+    const formData = new FormData();
+    formData.append(
+      "inquiry",
+      new Blob(
+        [
+          JSON.stringify({
             iTitle: newPostTitle.value,
             iContents: newPostContent.value,
-            iFile: null, // 필요하면 파일 추가
-            iViews: 0,
-            iIsResolved: false,
-            iCommentsCount: 0,
-            iCategoryName: "기타", // 카테고리 설정
-        };
+            iCategoryName: selectedCategory.value, // 선택된 카테고리
+            userNo: null, // 로그인한 사용자가 없으므로 null 또는 기본값 설정
+          }),
+        ],
+        { type: "application/json" }
+      )
+    );
 
-        const response = await axios.post("http://localhost:8080/api/inquiry", newPost);
-
-        // 등록 성공 시 목록에 추가
-        posts.value.unshift(response.data); // 목록 맨 위에 추가
-        alert("글이 성공적으로 등록되었습니다.");
-
-        
-
-        // 입력값 초기화
-        newPostTitle.value = "";
-        newPostContent.value = "";
-        showWriteModal.value = false;
-    } catch (error) {
-        console.error("글 등록 중 오류 발생:", error);
-        alert("글 등록에 실패했습니다.");
+    if (selectedFiles.value.length > 0) {
+      selectedFiles.value.forEach((file) => {
+        formData.append("files", file);
+      });
     }
+
+    const response = await axios.post(
+      "http://localhost:8080/api/inquiry",
+      formData
+    );
+
+    alert("게시글이 성공적으로 등록되었습니다!");
+    window.location.reload();
+  } catch (error) {
+    console.error("글 등록 중 오류 발생:", error);
+    alert("게시글 등록에 실패했습니다.");
+  }
 };
+
+
+
+
+
+
+
 
 
 
@@ -526,6 +677,31 @@ const submitPost = async () => {
   align-items: center;
   gap: 5px;
   color: #555;
+}
+
+.category-toggle {
+  display: flex;
+  gap: 10px;
+  margin: 10px 0;
+}
+
+.category-toggle button {
+  padding: 10px 15px;
+  border: 1px solid #ddd;
+  background-color: #f9f9f9;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.category-toggle button.active {
+  background-color: #ffd987;
+  color: white;
+  font-weight: bold;
+  transform: scale(1.1);
+}
+
+.category-toggle button:hover {
+  background-color: #f8cd71;
 }
 
 </style>
