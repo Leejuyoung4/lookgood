@@ -233,7 +233,7 @@ const isActiveCategory = (category) => {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
-  top: 250px;
+  top: 100px;
 }
 
 .menu-item {
@@ -263,7 +263,7 @@ const isActiveCategory = (category) => {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 24px;
-  margin-top: 600px;
+  margin-top: 400px;
   padding: 0 50px;
 }
 
@@ -384,7 +384,7 @@ const isActiveCategory = (category) => {
 
 .loading, .error {
   text-align: center;
-  margin-top: 300px;
+  margin-top: 200px;
   font-size: 18px;
   color: var(--text-color);
 }

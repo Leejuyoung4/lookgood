@@ -171,53 +171,61 @@ const handleVideoClick = async (videoNo) => {
   }
 };
 
-// 저장하기 함수
-const handleSave = () => {
-  if (!video.value) return;
-  
-  const savedVideos = JSON.parse(localStorage.getItem('savedVideos') || '[]');
-  const videoData = {
-    vno: video.value.vno,
-    videoId: video.value.videoId,
-    vtitle: video.value.vtitle,
-    vinstructor: video.value.vinstructor,
-    savedAt: new Date().toISOString()
-  };
+// 저장하기 함수 수정
+const handleSave = async () => {
+  try {
+    const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+    if (!userInfo || !userInfo.userNo) {
+      alert('로그인이 필요한 서비스입니다.');
+      return;
+    }
 
-  if (isSaved.value) {
-    // 저장 취소
-    const filteredVideos = savedVideos.filter(v => v.vno !== video.value.vno);
-    localStorage.setItem('savedVideos', JSON.stringify(filteredVideos));
-    isSaved.value = false;
-  } else {
-    // 새로 저장
-    savedVideos.unshift(videoData);
-    localStorage.setItem('savedVideos', JSON.stringify(savedVideos));
-    isSaved.value = true;
+    const response = await axios.post(`/api/saved-videos/${video.value.vno}`, null, {
+      params: { userNo: userInfo.userNo }
+    });
+
+    if (response.data.success) {
+      alert('영상이 저장되었습니다.');
+      isSaved.value = true;
+    }
+  } catch (error) {
+    console.error('저장 처리 중 오류 발생:', error);
+    alert(error.response?.data?.message || '저장 처리 중 오류가 발생했습니다.');
   }
 };
 
 // 저장 상태 확인
-const checkSavedStatus = () => {
-  if (!video.value?.vno) return;
-  
-  const savedVideos = JSON.parse(localStorage.getItem('savedVideos') || '[]');
-  isSaved.value = savedVideos.some(v => v.vno === video.value.vno);
+const checkSavedStatus = async () => {
+  try {
+    if (!video.value?.vno) return;
+    
+    const userInfoStr = localStorage.getItem('userInfo');
+    if (!userInfoStr) return;
+
+    const userInfo = JSON.parse(userInfoStr);
+    if (!userInfo || !userInfo.userNo) return;
+
+    const response = await axios.get(`/api/saved-videos/${video.value.vno}/check`);
+    console.log('저장 상태 확인 응답:', response.data);
+    
+    if (response.data.success) {
+      isSaved.value = response.data.isSaved;
+    }
+  } catch (error) {
+    console.error('저장 상태 확인 중 오류:', error);
+  }
 };
 
+// 컴포넌트 마운트 시 저장 상태 확인
 onMounted(() => {
-  fetchVideoDetails()
-})
+  fetchVideoDetails();
+  checkSavedStatus();
+});
 
-// route params가 변경될 때마다 데이터 다시 가져오기
-watch(
-  () => route.params.id,
-  async (newId) => {
-    if (newId) {
-      await fetchVideoDetails();
-    }
-  }
-);
+// 비디오 변경 시 저장 상태 다시 확인
+watch(() => route.params.id, () => {
+  checkSavedStatus();
+});
 </script>
 
 <style scoped>

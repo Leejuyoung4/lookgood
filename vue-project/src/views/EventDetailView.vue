@@ -338,7 +338,7 @@ const toggleChatbot = () => {
 .bubble-navigation {
   display: flex;
   justify-content: center;
-  gap: 20px;
+  gap: 25px;
   margin-bottom: 40px;
 }
 
@@ -348,29 +348,36 @@ const toggleChatbot = () => {
   align-items: center;
   padding: 15px 25px;
   background-color: var(--bg-color);
-  border-radius: 30px;
-  box-shadow: 0 4px 15px rgba(222, 184, 135, 0.2);
+  border: 2px solid #ebd03b;
+  border-radius: 20px;
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
 .bubble.active {
-  background-color: var(--hover-color);
+  background-color: #ebd03b;
+  color: #fff;
   transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(235, 208, 59, 0.3);
 }
 
 .bubble i {
   font-size: 24px;
   margin-bottom: 5px;
-  color: #DEB887;
+  color: #ebd03b;
+}
+
+.bubble.active i {
+  color: #fff;
 }
 
 /* Main Image */
 .main-image-container {
-  border-radius: 30px;
+  border-radius: 20px;
   overflow: hidden;
-  box-shadow: 0 6px 20px rgba(222, 184, 135, 0.3);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
   margin-bottom: 30px;
+  border: 3px solid #ebd03b;
 }
 
 .main-image-container img {
@@ -387,12 +394,11 @@ const toggleChatbot = () => {
 /* Info Bubbles */
 .description-bubble, .detail-bubble, .comment-bubble {
   background-color: var(--bg-color);
-  color: var(--text-color);
-  border-radius: 25px;
+  border: 2px solid #ebd03b;
+  border-radius: 15px;
   padding: 20px;
   margin-bottom: 20px;
-  box-shadow: 0 4px 15px rgba(222, 184, 135, 0.2);
-  transition: transform 0.3s ease;
+  transition: all 0.3s ease;
 }
 
 .detail-bubble {
@@ -404,12 +410,12 @@ const toggleChatbot = () => {
 
 .detail-bubble i {
   font-size: 20px;
-  color: var(--border-color);
+  color: #ebd03b;
 }
 
 .detail-bubble:hover {
   transform: translateY(-3px);
-  background-color: var(--hover-color);
+  background-color: rgba(235, 208, 59, 0.1);
 }
 
 /* Map Container */
@@ -444,19 +450,25 @@ const toggleChatbot = () => {
 .comment-bubble textarea {
   width: 100%;
   height: 120px;
-  border: 2px solid var(--border-color);
-  border-radius: 20px;
+  border: 2px solid #ebd03b;
+  border-radius: 15px;
   padding: 15px;
   margin-bottom: 15px;
   font-size: 16px;
   resize: none;
   background-color: var(--bg-color);
   color: var(--text-color);
+  transition: all 0.3s ease;
+}
+
+.comment-bubble textarea:focus {
+  box-shadow: 0 0 10px rgba(235, 208, 59, 0.3);
+  outline: none;
 }
 
 .submit-btn {
-  background-color: #DEB887;
-  color: white;
+  background-color: #ebd03b;
+  color: #fff;
   border: none;
   border-radius: 25px;
   padding: 12px 30px;
@@ -466,8 +478,9 @@ const toggleChatbot = () => {
 }
 
 .submit-btn:hover {
-  background-color: #BC8F8F;
+  background-color: #d4bb34;
   transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(235, 208, 59, 0.3);
 }
 
 /* Animations */
@@ -493,7 +506,7 @@ const toggleChatbot = () => {
   width: 60px;
   height: 60px;
   border-radius: 50%;
-  background-color: #DEB887;
+  background-color: #ebd03b;
   border: none;
   color: white;
   font-size: 24px;
@@ -501,14 +514,14 @@ const toggleChatbot = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 15px rgba(222, 184, 135, 0.3);
+  box-shadow: 0 4px 15px rgba(235, 208, 59, 0.3);
   transition: all 0.3s ease;
   z-index: 1000;
 }
 
 .chatbot-button:hover {
   transform: translateY(-3px);
-  background-color: #BC8F8F;
+  background-color: #d4bb34;
 }
 
 .chatbot-container {
@@ -531,14 +544,16 @@ const toggleChatbot = () => {
   z-index: 1000;
   display: flex;
   flex-direction: column;
+  border: 2px solid #ebd03b;
 }
 
 .chatbot-header {
   padding: 15px 20px;
-  background-color: var(--hover-color);
+  background-color: #ebd03b;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  color: white;
 }
 
 .chatbot-header h3 {

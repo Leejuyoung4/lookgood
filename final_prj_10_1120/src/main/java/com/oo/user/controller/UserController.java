@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.oo.config.JwtUtil;
+import com.oo.config.PasswordUtil;
 import com.oo.user.model.dto.User;
 import com.oo.user.model.service.UserService;
 
@@ -48,6 +49,10 @@ public class UserController {
                 return ResponseEntity.badRequest().body(response);
             }
 
+            // 비밀번호 암호화
+            String encryptedPassword = PasswordUtil.encrypt(user.getPassword());
+            user.setPassword(encryptedPassword);
+
             boolean result = userService.signup(user);
             if (result) {
                 response.put("success", true);
@@ -59,6 +64,7 @@ public class UserController {
                 return ResponseEntity.badRequest().body(response);
             }
         } catch (Exception e) {
+            e.printStackTrace();
             response.put("success", false);
             response.put("message", "서버 오류가 발생했습니다.");
             return ResponseEntity.internalServerError().body(response);
@@ -72,6 +78,8 @@ public class UserController {
     public ResponseEntity<Map<String, Object>> login(@RequestBody User user) {
         Map<String, Object> response = new HashMap<>();
         try {
+            System.out.println("로그인 요청 데이터: " + user);  // 요청 데이터 출력
+
             if (user.getUserId() == null || user.getPassword() == null) {
                 response.put("success", false);
                 response.put("message", "아이디와 비밀번호를 입력해주세요.");
@@ -79,12 +87,12 @@ public class UserController {
             }
 
             User loginUser = userService.login(user.getUserId(), user.getPassword());
+            System.out.println("로그인 결과: " + loginUser);  // 로그인 결과 출력
+
             if (loginUser != null) {
-                // JWT 토큰 생성
                 String token = jwtUtil.createToken(loginUser.getUserNo(), loginUser.getUserId());
                 
-                // 비밀번호 제외하고 반환
-                loginUser.setPassword(null);
+                loginUser.setPassword(null);  // 비밀번호 제외
                 
                 response.put("success", true);
                 response.put("token", token);
@@ -97,6 +105,7 @@ public class UserController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
             }
         } catch (Exception e) {
+            e.printStackTrace();  // 스택 트레이스 출력
             response.put("success", false);
             response.put("message", "서버 오류가 발생했습니다.");
             return ResponseEntity.internalServerError().body(response);
