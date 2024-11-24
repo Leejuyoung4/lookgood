@@ -75,7 +75,7 @@
 		SET
 			g_board_title = #{gBoardTitle},
 			g_board_content = #{gBoardContent},
-			g_board_file = #{gBoardFiles},
+			g_board_files = #{gBoardFiles},
 			g_board_is_resolved = #{gBoardIsResolved}
 		WHERE g_board_no = #{gBoardNo};
 	</update>

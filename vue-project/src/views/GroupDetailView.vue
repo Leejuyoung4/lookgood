@@ -2,35 +2,30 @@
   <div>
     <!-- 수정 모드가 아닐 때 -->
     <div v-if="!editMode" class="group-detail">
-  <h1>{{ group.gBoardTitle }}</h1>
-  <p>{{ group.gBoardContent }}</p>
-  <ul>
-    <li><strong>작성자:</strong> {{ group.gBoardAuthor }}</li>
-    <li><strong>등록일:</strong> {{ formatDate(group.gBoardRegDate) }}</li>
-    <li><strong>조회수:</strong> {{ group.gBoardViews }}</li>
-    <li><strong>좋아요:</strong> ❤️ {{ group.gBoardLikeCount }}</li>
-    <li><strong>댓글 수:</strong> {{ group.gBoardCommentsCount }}</li>
-    <li><strong>상태:</strong> {{ group.gBoardIsResolved ? '모집완료' : '모집중' }}</li>
-    <!-- 첨부 파일 -->
-    <li v-if="group.gBoardFilesList && group.gBoardFilesList.length">
-      <strong>첨부 파일:</strong>
-      <div class="uploaded-images">
-        <img
-          v-for="(file, index) in group.gBoardFilesList"
-          :key="index"
-          :src="`http://localhost:8080/uploads/${file}`"
-          alt="첨부 이미지"
-          class="uploaded-image"
-        />
-
-      </div>
-    </li>
-
-
-
-  </ul>
-</div>
-
+      <h1>{{ group.gBoardTitle }}</h1>
+      <p>{{ group.gBoardContent }}</p>
+      <ul>
+        <li><strong>작성자:</strong> {{ group.gBoardAuthor }}</li>
+        <li><strong>등록일:</strong> {{ formatDate(group.gBoardRegDate) }}</li>
+        <li><strong>조회수:</strong> {{ group.gBoardViews }}</li>
+        <li><strong>좋아요:</strong> ❤️ {{ group.gBoardLikeCount }}</li>
+        <li><strong>댓글 수:</strong> {{ group.gBoardCommentsCount }}</li>
+        <li><strong>상태:</strong> {{ group.gBoardIsResolved ? '모집완료' : '모집중' }}</li>
+        <!-- 첨부 파일 -->
+        <li v-if="group.gBoardFilesList && group.gBoardFilesList.length">
+          <strong>첨부 파일:</strong>
+          <div class="uploaded-images">
+            <img
+              v-for="(file, index) in group.gBoardFilesList"
+              :key="index"
+              :src="`http://localhost:8080/uploads/${file}`"
+              alt="첨부 이미지"
+              class="uploaded-image"
+            />
+          </div>
+        </li>
+      </ul>
+    </div>
 
     <!-- 수정 모드일 때 -->
     <div v-else class="edit-form">
@@ -50,11 +45,28 @@
             <option :value="true">모집완료</option>
           </select>
         </label>
-        <!-- 파일 첨부 -->
+        <!-- 기존 첨부 파일 -->
         <label>
-          첨부 파일:
-          <input type="file" @change="handleFileUpload" />
+          기존 첨부 파일:
+          <div v-for="(file, index) in editData.gBoardFilesList" :key="index" class="file-item">
+            <span>{{ file }}</span>
+            <button type="button" @click="removeFile(index)">삭제</button>
+          </div>
         </label>
+        <!-- 새로운 파일 추가 -->
+        <label>
+          새로운 첨부 파일:
+          <input type="file" multiple @change="handleFileUpload" />
+        </label>
+        <div class="uploaded-images">
+        <img
+          v-for="(file, index) in previewImages"
+          :key="index"
+          :src="file"
+          alt="미리보기 이미지"
+          class="uploaded-image"
+        />
+      </div>
         <div class="form-actions">
           <button type="submit">수정 완료</button>
           <button type="button" @click="cancelEdit">취소</button>
@@ -99,22 +111,33 @@ const group = ref({}); // 게시글 데이터
 const editData = ref({}); // 수정 데이터
 const editMode = ref(false); // 수정 모드 상태
 const selectedFile = ref(null); // 파일 업로드 상태
+const previewImages = ref([]); // 미리보기 이미지 URL들
 
 // 파일 선택 이벤트 핸들러
 const handleFileUpload = (event) => {
-  selectedFile.value = event.target.files[0];
+  selectedFile.value = [...event.target.files];
+  previewImages.value = selectedFile.value.map((file) =>
+    URL.createObjectURL(file)
+  ); // 미리보기 URL 생성
 };
 
 // 수정 모드 토글
 const toggleEdit = () => {
   editMode.value = true;
-  editData.value = { ...group.value }; // 기존 데이터를 복사해 수정용 데이터로 설정
+  editData.value = { ...group.value, gBoardFilesList: [...group.value.gBoardFilesList] };
 };
 
 // 수정 취소
 const cancelEdit = () => {
   editMode.value = false;
-  selectedFile.value = null;
+  selectedFile.value = [];
+  previewImages.value = [];
+};
+
+
+// 파일 삭제
+const removeFile = (index) => {
+  editData.value.gBoardFilesList.splice(index, 1);
 };
 
 // 수정 제출
@@ -125,6 +148,7 @@ const submitEdit = async () => {
     formData.append("gBoardContent", editData.value.gBoardContent);
     formData.append("gBoardIsResolved", editData.value.gBoardIsResolved);
 
+    
     if (selectedFile.value) {
       formData.append("gBoardFile", selectedFile.value);
     }
@@ -233,7 +257,21 @@ onMounted(async () => {
   }
 });
 
+// 데이터 로드
+const fetchGroupData = async () => {
+  try {
+    const gBoardNo = route.params.gBoardNo;
+    const response = await axios.get(`http://localhost:8080/api/group/${gBoardNo}`);
+    group.value = response.data;
+    group.value.gBoardFilesList = response.data.gBoardFiles?.split(',') || [];
+  } catch (error) {
+    console.error('게시글 로드 중 오류 발생:', error);
+  }
+};
 
+onMounted(() => {
+  fetchGroupData();
+});
 
 // 날짜 포맷팅
 const formatDate = (dateString) => {

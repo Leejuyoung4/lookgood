@@ -66,5 +66,4 @@ public interface UserService {
      */
     boolean isUserIdDuplicate(String userId);
     
-    User findUserById(String userId);
 }

@@ -139,6 +139,7 @@ public class GroupController {
     public ResponseEntity<?> updateGroup(@PathVariable("gBoardNo") int gBoardNo, @RequestBody Group group) {
         try {
             group.setgBoardNo(gBoardNo);
+            System.out.println(group);
             groupService.updateGroup(group);
             return ResponseEntity.ok("수정 성공");
         } catch (Exception e) {
