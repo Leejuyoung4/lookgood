@@ -2,249 +2,118 @@
   <div class="mypage-container">
     <!-- 저장한 영상 섹션 -->
     <section class="saved-videos-section">
-      <h2>저장한 영상</h2>
-      <div v-if="isLoading" class="loading">
-        로딩 중...
-      </div>
-      <div v-else-if="error" class="error">
-        {{ error }}
-      </div>
-      <div v-else-if="savedVideos.length === 0" class="no-videos">
-        저장된 영상이 없습니다.
-      </div>
-      <div v-else class="video-grid">
-        <div v-for="video in savedVideos" :key="video.vNo" class="video-card">
-          <router-link :to="`/videos/${video.vNo}`" class="video-link">
-            <div class="thumbnail">
-              <img 
-                :src="`https://img.youtube.com/vi/${video.videoId}/mqdefault.jpg`" 
-                :alt="video.vTitle"
-              >
-            </div>
-            <div class="video-info">
-              <h3 class="video-title">{{ video.vTitle }}</h3>
-              <p class="instructor">{{ video.vInstructor }}</p>
-              <div class="video-meta">
-                <span class="saved-date">저장일: {{ formatDate(video.savedDate) }}</span>
-              </div>
-            </div>
-          </router-link>
-          <button @click="unsaveVideo(video.vNo)" class="unsave-btn">
-            저장 취소
+      <div class="section-header">
+        <h2>저장한 영상</h2>
+        <div class="playlist-controls">
+          <select v-model="selectedPlaylist">
+            <option value="">모든 영상</option>
+            <option v-for="name in playlistNames" :key="name" :value="name">
+              {{ name }}
+            </option>
+          </select>
+          <button @click="showPlaylistModal = true" class="create-playlist-btn">
+            <i class="bi bi-plus"></i> 새 플레이리스트
           </button>
         </div>
       </div>
+
+      <!-- 영상 목록 -->
+      <div class="video-grid">
+        <div v-for="video in filteredVideos" :key="video.vNo" class="video-card">
+          <!-- 기존 비디오 카드 내용 -->
+          <div class="playlist-actions">
+            <select 
+              v-model="video.playlistName"
+              @change="updateVideoPlaylist(video)"
+            >
+              <option value="">플레이리스트 선택</option>
+              <option v-for="name in playlistNames" :key="name" :value="name">
+                {{ name }}
+              </option>
+            </select>
+          </div>
+        </div>
+      </div>
     </section>
-  </div>
-  
-  <!-- 로그인 모달 추가 -->
-  <div v-if="isLoginModalOpen" class="overlay">
-    <LoginViewModal @close="closeLoginModal" @login-success="handleLoginSuccess" />
+
+    <!-- 플레이리스트 생성 모달 -->
+    <div v-if="showPlaylistModal" class="modal-overlay">
+      <div class="modal-content">
+        <h3>새 플레이리스트</h3>
+        <input 
+          v-model="newPlaylistName" 
+          placeholder="플레이리스트 이름"
+          @keyup.enter="createPlaylist"
+        >
+        <div class="modal-actions">
+          <button @click="showPlaylistModal = false">취소</button>
+          <button @click="createPlaylist">만들기</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="playlists-section">
+      <h2>내 플레이리스트</h2>
+      
+      <div class="playlist-list">
+        <div v-for="playlist in playlists" :key="playlist" class="playlist-item">
+          <h3>{{ playlist }}</h3>
+          <div class="video-grid">
+            <div v-for="video in playlistVideos[playlist]" 
+                 :key="video.vNo" 
+                 class="video-card"
+                 @click="goToVideo(video.vNo)">
+              <img :src="getThumbUrl(video.videoId)" :alt="video.vTitle">
+              <h4>{{ video.vTitle }}</h4>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
-import LoginViewModal from '@/views/LoginViewModal.vue';
-import axios from 'axios';
+import { ref, computed } from 'vue'
+import axios from 'axios'
 
-const router = useRouter();
-const savedVideos = ref([]);
-const isLoginModalOpen = ref(false);
-const isLoading = ref(false);
-const error = ref(null);
+const savedVideos = ref([])
+const selectedPlaylist = ref('')
+const showPlaylistModal = ref(false)
+const newPlaylistName = ref('')
 
-// 저장된 영상 로드 수정
-const fetchSavedVideos = async () => {
+// 고유한 플레이리스트 이름 목록
+const playlistNames = computed(() => {
+  const names = new Set(savedVideos.value
+    .map(v => v.playlistName)
+    .filter(name => name)) // null/undefined 제거
+  return Array.from(names)
+})
+
+// 선택된 플레이리스트에 따른 필터링
+const filteredVideos = computed(() => {
+  if (!selectedPlaylist.value) return savedVideos.value
+  return savedVideos.value.filter(v => v.playlistName === selectedPlaylist.value)
+})
+
+// 비디오의 플레이리스트 업데이트
+const updateVideoPlaylist = async (video) => {
   try {
-    isLoading.value = true;
-    const userInfo = JSON.parse(localStorage.getItem('userInfo'));
-    
-    if (!userInfo || !userInfo.userNo) {
-      error.value = '로그인이 필요합니다.';
-      return;
-    }
-
-    const response = await axios.get(`/api/saved-videos/user/${userInfo.userNo}`);
-    console.log('저장된 비디오 응답:', response.data); // 디버깅용
-
-    if (response.data.success) {
-      savedVideos.value = response.data.videos;
-    } else {
-      error.value = response.data.message || '저장된 영상을 불러오는데 실패했습니다.';
-    }
-  } catch (err) {
-    console.error('저장된 비디오 조회 중 오류:', err);
-    error.value = '저장된 영상을 불러오는데 실패했습니다.';
-  } finally {
-    isLoading.value = false;
-  }
-};
-
-// 로그인 모달 관련 함수 추가
-const closeLoginModal = () => {
-  isLoginModalOpen.value = false;
-};
-
-const handleLoginSuccess = () => {
-  closeLoginModal();
-  fetchSavedVideos(); // 로그인 성공 후 영상 목록 로드
-};
-
-// 저장 취소
-const unsaveVideo = (vno) => {
-  try {
-    const userInfo = JSON.parse(localStorage.getItem('user'));
-    if (!userInfo) return;
-    
-    const savedVideosData = JSON.parse(localStorage.getItem(`savedVideos_${userInfo.userId}`) || '[]');
-    const updatedVideos = savedVideosData.filter(video => video.vno !== vno);
-    localStorage.setItem(`savedVideos_${userInfo.userId}`, JSON.stringify(updatedVideos));
-    fetchSavedVideos(); // 목록 새로고침
+    await axios.put(`/api/videos/${video.vNo}`, {
+      playlistName: video.playlistName
+    })
   } catch (error) {
-    console.error('저장 취소 실패:', error);
-    alert('저장 취소 중 오류가 발생했습니다.');
-  }
-};
-
-// 날짜 포맷팅
-const formatDate = (dateString) => {
-  const date = new Date(dateString);
-  return `${date.getFullYear()}.${date.getMonth() + 1}.${date.getDate()}`;
-};
-
-onMounted(() => {
-  fetchSavedVideos();
-});
-</script>
-
-<style scoped>
-.mypage-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
-}
-
-section {
-  background: white;
-  border-radius: 8px;
-  padding: 20px;
-  margin-bottom: 20px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-h2 {
-  color: #333;
-  margin-bottom: 20px;
-  padding-bottom: 10px;
-  border-bottom: 2px solid #DEB887;
-}
-
-.user-info p {
-  margin: 10px 0;
-  color: #666;
-}
-
-.video-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 20px;
-}
-
-.video-card {
-  background: white;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  transition: transform 0.2s;
-}
-
-.video-card:hover {
-  transform: translateY(-4px);
-}
-
-.video-link {
-  text-decoration: none;
-  color: inherit;
-}
-
-.thumbnail {
-  width: 100%;
-  aspect-ratio: 16/9;
-  overflow: hidden;
-}
-
-.thumbnail img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.video-info {
-  padding: 15px;
-}
-
-.video-title {
-  font-size: 16px;
-  font-weight: 600;
-  margin: 0 0 8px 0;
-  color: #333;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.instructor {
-  font-size: 14px;
-  color: #666;
-  margin: 0 0 8px 0;
-}
-
-.video-meta {
-  display: flex;
-  justify-content: space-between;
-  font-size: 12px;
-  color: #888;
-}
-
-.unsave-btn {
-  width: 100%;
-  padding: 8px;
-  background: #ff6b6b;
-  color: white;
-  border: none;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.unsave-btn:hover {
-  background: #ff5252;
-}
-
-.empty-state {
-  text-align: center;
-  padding: 40px;
-  color: #666;
-}
-
-@media (max-width: 768px) {
-  .video-grid {
-    grid-template-columns: 1fr;
+    console.error('플레이리스트 업데이트 실패:', error)
   }
 }
 
-/* 모달 오버레이 스타일 추가 */
-.overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
+// 새 플레이리스트 생성 (실제로는 이름만 추가)
+const createPlaylist = () => {
+  if (playlistNames.value.includes(newPlaylistName.value)) {
+    alert('이미 존재하는 플레이리스트 이름입니다.')
+    return
+  }
+  showPlaylistModal.value = false
+  newPlaylistName.value = ''
 }
-</style> 
+</script> 

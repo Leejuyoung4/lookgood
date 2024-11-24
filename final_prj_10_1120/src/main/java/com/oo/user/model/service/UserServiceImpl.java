@@ -126,4 +126,22 @@ public class UserServiceImpl implements UserService {
             return false;
         }
     }
+
+	@Override
+	public User findUserById(String userId) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	
+	@Override
+	@Transactional(readOnly = true)
+	public boolean isPhoneNumDuplicate(String phoneNum) {
+	    try {
+	        return userDao.countByPhoneNum(phoneNum) > 0;
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        return false;
+	    }
+	}
+	
 }

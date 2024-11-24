@@ -1,6 +1,9 @@
 package com.oo.video.controller;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -11,6 +14,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -22,7 +27,7 @@ import jakarta.servlet.http.HttpSession;
 
 @RestController
 @RequestMapping("/api/videos")
-@CrossOrigin(origins = "*", allowCredentials = "false")
+@CrossOrigin(origins = "*", allowCredentials = "false")  // main.js 설정과 일치
 public class VideoController {
 
     private final VideoService videoService;
@@ -86,29 +91,21 @@ public class VideoController {
     
     @GetMapping("/recommended")
     public ResponseEntity<List<Video>> getRecommendedVideos(
-        @RequestParam(name = "currentVideoId") Integer currentVideoId,
+        @RequestParam Integer currentVideoId,
         @RequestParam(required = false) String category,
         @RequestParam(defaultValue = "5") int limit
     ) {
         try {
-            // 디버깅을 위한 로그 추가
-            System.out.println("Controller - currentVideoId: " + currentVideoId);
-            System.out.println("Controller - category: " + category);
-            System.out.println("Controller - limit: " + limit);
-            
             List<Video> recommendedVideos = videoService.getRecommendedVideos(
                 currentVideoId.longValue(), 
                 category, 
                 limit
             );
             
-            // 결과 확인을 위한 로그
-            System.out.println("Controller - result size: " + recommendedVideos.size());
-            
             return ResponseEntity.ok(recommendedVideos);
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
     
@@ -209,5 +206,122 @@ public class VideoController {
         }
     }
     
+
+        // 플레이리스트 업데이트
+        @PutMapping("/{vNo}/playlist")
+        public ResponseEntity<?> updateVideoPlaylist(
+                @PathVariable int vNo,
+                @RequestBody Map<String, String> updates,
+                HttpSession session) {
+            try {
+                Integer userNo = (Integer) session.getAttribute("userNo");
+                if (userNo == null) {
+                    return new ResponseEntity<>("로그인이 필요합니다.", HttpStatus.UNAUTHORIZED);
+                }
+
+                videoService.updatePlaylist(vNo, updates.get("playlistName"), userNo);
+                
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", true);
+                response.put("message", "플레이리스트가 업데이트되었습니다.");
+                
+                return new ResponseEntity<>(response, HttpStatus.OK);
+            } catch (Exception e) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("message", "플레이리스트 업데이트 실패: " + e.getMessage());
+                
+                return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+        }
+
+        // 사용자의 플레이리스트 영상 조회
+        @GetMapping("/playlist")
+        public ResponseEntity<?> getVideosByPlaylist(
+                HttpSession session,
+                @RequestParam(required = false) String playlistName) {
+            try {
+                Integer userNo = (Integer) session.getAttribute("userNo");
+                if (userNo == null) {
+                    return new ResponseEntity<>("로그인이 필요합니다.", HttpStatus.UNAUTHORIZED);
+                }
+
+                List<Video> videos;
+                if (playlistName != null && !playlistName.isEmpty()) {
+                    videos = videoService.getVideosByPlaylist(userNo, playlistName);
+                } else {
+                    videos = videoService.getAllUserVideos(userNo);
+                }
+                
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", true);
+                response.put("videos", videos);
+                
+                return new ResponseEntity<>(response, HttpStatus.OK);
+            } catch (Exception e) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("message", "영상 조회 실패: " + e.getMessage());
+                
+                return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+        }
+
+
+
+        @GetMapping("/playlists")
+        public ResponseEntity<?> getUserPlaylists(@RequestParam Integer userNo) {
+            Map<String, Object> response = new HashMap<>();
+            
+            try {
+                if (userNo == null || userNo <= 0) {
+                    response.put("success", false);
+                    response.put("message", "유효하지 않은 사용자 번호입니다.");
+                    response.put("playlists", new ArrayList<>());
+                    return ResponseEntity.badRequest().body(response);
+                }
+
+                List<String> playlists = videoService.getUserPlaylists(userNo);
+                
+                response.put("success", true);
+                response.put("playlists", playlists);
+                return ResponseEntity.ok(response);
+                
+            } catch (Exception e) {
+                e.printStackTrace();
+                response.put("success", false);
+                response.put("message", "플레이리스트 조회 중 오류가 발생했습니다.");
+                response.put("playlists", new ArrayList<>());
+                return ResponseEntity.ok(response); // 500 에러 대신 정상 응답
+            }
+        }
+        // 플레이리스트에서 영상 제거
+        @DeleteMapping("/{vNo}/playlist")
+        public ResponseEntity<?> removeFromPlaylist(
+                @PathVariable int vNo,
+                HttpSession session) {
+            try {
+                Integer userNo = (Integer) session.getAttribute("userNo");
+                if (userNo == null) {
+                    return new ResponseEntity<>("로그인이 필요합니다.", HttpStatus.UNAUTHORIZED);
+                }
+
+                videoService.removeFromPlaylist(vNo, userNo);
+                
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", true);
+                response.put("message", "플레이리스트에서 영상이 제거되었습니다.");
+                
+                return new ResponseEntity<>(response, HttpStatus.OK);
+            } catch (Exception e) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("message", "영상 제거 실패: " + e.getMessage());
+                
+                return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+        }
+    
+ 
 
 }

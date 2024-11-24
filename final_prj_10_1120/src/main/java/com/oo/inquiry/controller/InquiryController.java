@@ -109,23 +109,23 @@ public class InquiryController {
 	    }
 	}
 
-	 @GetMapping("/me")
-	    public ResponseEntity<?> getCurrentUser(@RequestHeader("Authorization") String token) {
-	        try {
-	            // Bearer 토큰에서 실제 JWT 값 추출
-	            String jwt = token.replace("Bearer ", "");
-	            String userId = jwtUtil.extractUsername(jwt); // 토큰에서 사용자 ID 추출
-	            User user = userService.findUserById(userId); // 사용자 정보를 데이터베이스에서 조회
-
-	            if (user == null) {
-	                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("유효하지 않은 사용자입니다.");
-	            }
-	            return ResponseEntity.ok(user);
-	        } catch (Exception e) {
-	            e.printStackTrace();
-	            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("사용자 정보를 가져올 수 없습니다.");
-	        }
-	    }
+//	 @GetMapping("/me")
+//	    public ResponseEntity<?> getCurrentUser(@RequestHeader("Authorization") String token) {
+//	        try {
+//	            // Bearer 토큰에서 실제 JWT 값 추출
+//	            String jwt = token.replace("Bearer ", "");
+//	            String userId = jwtUtil.extractUsername(jwt); // 토큰에서 사용자 ID 추출
+//	            User user = userService.findUserById(userId); // 사용자 정보를 데이터베이스에서 조회
+//
+//	            if (user == null) {
+//	                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("유효하지 않은 사용자입니다.");
+//	            }
+//	            return ResponseEntity.ok(user);
+//	        } catch (Exception e) {
+//	            e.printStackTrace();
+//	            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("사용자 정보를 가져올 수 없습니다.");
+//	        }
+//	    }
 
 	// 게시글 삭제
 	@DeleteMapping("{iNo}")

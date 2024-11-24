@@ -100,7 +100,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useThemeStore } from '@/stores/theme'
 import { useRouter, useRoute } from 'vue-router';
 import LoginViewModal from '@/views/LoginViewModal.vue';
@@ -117,8 +117,10 @@ import fluentHomePersonImage from '@/assets/img/fluent-home-person-24-regular0.s
 import logoutImage from '@/assets/img/Logout.png';
 
 // 상태 관리
-const isLoggedIn = ref(false);
 const userInfo = ref(null);
+const isLoggedIn = computed(() => {
+  return userInfo.value !== null;
+});
 const isLoginModalOpen = ref(false);
 const isSignupModalOpen = ref(false);
 const showDropdown = ref(false);
@@ -130,38 +132,15 @@ const route = useRoute();
 // 로그인 체크
 const checkLoginStatus = () => {
   try {
-    // localStorage나 sessionStorage에서 userInfo 가져오기
-    const userInfoStr = localStorage.getItem('userInfo') || sessionStorage.getItem('userInfo');
-    console.log('저장된 사용자 정보:', userInfoStr); // 디버깅용
-    
-    if (!userInfoStr) {
-      isLoggedIn.value = false;
-      userInfo.value = null;
-      return;
+    const storedUserInfo = localStorage.getItem('userInfo');
+    if (storedUserInfo) {
+      userInfo.value = JSON.parse(storedUserInfo);
+      return true;
     }
-
-    const userInfo = JSON.parse(userInfoStr);
-    console.log('파싱된 사용자 정보:', userInfo); // 디버깅용
-    
-    // 필수 필드 확인
-    if (!userInfo || !userInfo.userId || !userInfo.userName) {
-      isLoggedIn.value = false;
-      userInfo.value = null;
-      return;
-    }
-
-    // 로그인 상태 업데이트
-    isLoggedIn.value = true;
-    userInfo.value = userInfo;
-    
+    return false;
   } catch (error) {
     console.error('로그인 상태 확인 중 오류:', error);
-    isLoggedIn.value = false;
-    userInfo.value = null;
-    
-    // 잘못된 데이터 정리
-    localStorage.removeItem('userInfo');
-    sessionStorage.removeItem('userInfo');
+    return false;
   }
 };
 
@@ -170,8 +149,8 @@ const logout = () => {
   try {
     // 모든 관련 데이터 삭제
     localStorage.removeItem('userInfo');
-    sessionStorage.removeItem('userInfo');
     localStorage.removeItem('token');
+    userInfo.value = null;
     
     // 상태 초기화
     isLoggedIn.value = false;
@@ -925,7 +904,7 @@ window.addEventListener('storage', (e) => {
   transition: all 0.3s ease;
 }
 
-/* 로그아웃 이미지 별도 필터 ��용 */
+/* 로그아웃 이미지 별도 필터 용 */
 .logout-img {
   height: 24px;
   margin-left: 10px;

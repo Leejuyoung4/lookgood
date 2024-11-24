@@ -65,10 +65,11 @@ public interface UserDao {
      */
     int countByUserId(String userId);
 
+	int countByPhoneNum(String phoneNum);
+
     /**
      * 사용자 ID로 사용자 정보를 조회합니다.
      * @param userId 조회할 사용자 ID
      * @return 사용자 정보
      */
-    User selectUserByUserId(String userId);
 }

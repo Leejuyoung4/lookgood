@@ -1,61 +1,22 @@
 <template>
-  <div class="video-div">
-    <div class="video-menu">
-      <div 
-        v-for="(icon, index) in icons" 
-        :key="index"
-        class="menu-item"
-        :class="{ active: isActiveCategory(icon.category) }"
-        @click="filterVideos(icon.category)"
-      >
-        <img :src="icon.src" />
-        <span>{{ icon.name }}</span>
+  <div class="video-list">
+    <div class="video" 
+         v-for="video in paginatedVideos" 
+         :key="video.vNo"
+         @click="goToVideo(video.vNo)">
+      <div class="video-thumbnail">
+        <img :src="video.image" :alt="video.title" />
       </div>
-    </div>
-    
-    <!-- 디버깅용 정보 표시 (개발 중에만 사용) -->
-    <div v-if="false" style="margin-top: 20px; padding: 20px;">
-      <p>Selected Category: {{ selectedCategory }}</p>
-      <p>Total Videos: {{ videos.length }}</p>
-      <p>Filtered Videos: {{ filteredVideos.length }}</p>
-    </div>
-
-    <!-- 로딩 상태 표시 -->
-    <div v-if="loading" class="loading">
-      데이터를 불러오는 중...
-    </div>
-
-    <!-- 에러 메시지 표시 -->
-    <div v-if="error" class="error">
-      {{ error }}
-    </div>
-
-    <!-- 비디오 리스트 -->
-    <div v-else class="video-list">
-      <div class="video" 
-           v-for="video in paginatedVideos" 
-           :key="video.id"
-           @click="goToVideoDetail(video.id)">
-        <div class="video-thumbnail">
-          <img :src="video.image" :alt="video.title" />
-        </div>
-        <div class="video-content">
-          <h3 class="video-title">{{ video.title || '제목 없음' }}</h3>
-          <div class="video-info">
-            <span class="instructor">{{ video.instructor || '강사 미정' }}</span>
-            <div class="stats">
-              <span class="views">조회수 {{ video.views }}회</span>
-              <span class="upload-date">{{ video.uploadDate }}</span>
-            </div>
+      <div class="video-content">
+        <h3 class="video-title">{{ video.title || '제목 없음' }}</h3>
+        <div class="video-info">
+          <span class="instructor">{{ video.instructor || '강사 미정' }}</span>
+          <div class="stats">
+            <span class="views">조회수 {{ formatViews(video.views) }}회</span>
+            <span class="upload-date">{{ formatDate(video.uploadDate) }}</span>
           </div>
         </div>
       </div>
-    </div>
-
-    <!-- 페이지네이션 버튼 -->
-    <div class="pagination" v-if="filteredVideos.length > itemsPerPage">
-      <button @click="prevPage" :disabled="currentPage === 1">이전</button>
-      <button @click="nextPage" :disabled="currentPage === totalPages">다음</button>
     </div>
   </div>
 </template>
@@ -92,23 +53,26 @@ const fetchVideos = async () => {
   try {
     loading.value = true;
     const response = await axios.get('/api/videos');
+    console.log('원본 데이터:', response.data);
     
     videos.value = response.data.map(video => ({
-      id: video.vno,
-      title: video.vtitle,
-      description: video.vdescription,
+      id: video.vNo,
+      vNo: video.vNo,
+      title: video.vTitle,
+      description: video.vDescription,
       image: `https://img.youtube.com/vi/${video.videoId}/mqdefault.jpg`,
-      category: video.vcategoryName,
-      uploadDate: formatDate(video.vuploadDate),
-      views: formatViews(video.vviews),
-      instructor: video.vinstructor
+      category: video.vCategoryName,
+      uploadDate: video.vUploadDate,
+      views: video.vViews,
+      instructor: video.vInstructor,
+      instructorIntro: video.vInstructorIntro,
+      likes: video.vLikes,
+      hates: video.vHates,
+      savedNo: video.savedNo,
+      videoId: video.videoId
     }));
 
-    console.log('Videos with categories:', videos.value.map(v => ({
-      id: v.id,
-      category: v.category,
-      title: v.title
-    })));
+    console.log('변환된 데이터:', videos.value);
   } catch (err) {
     error.value = '비디오 데이터를 불러오는데 실패했습니다.';
     console.error('Error fetching videos:', err);
@@ -119,17 +83,54 @@ const fetchVideos = async () => {
 
 // 날짜 포맷팅 함수
 const formatDate = (dateString) => {
-  if (!dateString) return '';
+  if (!dateString) return '날짜 없음';
+  
+  // 이미 "~전" 형식으로 온 경우 그대로 반환
+  if (dateString.includes('전')) {
+    return dateString;
+  }
+  
   try {
     const date = new Date(dateString);
-    return new Intl.DateTimeFormat('ko-KR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    }).format(date);
+    const now = new Date();
+    const diff = now - date;
+
+    // 유효한 날짜가 아닌 경우
+    if (isNaN(date.getTime())) {
+      return dateString; // 원본 문자열 반환
+    }
+
+    // 1일 이내
+    if (diff < 24 * 60 * 60 * 1000) {
+      const hours = Math.floor(diff / (60 * 60 * 1000));
+      return `${hours}시간 전`;
+    }
+    
+    // 7일 이내
+    if (diff < 7 * 24 * 60 * 60 * 1000) {
+      const days = Math.floor(diff / (24 * 60 * 60 * 1000));
+      return `${days}일 전`;
+    }
+    
+    // 30일 이내
+    if (diff < 30 * 24 * 60 * 60 * 1000) {
+      const weeks = Math.floor(diff / (7 * 24 * 60 * 60 * 1000));
+      return `${weeks}주 전`;
+    }
+
+    // 1년 이내
+    if (diff < 365 * 24 * 60 * 60 * 1000) {
+      const months = Math.floor(diff / (30 * 24 * 60 * 60 * 1000));
+      return `${months}개월 전`;
+    }
+
+    // 1년 이상
+    const years = Math.floor(diff / (365 * 24 * 60 * 60 * 1000));
+    return `${years}년 전`;
+
   } catch (e) {
-    console.error('Date formatting error:', e);
-    return dateString;
+    console.log('날짜 처리:', dateString);
+    return dateString; // 에러 발생 시 원본 반환
   }
 };
 
@@ -145,8 +146,9 @@ const formatViews = (views) => {
 };
 
 // 비디오 상세 페이지로 이동
-const goToVideoDetail = (videoId) => {
-  router.push(`/videos/${videoId}`);
+const goToVideo = (videoNo) => {
+  console.log('이동할 비디오 번호:', videoNo); // 디버깅용
+  router.push(`/videos/${videoNo}`);
 };
 
 // 컴포넌트 마운트 시 데이터 로드
