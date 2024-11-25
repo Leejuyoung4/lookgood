@@ -3,6 +3,7 @@ package com.oo.inquiry.model.dao;
 import java.util.List;
 
 import org.apache.ibatis.annotations.Mapper;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.oo.inquiry.model.dto.Inquiry;
 
@@ -26,6 +27,7 @@ public interface InquiryDao {
 
 	// 조회수 증가
 	public void increaseViews(int iNo);
+
 
 
 

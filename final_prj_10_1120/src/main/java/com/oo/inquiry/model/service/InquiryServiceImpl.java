@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.oo.inquiry.model.dao.InquiryDao;
 import com.oo.inquiry.model.dto.Inquiry;
@@ -45,9 +46,22 @@ public class InquiryServiceImpl implements InquiryService {
 
 	// 게시글 수정
 	@Override
-	public void updateInquiry(Inquiry inquiry) {
-		inquiryDao.modifyInquiry(inquiry);
+	public void updateInquiry(int iNo, Inquiry inquiry, List<MultipartFile> files) {
+	    // 기존 iFiles 값을 병합하여 수정
+	    if (files != null && !files.isEmpty()) {
+	        StringBuilder filePaths = new StringBuilder();
+	        for (MultipartFile file : files) {
+	            String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
+	            // 파일 저장 경로 생성
+	            filePaths.append("uploads/" + fileName).append(";");
+	        }
+	        inquiry.setiFiles(filePaths.toString());
+	    }
+
+	    inquiry.setiNo(iNo); // iNo 설정
+	    inquiryDao.modifyInquiry(inquiry); // 수정 쿼리 호출
 	}
+
 
 	// 조회수 증가
 	@Override

@@ -39,7 +39,9 @@
 		UPDATE inquiry_board
 		SET
 			i_title = #{iTitle},
-			i_contents = #{iContents}
+			i_contents = #{iContents},
+			i_files = #{iFiles},
+            i_is_resolved = #{iIsResolved}
 		WHERE i_no = #{iNo};
 	</update>
 	

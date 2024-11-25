@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.oo.config.JwtUtil;
 import com.oo.inquiry.model.dto.Inquiry;
 import com.oo.inquiry.model.service.InquiryService;
@@ -101,6 +102,7 @@ public class InquiryController {
 	        // 서비스 호출
 	        inquiryService.createInquiry(inquiry);
 
+	        System.out.println(inquiry);
 	        // 등록된 데이터 반환
 	        return new ResponseEntity<>(inquiry, HttpStatus.CREATED);
 	    } catch (Exception e) {
@@ -140,15 +142,28 @@ public class InquiryController {
 	
 	// 게시글 수정
 	@PutMapping("{iNo}")
-	public ResponseEntity<?> updateInquiry(@PathVariable("iNo") int iNo, @RequestBody Inquiry inquiry) {
-		try {
-			inquiry.setiNo(iNo);
-			inquiryService.updateInquiry(inquiry);
-			return ResponseEntity.ok("수정 성공");
-		} catch (Exception e) {
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-		}
+	public ResponseEntity<?> updateInquiry(
+	    @PathVariable int iNo,
+	    @RequestPart("inquiry") String inquiryJson,
+	    @RequestPart(value = "files", required = false) List<MultipartFile> files) {
+	    try {
+	        // JSON 문자열을 Inquiry 객체로 변환
+	        ObjectMapper objectMapper = new ObjectMapper();
+	        Inquiry inquiry = objectMapper.readValue(inquiryJson, Inquiry.class);
+
+	        // 서비스 호출
+	        inquiryService.updateInquiry(iNo, inquiry, files);
+	        System.out.println(inquiry);
+
+	        return ResponseEntity.ok("수정 완료");
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("수정 실패");
+	    }
 	}
+
+
+
 	
 	// 조회수 증가
 	@PutMapping("{iNo}/view")

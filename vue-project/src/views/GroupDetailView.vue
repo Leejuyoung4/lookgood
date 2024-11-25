@@ -364,39 +364,144 @@ onMounted(() => {
 
 <style scoped>
 .group-detail {
-  padding: 20px;
-  background-color: #fff;
-  box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.1);
-  margin: 20px auto;
+  padding: 25px;
+  background-color: #f9f9f9; /* 부드러운 배경색 */
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1); /* 부드러운 그림자 */
+  margin: 30px auto;
   max-width: 800px;
-  border-radius: 8px;
+  border-radius: 12px;
+  font-family: 'Noto Sans KR', sans-serif;
+  line-height: 1.6;
+  color: #333;
+  position: relative; /* 내부 요소 배치 조정 가능 */
 }
+
 .group-detail h1 {
-  font-size: 24px;
-  margin-bottom: 10px;
+  font-size: 28px;
+  font-weight: bold;
+  color: #555;
+  border-bottom: 3px solid #ffd987;
+  padding-bottom: 10px;
+  margin-bottom: 20px;
 }
+
 .group-detail ul {
   list-style: none;
   padding: 0;
 }
+
 .group-detail li {
-  margin-bottom: 8px;
+  font-size: 16px;
+  color: #666;
+  margin-bottom: 12px;
 }
 
-.edit-form {
-  padding: 20px;
-  background-color: #fff;
-  box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.1);
-  margin: 20px auto;
-  max-width: 800px;
+.group-detail .uploaded-images {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 15px;
+  margin-top: 15px;
+}
+
+.group-detail .uploaded-image {
+  max-width: 100%;
   border-radius: 8px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.group-detail .uploaded-image:hover {
+  transform: scale(1.05);
+  box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* 수정 및 삭제 버튼 */
+.actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end; /* 버튼을 오른쪽으로 정렬 */
+  margin-top: 15px;
+}
+
+.actions button {
+  padding: 10px 15px;
+  font-size: 14px;
+  font-weight: bold;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.actions button:first-child {
+  background-color: #ffd987; /* 수정 버튼 색상 */
+  color: white;
+}
+
+.actions button:first-child:hover {
+  background-color: #f8cd71;
+  transform: scale(1.05);
+}
+
+.actions button:last-child {
+  background-color: #ccc; /* 삭제 버튼 색상 */
+  color: white;
+}
+
+.actions button:last-child:hover {
+  background-color: #aaa;
+  transform: scale(1.05);
+}
+
+/* 댓글 작성 영역 */
+.comment-form {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #fff;
+  border-radius: 10px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.comment-form textarea {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 10px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  resize: none;
+}
+
+.comment-form button {
+  padding: 8px 12px;
+  background-color: #ffd987;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.comment-form button:hover {
+  background-color: #f8cd71;
+  transform: scale(1.05);
+}
+
+/* 수정 폼 스타일 */
+.edit-form {
+  padding: 25px;
+  background-color: #fff;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+  margin: 30px auto;
+  max-width: 800px;
+  border-radius: 12px;
 }
 
 .edit-form label {
   display: block;
-  margin-bottom: 10px;
   font-size: 14px;
-  color: #333;
+  margin-bottom: 10px;
+  color: #555;
 }
 
 .edit-form input,
@@ -404,10 +509,10 @@ onMounted(() => {
 .edit-form select {
   width: 100%;
   padding: 10px;
-  margin-top: 5px;
-  font-size: 16px;
+  margin-bottom: 15px;
+  font-size: 14px;
   border: 1px solid #ccc;
-  border-radius: 4px;
+  border-radius: 5px;
 }
 
 .edit-form .form-actions {
@@ -421,8 +526,9 @@ onMounted(() => {
   background-color: #ffd987;
   color: #fff;
   border: none;
-  border-radius: 4px;
+  border-radius: 5px;
   cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
 }
 
 .edit-form button:hover {
@@ -430,17 +536,17 @@ onMounted(() => {
 }
 
 .uploaded-images {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
   gap: 10px;
-  margin-top: 10px;
+  margin-top: 15px;
 }
 
 .uploaded-image {
   max-width: 100px;
-  max-height: 100px;
   border-radius: 5px;
   box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
 }
+
 
 </style>

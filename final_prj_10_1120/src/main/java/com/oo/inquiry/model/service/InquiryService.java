@@ -2,6 +2,8 @@ package com.oo.inquiry.model.service;
 
 import java.util.List;
 
+import org.springframework.web.multipart.MultipartFile;
+
 import com.oo.inquiry.model.dto.Inquiry;
 
 public interface InquiryService {
@@ -18,10 +20,11 @@ public interface InquiryService {
 	public void deleteInquiry(int iNo);
 
 	// 게시글 수정
-	public void updateInquiry(Inquiry inquiry);
+	public void updateInquiry(int iNo, Inquiry inquiry, List<MultipartFile> files);
 
 	// 조회수 증가
 	public void incrementViews(int iNo);
+
 
 	
 	
