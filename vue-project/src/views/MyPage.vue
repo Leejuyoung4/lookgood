@@ -36,7 +36,7 @@
     <section class="saved-videos-section">
       <h2>저장된 영상</h2>
       
-      <!-- ��� 메뉴 -->
+      <!-- ���뉴 -->
       <div class="video-tabs">
         <button 
           :class="{ active: activeTab === 'all' }" 
@@ -121,8 +121,7 @@
         <div class="custom-player-container">
           <div class="player-wrapper">
             <!-- 메모 입력 영역 -->
-            <div class="modal-memo" @dblclick.self="handleMemoDoubleClick">
-              <!-- 메모 입력 폼 -->
+            <div class="modal-memo" @dblclick="handleMemoDoubleClick">
               <div 
                 v-if="showMemoInput" 
                 class="memo-input-container"
@@ -218,17 +217,57 @@
           </div>
         </div>
         
-        <!-- 메모 사이드바 추가 -->
+        <!-- 메모 사이드바 수정 -->
         <div class="memo-sidebar">
-          <h3>메모 목록</h3>
+          <h3 class="memo-title">
+            <i class="bi bi-sticky"></i>
+            메모 목록
+          </h3>
+          
           <div class="memo-list">
-            <div v-for="memo in savedMemos" :key="memo.id" class="memo-item">
-              <div class="memo-timestamp" @click="seekToTimestamp(memo.timestamp)">
-                {{ formatTime(memo.timestamp) }}
+            <div 
+              v-for="memo in paginatedMemos" 
+              :key="memo.memoId" 
+              class="memo-list-item"
+              @click="seekToTimestamp(memo.timeStamp)"
+            >
+              <div class="memo-header">
+                <span class="memo-timestamp" @click.stop="seekToTimestamp(memo.timeStamp)">
+                  <i class="bi bi-clock"></i>
+                  {{ formatTime(memo.timeStamp) }}
+                </span>
+                <button 
+                  class="memo-delete-btn" 
+                  @click.stop="deleteMemo(memo.memoId)"
+                  title="메모 삭제"
+                >
+                  <i class="bi bi-x"></i>
+                </button>
               </div>
               <div class="memo-content">{{ memo.content }}</div>
-              <button class="memo-delete-btn" @click="deleteMemo(memo.id)">×</button>
+              <div class="memo-footer">
+                <span class="memo-date">{{ formatDate(memo.createdAt) }}</span>
+              </div>
             </div>
+          </div>
+
+          <!-- 페이지네이션 추가 -->
+          <div class="pagination">
+            <button 
+              class="page-btn"
+              :disabled="currentPage === 1"
+              @click="currentPage--"
+            >
+              <i class="bi bi-chevron-left"></i>
+            </button>
+            <span class="page-info">{{ currentPage }} / {{ totalPages }}</span>
+            <button 
+              class="page-btn"
+              :disabled="currentPage === totalPages"
+              @click="currentPage++"
+            >
+              <i class="bi bi-chevron-right"></i>
+            </button>
           </div>
         </div>
       </div>
@@ -240,7 +279,7 @@
     </div>
 
     <div class="badges">
-      <h3>획득한 뱃지</h3>
+      <h3>획��한 뱃지</h3>
       <div class="badge-container">
         <span v-for="(badge, index) in badges" :key="index" class="badge">{{ badge }}</span>
       </div>
@@ -276,6 +315,33 @@
         </div>
       </div>
     </Transition>
+
+    <!-- 토스트 메시지 -->
+    <Transition name="fade">
+      <div v-if="showToastFlag" class="toast-message">
+        {{ toastMessage }}
+      </div>
+    </Transition>
+
+    <!-- 알림 메시지 -->
+    <Transition name="fade">
+      <div v-if="showMessage" 
+           :class="['notification', messageType === 'error' ? 'notification-error' : 'notification-success']">
+        {{ message }}
+      </div>
+    </Transition>
+
+    <!-- YouTube Player를 마운트할 div -->
+    <div id="player"></div>
+    
+    <!-- 메모 입력 폼 -->
+    <div v-if="showMemoInput">
+      <textarea 
+        v-model="newMemoText"
+        @blur="handleBlur"
+        placeholder="메모를 입력하세요..."
+      ></textarea>
+    </div>
   </div>
 </template>
 
@@ -289,8 +355,8 @@ const savedVideos = ref([]);
 const activeTab = ref('all');
 const selectedVideo = ref(null);
 const currentProgress = ref(0);
-let player = null;
-let progressInterval = null;
+const player = ref(null);
+const progressInterval = ref(null);
 const isLoading = ref(true);
 const isPlaying = ref(false);
 const currentTime = ref(0);
@@ -299,7 +365,7 @@ const volume = ref(100);
 const isMuted = ref(false);
 const hasStarted = ref(false);
 const showVolumeNotification = ref(false);
-let volumeNotificationTimeout;
+const volumeNotificationTimeout = ref(null);
 const isFullscreen = ref(false);
 const videoContent = ref(null);
 const isHovering = ref(false);
@@ -328,7 +394,7 @@ const fetchSavedVideos = async () => {
     const response = await axios.get(`/api/saved-videos/user/${userInfo.userNo}`);
     
     if (response.data.success && response.data.videos) {
-      // 각 비디오의 상세 정보와 재생시간을 함께 가져오기
+      // 각 비디오의 상세 정���와 재생시간을 함께 가져오기
       const videosWithDetails = await Promise.all(
         response.data.videos.map(async (savedVideo) => {
           try {
@@ -398,7 +464,7 @@ const unsaveVideo = async (videoNo) => {
     });
     
     if (response.data.success) {
-      // localStorage에서 해당 비디오의 재생 시간 정보 삭제
+      // localStorage에�� 해당 비디오의 재생 시간 정보 삭제
       const video = savedVideos.value.find(v => v.vno === videoNo);
       if (video && video.videoId) {
         const savedTimes = JSON.parse(localStorage.getItem('videoTimes') || '{}');
@@ -413,33 +479,33 @@ const unsaveVideo = async (videoNo) => {
   }
 };
 
-// 썸네일 URL 생성
+// 썸��일 URL 생성
 const getThumbUrl = (videoId) => {
   return `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
 };
 
 // 진도율 추적 시작
 const startProgressTracking = () => {
-  if (progressInterval) clearInterval(progressInterval);
-  progressInterval = setInterval(() => {
+  if (progressInterval.value) clearInterval(progressInterval.value);
+  progressInterval.value = setInterval(() => {
     updateProgress();
-    // 현재 재생 위치 저장 (매 1초마다)
-    if (player && selectedVideo.value) {
-      const currentTime = player.getCurrentTime();
+    // 현재 재생 위 저장 (매 1초마다)
+    if (player.value && selectedVideo.value) {
+      const currentTime = player.value.getCurrentTime();
       saveVideoTime(selectedVideo.value.videoId, currentTime);
     }
   }, 1000); // 1초마다 업데이트
 };
 
-// 진도율 추 중지
+// 진도율 추 ���지
 const stopProgressTracking = () => {
-  if (progressInterval) {
-    clearInterval(progressInterval);
+  if (progressInterval.value) {
+    clearInterval(progressInterval.value);
     updateProgress(); // 마지 상태 저장
   }
 };
 
-// 디디오 재생 위치 저장 함수 수정
+// 디오 재생 위치 저 함수 수정
 const saveVideoTime = (videoId, currentTime) => {
   const savedTimes = JSON.parse(localStorage.getItem('videoTimes') || '{}');
   savedTimes[videoId] = currentTime;
@@ -454,25 +520,25 @@ const getSavedTime = (videoId) => {
 
 // 재생바 관련 함수들 수정
 const handleSeek = (event) => {
-  if (!player || !duration.value) return;
+  if (!player.value || !duration.value) return;
   
   const progressBar = event.currentTarget;
   const rect = progressBar.getBoundingClientRect();
   const clickPosition = (event.clientX - rect.left) / rect.width;
   const newTime = duration.value * clickPosition;
   
-  player.seekTo(newTime, true);
+  player.value.seekTo(newTime, true);
   currentProgress.value = clickPosition * 100;
   currentTime.value = newTime;
 };
 
 // 진행률 업데이트 함수 수정
 const updateProgress = async () => {
-  if (!player || !selectedVideo.value) return;
+  if (!player.value || !selectedVideo.value) return;
   
   try {
-    const videoDuration = player.getDuration();
-    const videoCurrentTime = player.getCurrentTime();
+    const videoDuration = player.value.getDuration();
+    const videoCurrentTime = player.value.getCurrentTime();
     
     duration.value = videoDuration;
     currentTime.value = videoCurrentTime;
@@ -613,18 +679,18 @@ const initPlayer = () => {
   if (!selectedVideo.value) return;
   
   try {
-    player = new window.YT.Player(`video-player-${selectedVideo.value.vno}`, {
+    player.value = new window.YT.Player(`video-player-${selectedVideo.value.vno}`, {
       events: {
         onReady: (event) => {
-          player = event.target;  // player 객체 올바르게 할당
+          player.value = event.target;  // player 객체 올바르게 할당
           isLoading.value = false;
           isPlayerReady.value = true;  // player 준비 완료
-          duration.value = player.getDuration();
+          duration.value = player.value.getDuration();
           
           // 저장된 재생 시간이 있다면 해당 위치로 이동
           const savedTime = getSavedTime(selectedVideo.value.videoId);
           if (savedTime > 0) {
-            player.seekTo(savedTime, true);
+            player.value.seekTo(savedTime, true);
           }
         },
         onStateChange: (event) => {
@@ -641,7 +707,7 @@ const initPlayer = () => {
             case window.YT.PlayerState.ENDED:
               isPlaying.value = false;
               stopProgressTracking();
-              // 영상이 완전히 끝났을 때의 처리
+              // 영상이 완��히 끝났을 때의 처리
               handleVideoEnd();
               break;
           }
@@ -672,7 +738,7 @@ const handleVideoEnd = async () => {
       // 재생 시간 초기화
       saveVideoTime(selectedVideo.value.videoId, 0);
       
-      // 영상 종료 후 모달 닫기 및 메시지 표시
+      // 영상 종료 후 모달 닫기 및 메��지 표시
       setTimeout(() => {
         closeVideo();
         displayToast('축하합니다! 영상을 완료하셨습니다. 🎉');
@@ -685,12 +751,12 @@ const handleVideoEnd = async () => {
 
 // 모달 닫기 함수 수정
 const closeVideo = () => {
-  if (player && selectedVideo.value) {
+  if (player.value && selectedVideo.value) {
     // 현재 재생 위치 저장
-    const currentTime = player.getCurrentTime();
+    const currentTime = player.value.getCurrentTime();
     saveVideoTime(selectedVideo.value.videoId, currentTime);
     
-    player.stopVideo();
+    player.value.stopVideo();
   }
   
   hasStarted.value = false;
@@ -712,35 +778,16 @@ onUnmounted(() => {
   window.removeEventListener('keydown', handleKeyPress);
 });
 
-const handleKeyPress = (e) => {
-  if (selectedVideo.value && player) {
-    if (e.key === 'Escape') {
-      closeVideo();
-    } else if (e.key === ' ') {
-      // 스페이스바로 재생/일시정지
-      e.preventDefault();
-      togglePlay();
-    } else if (e.key === 'ArrowLeft') {
-      // 왼쪽 방키: 5초 뒤로
-      e.preventDefault();
-      const newTime = Math.max(0, player.getCurrentTime() - 5);
-      player.seekTo(newTime, true);
-    } else if (e.key === 'ArrowRight') {
-      // 오른쪽 방향키: 5초 앞으
-      e.preventDefault();
-      const newTime = Math.min(player.getDuration(), player.getCurrentTime() + 5);
-      player.seekTo(newTime, true);
-    } else if (e.key === 'ArrowUp') {
-      // 위쪽 방향키: 볼륨 증가
-      e.preventDefault();
-      const newVolume = Math.min(100, volume.value + 5);
-      updateVolume({ target: { value: newVolume } });
-    } else if (e.key === 'ArrowDown') {
-      // 아래쪽 방향키: 볼륨 소
-      e.preventDefault();
-      const newVolume = Math.max(0, volume.value - 5);
-      updateVolume({ target: { value: newVolume } });
-    }
+const handleKeyPress = (event) => {
+  // 메모 입력 중일 때는 스페이스바 이벤트 처리하지 않음
+  if (showMemoInput.value && document.activeElement === memoInput.value) {
+    return;
+  }
+
+  // 메모 입력 중이 아닐 때만 스페이스바로 영상 제어
+  if (event.code === 'Space') {
+    event.preventDefault();
+    togglePlay();
   }
 };
 
@@ -753,16 +800,16 @@ watch(selectedVideo, (newVal) => {
 
 // 재생/일시정지 토글
 const togglePlay = () => {
-  if (!player || !isPlayerReady.value) {
+  if (!player.value || !isPlayerReady.value) {
     console.log('플레이어가 아직 준비되지 않았습니다.');
     return;
   }
   
   try {
     if (isPlaying.value) {
-      player.pauseVideo();
+      player.value.pauseVideo();
     } else {
-      player.playVideo();
+      player.value.playVideo();
     }
   } catch (error) {
     console.error('재생/일시정지 전환 실패:', error);
@@ -770,10 +817,11 @@ const togglePlay = () => {
 };
 
 // 시간 포맷팅
-const formatTime = (seconds) => {
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  return `${mins}:${secs.toString().padStart(2, '0')}`;
+const formatTime = (timeStamp) => {
+  if (typeof timeStamp !== 'number') return '00:00';
+  const minutes = Math.floor(timeStamp / 60);
+  const seconds = Math.floor(timeStamp % 60);
+  return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 };
 
 // 륨 업데이트
@@ -785,41 +833,41 @@ const updateVolume = (event) => {
   const volumeSlider = event.target;
   volumeSlider.style.setProperty('--volume-percentage', `${newVolume}%`);
   
-  if (player) {
-    player.setVolume(newVolume);
+  if (player.value) {
+    player.value.setVolume(newVolume);
     if (newVolume > 0) {
-      player.unMute();
+      player.value.unMute();
       isMuted.value = false;
     } else {
-      player.mute();
+      player.value.mute();
       isMuted.value = true;
     }
   }
 
   // 볼륨 변경 알 표시
   showVolumeNotification.value = true;
-  if (volumeNotificationTimeout) {
-    clearTimeout(volumeNotificationTimeout);
+  if (volumeNotificationTimeout.value) {
+    clearTimeout(volumeNotificationTimeout.value);
   }
-  volumeNotificationTimeout = setTimeout(() => {
+  volumeNotificationTimeout.value = setTimeout(() => {
     showVolumeNotification.value = false;
   }, 1000);
 };
 
 // 음소거 토글
 const toggleMute = () => {
-  if (player) {
+  if (player.value) {
     if (isMuted.value) {
-      player.unMute();
-      player.setVolume(volume.value);
+      player.value.unMute();
+      player.value.setVolume(volume.value);
     } else {
-      player.mute();
+      player.value.mute();
     }
     isMuted.value = !isMuted.value;
   }
 };
 
-// 전체화면 토글 함수
+// ���체화면 토글 함수
 const toggleFullscreen = () => {
   const container = document.querySelector('.custom-player-container');
   if (!document.fullscreenElement) {
@@ -866,7 +914,7 @@ const userLevel = computed(() => {
   return level;
 });
 
-// 다음 레벨까지 남은 영상 수
+// ���음 레벨까지 남은 영상 수
 const videosUntilNextLevel = computed(() => {
   return 5 - (completedCount.value % 5);
 });
@@ -883,7 +931,7 @@ const formatTotalTime = computed(() => {
   const minutes = Math.floor(totalMinutes % 60);
   
   if (hours > 0) {
-    return `${hours}시간 ${minutes}분`;
+    return `${hours}시간 ${minutes}���`;
   }
   return `${minutes}분`;
 });
@@ -913,16 +961,16 @@ const progressBarRef = ref(null);
 
 // 재생바 클릭 처리
 const handleProgressBarClick = (event) => {
-  if (!player || !progressBarRef.value) return;
+  if (!player.value || !progressBarRef.value) return;
   
   const rect = progressBarRef.value.getBoundingClientRect();
   const clickPosition = (event.clientX - rect.left) / rect.width;
   
-  // 이미 완료된 영상이 아닐 경우에만 진행 업데이트
+  // 이미 완���된 ���상��� 아닐 경우에만 진행 업데이트
   const savedVideo = savedVideos.value.find(v => v.vno === selectedVideo.value.vno);
   if (!savedVideo || (!savedVideo.isCompleted && savedVideo.progressRate < 100)) {
-    const newTime = player.getDuration() * clickPosition;
-    player.seekTo(newTime, true);
+    const newTime = player.value.getDuration() * clickPosition;
+    player.value.seekTo(newTime, true);
     currentProgress.value = Math.min(100, clickPosition * 100);
   }
 };
@@ -933,7 +981,7 @@ const isFirstComplete = (video) => {
   return completedVideos.length === 1 && completedVideos[0].vno === video.vno;
 };
 
-// 빠른 학습 뱃지
+// 빠�� 학습 뱃지
 const isQuickLearner = (video) => {
   const watchTime = video.watchTime || 0;
   const videoDuration = video.duration || 0;
@@ -945,7 +993,7 @@ const isPerfectWatch = (video) => {
   return video.progressRate >= 95; // 95% 이상 시청한 경우
 };
 
-const badges = ref([]); // 뱃지 상태 관리
+const badges = ref([]); // 뱃지 상태 관��
 
 // 뱃지 추가 함수
 const addBadge = (badge) => {
@@ -1017,7 +1065,7 @@ const editingMemoId = ref(null);
 const editingMemoText = ref('');
 const memoInput = ref(null);
 
-// 더블클릭 이벤트 핸들러
+// 더블클릭 이벤트 ���들러
 const handleMemoDoubleClick = (event) => {
   const rect = event.target.getBoundingClientRect();
   memoPosition.value = {
@@ -1031,31 +1079,142 @@ const handleMemoDoubleClick = (event) => {
   });
 };
 
-// 메모 저장
-const saveMemoWithAnimation = () => {
-  if (!newMemoText.value.trim()) return;
+// ref 추가
+
+const showToastFlag = ref(false);
+
+// 상태 관리를 위한 ref 추가
+const message = ref('');
+const showMessage = ref(false);
+const messageType = ref('success'); // 'success' 또는 'error'
+
+// 메시지 표시 함수
+const showNotification = (text, type = 'success') => {
+  message.value = text;
+  messageType.value = type;
+  showMessage.value = true;
+  setTimeout(() => {
+    showMessage.value = false;
+  }, 3000);
+};
+
+// 메모 저장 함수 수정
+const saveMemoWithAnimation = async () => {
+  if (!newMemoText.value.trim() || !selectedVideo.value) return;
   
-  const memo = {
-    id: Date.now(),
-    content: newMemoText.value,
-    timestamp: Math.floor(player.getCurrentTime()),
-    createdAt: new Date()
-  };
-  
-  savedMemos.value.push(memo);
-  newMemoText.value = '';
-  showMemoInput.value = false;
+  try {
+    const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+    const currentTime = player.value ? Math.floor(player.value.getCurrentTime()) : 0;
+    
+    console.log('Current video time:', currentTime); // 디버깅
+    
+    const memoData = {
+      memoId: 0,
+      userNo: parseInt(userInfo.userNo),
+      vNo: parseInt(selectedVideo.value.vno),
+      content: newMemoText.value.trim(),
+      timeStamp: currentTime
+    };
+    
+    console.log('Sending memo:', memoData); // 디버깅
+    const response = await axios.post('/api/memos', memoData);
+    
+    if (response.data) {
+      console.log('Received response:', response.data); // 디버깅
+      const newMemo = {
+        ...response.data,
+        timeStamp: currentTime,
+        content: newMemoText.value.trim()
+      };
+      
+      savedMemos.value.push(newMemo);
+      newMemoText.value = '';
+      showMemoInput.value = false;
+      showNotification('메모가 저장되었습니다.');
+      
+      // 메모 목록 새로고침
+      await fetchMemos();
+    }
+  } catch (error) {
+    console.error('메모 저장 실패:', error);
+    showNotification('메모 저장에 실패했습니다.', 'error');
+  }
+};
+
+// 메모 불러오기 함수 수정
+const fetchMemos = async () => {
+  try {
+    if (!selectedVideo.value || !selectedVideo.value.vno) {
+      console.warn('No video selected');
+      return;
+    }
+
+    const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+    if (!userInfo || !userInfo.userNo) {
+      console.warn('No user info found');
+      return;
+    }
+
+    console.log('Fetching memos for video:', selectedVideo.value.vno, 'and user:', userInfo.userNo);
+    
+    const response = await axios.get('/api/memos', {
+      params: {
+        vNo: selectedVideo.value.vno,
+        userNo: userInfo.userNo
+      }
+    });
+
+    console.log('Fetched memos:', response.data);
+    if (Array.isArray(response.data)) {
+      savedMemos.value = response.data;
+    } else {
+      console.warn('Unexpected response format:', response.data);
+      savedMemos.value = [];
+    }
+  } catch (error) {
+    console.error('메모 목록 가져오기 실패:', error);
+    showNotification('메모 목록을 가져오는데 실패했습니다.', 'error');
+    savedMemos.value = [];
+  }
+};
+
+// 컴포넌트 마운트 시 메모 목록 가져오기
+onMounted(async () => {
+  if (selectedVideo.value) {
+    await fetchMemos();
+  }
+});
+
+// 비���오가 변경될 때마다 메모 목록 새로고침
+watch(() => selectedVideo.value, async (newVideo) => {
+  if (newVideo) {
+    await fetchMemos();
+  }
+});
+
+// 메모 삭제 함수 수정
+const deleteMemo = async (memoId) => {
+  try {
+    const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+    const response = await axios.delete(`/api/memos/${memoId}`, {
+      params: { userNo: userInfo.userNo }
+    });
+    
+    if (response.data.success) {
+      savedMemos.value = savedMemos.value.filter(m => m.memoId !== memoId);
+      showNotification('메모가 삭제되었습니다.');
+    }
+  } catch (error) {
+    console.error('메모 삭제 실패:', error);
+    showNotification('메모 삭제에 실패했습니다.', 'error');
+  }
 };
 
 // 메모 관리 함수들
 const seekToTimestamp = (timestamp) => {
-  if (player) {
-    player.seekTo(timestamp, true);
+  if (player.value) {
+    player.value.seekTo(timestamp, true);
   }
-};
-
-const deleteMemo = (memoId) => {
-  savedMemos.value = savedMemos.value.filter(m => m.id !== memoId);
 };
 
 const handleBlur = () => {
@@ -1067,26 +1226,26 @@ const handleBlur = () => {
 
 // startVideo 함수 수정
 const startVideo = () => {
-  if (!player || !isPlayerReady.value) {
+  if (!player.value || !isPlayerReady.value) {
     console.log('플레이어가 아직 준비되지 않았습니다.');
     return;
   }
   
   try {
-    player.playVideo();
+    player.value.playVideo();
     hasStarted.value = true;
     isPlaying.value = true;
   } catch (error) {
-    console.error('비디오 재생 시작 실패:', error);
+    console.error('비디��� 재생 시작 ���패:', error);
   }
 };
 
-// 커스텀 오버레이 클릭 핸들러 수정
+// 커스텀 오버레이 클릭 핸들����� 수정
 const handleOverlayClick = () => {
   if (isPlayerReady.value) {
     startVideo();
   } else {
-    console.log('플레이어가 준비되길 기다리는 중...');
+    console.log('플레이어�� 준비되길 기다리는 중...');
   }
 };
 
@@ -1100,7 +1259,7 @@ const confirmDelete = (videoNo, videoTitle) => {
   showDeleteModal.value = true;
 };
 
-// 삭제 취소
+// 삭��� 취소
 const cancelDelete = () => {
   showDeleteModal.value = false;
   deleteTarget.value = { vno: null, title: '' };
@@ -1114,6 +1273,60 @@ const confirmDeleteAction = async () => {
     deleteTarget.value = { vno: null, title: '' };
   }
 };
+
+// computed 속성 ��가
+const sortedMemos = computed(() => {
+  return [...savedMemos.value].sort((a, b) => a.timestamp - b.timestamp);
+});
+
+// 날짜 포맷팅 함수
+const formatDate = (dateString) => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return date.toLocaleDateString('ko-KR', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+};
+
+// 현재 재생 시간을 가져오는 함수 추가
+const getCurrentVideoTime = () => {
+  try {
+    if (!player.value) return 0;
+    const currentTime = player.value.getCurrentTime();
+    return Math.floor(currentTime);  // 소수점 제거하고 정수로 변환
+  } catch (error) {
+    console.error('Failed to get current video time:', error);
+    return 0;
+  }
+};
+
+// 페이지네이션 관련 상태 추가
+const currentPage = ref(1);
+const itemsPerPage = 5; // 페이지당 메모 수
+
+// 페이지네이션된 메모 목록 계산
+const paginatedMemos = computed(() => {
+  const startIndex = (currentPage.value - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  return sortedMemos.value.slice(startIndex, endIndex);
+});
+
+// 전체 페이지 수 계산
+const totalPages = computed(() => {
+  return Math.ceil(sortedMemos.value.length / itemsPerPage);
+});
+
+// 메모가 삭제되거나 추가될 때 페이지 조정
+watch(sortedMemos, () => {
+  if (currentPage.value > totalPages.value) {
+    currentPage.value = Math.max(1, totalPages.value);
+  }
+});
+
 </script>
 
 <style scoped>
@@ -1293,8 +1506,120 @@ const confirmDeleteAction = async () => {
   background: #242424;
   padding: 15px;
   border-left: 1px solid #333;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.memo-title {
+  padding: 20px;
+  margin: 0;
+  color: #fff;
+  font-size: 1.2rem;
+  border-bottom: 1px solid #333;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.memo-list {
+  flex: 1;
   overflow-y: auto;
-  max-height: 100%;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.memo-list-item {
+  background: #2a2a2a;
+  border-radius: 8px;
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid #333;
+}
+
+.memo-list-item:hover {
+  background: #333;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.memo-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.memo-timestamp {
+  color: #FFD700;
+  font-size: 0.9em;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.memo-timestamp:hover {
+  color: #FFF;
+}
+
+.memo-content {
+  color: #fff;
+  word-break: break-word;
+  line-height: 1.4;
+  margin-bottom: 8px;
+  font-size: 0.95rem;
+}
+
+.memo-footer {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.memo-date {
+  color: #666;
+  font-size: 0.8rem;
+}
+
+.memo-delete-btn {
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  opacity: 0;
+}
+
+.memo-list-item:hover .memo-delete-btn {
+  opacity: 1;
+}
+
+.memo-delete-btn:hover {
+  color: #ff4444;
+  background: rgba(255, 68, 68, 0.1);
+}
+
+/* 스크롤바 스타일링 */
+.memo-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.memo-list::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
+.memo-list::-webkit-scrollbar-thumb {
+  background: #444;
+  border-radius: 3px;
+}
+
+.memo-list::-webkit-scrollbar-thumb:hover {
+  background: #555;
 }
 
 .modal-memo {
@@ -1906,7 +2231,7 @@ body.modal-open {
   z-index: 2;
 }
 
-/* YouTube 워터마크와 타이틀 숨기기 */
+/* YouTube 워터���크와 타이틀 숨기기 */
 .ytp-chrome-top,
 .ytp-watermark,
 .ytp-title-channel,
@@ -2438,5 +2763,161 @@ body.modal-open {
     opacity: 1;
     transform: scale(1) translateY(0);
   }
+}
+
+/* 토스트 메시지 스타일 */
+.toast-message {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 4px;
+  z-index: 1000;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.notification {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 12px 24px;
+  border-radius: 4px;
+  z-index: 1000;
+  color: white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.notification-success {
+  background-color: #4caf50;
+}
+
+.notification-error {
+  background-color: #f44336;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.memo-container {
+  padding: 1rem;
+}
+
+.memo-input {
+  margin-bottom: 1rem;
+}
+
+.memo-textarea {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  resize: vertical;
+}
+
+.memo-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.memo-item {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: #fff;
+}
+
+.memo-time {
+  min-width: 60px;
+  font-weight: bold;
+  margin-right: 1rem;
+}
+
+.memo-content {
+  flex: 1;
+  word-break: break-all;
+}
+
+/* 페이지네이션 스타일 */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 20px;
+  padding: 10px 0;
+  border-top: 1px solid #333;
+}
+
+.page-btn {
+  background: none;
+  border: none;
+  color: #FFD700;
+  padding: 8px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.page-btn:disabled {
+  color: #666;
+  cursor: not-allowed;
+}
+
+.page-btn:not(:disabled):hover {
+  background: rgba(255, 215, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.page-info {
+  color: #fff;
+  font-size: 0.9rem;
+}
+
+/* 메모 리스트 컨테이너 높이 고정 */
+.memo-list {
+  height: calc(100vh - 250px); /* 적절한 높이로 조정 */
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+/* 스크롤바 스타일링 */
+.memo-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.memo-list::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
+.memo-list::-webkit-scrollbar-thumb {
+  background: #444;
+  border-radius: 3px;
+}
+
+.memo-list::-webkit-scrollbar-thumb:hover {
+  background: #555;
 }
 </style> 

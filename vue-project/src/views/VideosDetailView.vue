@@ -31,7 +31,7 @@
           <!-- 액션 버튼 -->
           <div class="action-bar">
             <div class="action-buttons">
-              <button class="action-btn share">
+              <button class="action-btn share" @click="handleShare">
                 <i class="bi bi-share"></i>
                 공유하기
               </button>
@@ -42,10 +42,6 @@
               >
                 <i class="bi" :class="isSaved ? 'bi-bookmark-fill' : 'bi-bookmark'"></i>
                 {{ isSaved ? '저장됨' : '저장하기' }}
-              </button>3
-              <button class="action-btn like">
-                <i class="bi bi-hand-thumbs-up"></i>
-                좋아요
               </button>
             </div>
           </div>
@@ -204,6 +200,8 @@ const formatViewsDetail = (views) => {
   return views.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 };
 
+
+
 const formatDate = (dateString) => {
   if (!dateString) return '';
   const date = new Date(dateString);
@@ -253,7 +251,7 @@ const displayToast = (message) => {
   }, 3000);
 };
 
-// 저장/저장취소 처리 함수 수정
+// 저/저장취소 처리 함수 수정
 const handleSaveClick = async () => {
   try {
     const userInfo = JSON.parse(localStorage.getItem('userInfo'));
@@ -293,7 +291,7 @@ const handleSaveClick = async () => {
 
     if (response.data.success) {
       isSaved.value = true;
-      displayToast('영상이 저장되었습���다.');
+      displayToast('영상이 저장되었습니다.');
     }
   } catch (error) {
     console.error('저장/취소 처리 중 오류 발생:', error);
@@ -339,7 +337,7 @@ const getAuthHeader = () => {
   };
 };
 
-// 저장 상태 ��인 함수 수정
+// 저장 상태 인 함수 수정
 const checkSavedStatus = async () => {
   try {
     const userInfo = JSON.parse(localStorage.getItem('userInfo'));
@@ -455,7 +453,7 @@ const initPlayer = () => {
         iv_load_policy: 3,    // 동영상 주석 숨기기
         modestbranding: 1,    // YouTube 로고 최소화
         rel: 0,               // 관련 동영상 숨기
-        showinfo: 0,          // ���영상 정보 숨기기
+        showinfo: 0,          // 영상 정보 숨기기
         autoplay: 0,          // 자동재생 비활성화
         playsinline: 1,       // iOS에서 인라인 재생
         enablejsapi: 1,       // JavaScript API 활성화
@@ -606,6 +604,105 @@ watch(() => route.params.id, () => {
   }
   initVideo();
 });
+
+// 공유하기 함수 추가
+const handleShare = async () => {
+  try {
+    const currentUrl = window.location.href;
+    
+    // 모바일 기기에서 Web Share API 지원하는 경우
+    if (navigator.share) {
+      await navigator.share({
+        title: video.value.vTitle,
+        text: video.value.vDescription,
+        url: currentUrl,
+      });
+      return;
+    }
+
+    // 클립보드 API 지원 확인
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(currentUrl);
+      displayToast('URL이 클립보드에 복사되었습니다.');
+      return;
+    }
+
+    // 폴백: 임시 textarea 사용
+    const textarea = document.createElement('textarea');
+    textarea.value = currentUrl;
+    textarea.style.position = 'fixed';
+    textarea.style.left = '-9999px';
+    document.body.appendChild(textarea);
+    textarea.select();
+    
+    try {
+      document.execCommand('copy');
+      displayToast('URL이 클립보드에 복사되었습니다.');
+    } catch (err) {
+      displayToast('URL 복사에 실패했습니다.');
+    } finally {
+      document.body.removeChild(textarea);
+    }
+
+  } catch (error) {
+    console.error('공유하기 실패:', error);
+    displayToast('URL 복사에 실패했습니다.');
+  }
+};
+
+// 메모 관련 함수들 수정
+const saveMemoWithAnimation = async () => {
+  if (!newMemoText.value.trim() || !selectedVideo.value) return;
+  
+  try {
+    const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+    
+    // VideoMemo DTO와 정확히 일치하는 객체 생성
+    const memo = {
+      memoId: 0, // 새로운 메모의 경우 0
+      userNo: parseInt(userInfo.userNo),
+      vNo: parseInt(selectedVideo.value.vno),
+      content: newMemoText.value.trim(),
+      startTime: Math.floor(player.getCurrentTime()), // timestamp를 startTime으로 변경
+      endTime: null, // 필요한 경우 설정
+      createdAt: null // 서버에서 설정됨
+    };
+    
+    console.log('Sending memo:', memo); // 디버깅용 로그
+    
+    const response = await axios.post('/api/memos', memo, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (response.data.success) {
+      savedMemos.value.push(response.data.memo);
+      showToast('메모가 저장되었습니다.');
+      newMemoText.value = '';
+      showMemoInput.value = false;
+    }
+  } catch (error) {
+    console.error('메모 저장 실패:', error);
+    console.error('에러 상세:', error.response?.data);
+    showToast('메모 저장에 실패했습니다.');
+  }
+};
+
+// computed 속성 수정 - 시간순 정렬
+const sortedMemos = computed(() => {
+  return [...savedMemos.value].sort((a, b) => a.startTime - b.startTime);
+});
+
+// 메모 시간으로 이동하는 함수 수정
+const seekToTimestamp = (startTime) => {
+  if (player) {
+    player.seekTo(startTime);
+    if (!isPlaying.value) {
+      player.playVideo();
+    }
+  }
+};
 </script>
 
 <style scoped>
@@ -807,147 +904,83 @@ watch(() => route.params.id, () => {
 
 .video-item {
   display: grid;
-  grid-template-columns: 160px 1fr;
-  gap: 16px;
-  padding: 16px;
-  border-radius: 16px;
+  grid-template-columns: 120px 1fr;
+  gap: 12px;
+  padding: 12px;
+  margin-bottom: 16px;
+  border-radius: 12px;
   background: white;
-  transition: all 0.3s ease;
-  border: 1px solid rgba(255, 184, 76, 0.2);
-  align-items: start;
+  transition: all 0.2s ease;
+  border: 1px solid rgba(255, 184, 76, 0.1);
 }
 
 .video-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(255, 217, 61, 0.2);
-  border-color: #FFD93D;
+  background: #FFFEF8;
 }
 
 .thumbnail {
-  width: 160px;
-  height: 90px;
-  border-radius: 12px;
+  width: 120px;
+  height: 68px;
+  border-radius: 8px;
   overflow: hidden;
-  position: relative;
 }
 
 .thumbnail img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.3s ease;
-}
-
-.video-item:hover .thumbnail img {
-  transform: scale(1.05);
 }
 
 .video-info {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  min-width: 0;
+  justify-content: space-between;
 }
 
-.video-info h3 {
-  font-size: 15px;
-  font-weight: 600;
+.title {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
   margin: 0;
   display: -webkit-box;
-  
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  line-height: 1.4;
+  color: #333;
 }
 
-.video-info .speaker {
+.speaker {
   font-size: 13px;
-  color: #FFB84C;
-  font-weight: 500;
+  color: #666;
   margin: 4px 0;
 }
 
-.video-info .meta {
+.meta {
+  font-size: 12px;
+  color: #888;
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  color: #666;
-  margin-top: 2px;
+  gap: 6px;
 }
 
-.meta .views,
-.meta .date {
-  display: inline-block;
-  color: #888;
+.dot {
+  font-size: 8px;
 }
 
-.meta .dot {
-  color: #FFD93D;
-  margin: 0 2px;
-}
-
-.no-recommendations {
-  text-align: center;
-  padding: 20px;
-  color: var(--text-secondary);
-  font-size: 14px;
-  background: #FFF6BD;
-  border-radius: 12px;
-  margin: 10px 0;
-}
-
-@media (max-width: 1400px) {
-  .thumbnail {
-    flex: 0 0 140px;
-    height: 80px;
-  }
-  
-  .video-info h3 {
-    font-size: 14px;
-  }
-}
-
-@media (max-width: 1200px) {
-  .sidebar {
-    padding: 20px;
-  }
-  
-  .video-item {
-    padding: 14px;
-  }
-  
-  .thumbnail {
-    flex: 0 0 120px;
-    height: 70px;
-  }
-}
-
+/* 반응형 조정 */
 @media (max-width: 768px) {
-  .watch-next {
-    font-size: 20px;
-  }
-  
   .video-item {
-    padding: 12px;
-    gap: 12px;
+    grid-template-columns: 100px 1fr;
+    gap: 10px;
   }
-  
+
   .thumbnail {
-    flex: 0 0 100px;
-    height: 60px;
+    width: 100px;
+    height: 56px;
   }
-  
-  .video-info h3 {
+
+  .title {
     font-size: 13px;
-  }
-  
-  .video-info .speaker {
-    font-size: 12px;
-  }
-  
-  .video-info .meta {
-    font-size: 11px;
   }
 }
 
