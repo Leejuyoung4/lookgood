@@ -1,5 +1,37 @@
 <template>
   <div class="mypage-container">
+    <!-- 학습 통계 섹션 -->
+    <section class="stats-section">
+      <div class="stat-card">
+        <i class="bi bi-clock-history"></i>
+        <div class="stat-info">
+          <h3>총 학습시간</h3>
+          <p>{{ formatTotalTime }}</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <i class="bi bi-play-circle"></i>
+        <div class="stat-info">
+          <h3>학습 중인 영상</h3>
+          <p>{{ inProgressCount }}개</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <i class="bi bi-check-circle"></i>
+        <div class="stat-info">
+          <h3>완료한 영상</h3>
+          <p>{{ completedCount }}개</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <i class="bi bi-graph-up"></i>
+        <div class="stat-info">
+          <h3>평균 진도율</h3>
+          <p>{{ averageProgress }}%</p>
+        </div>
+      </div>
+    </section>
+
     <!-- 저장된 영상 섹션 -->
     <section class="saved-videos-section">
       <h2>저장된 영상</h2>
@@ -32,21 +64,15 @@
           v-for="video in filteredVideos" 
           :key="video.vno" 
           class="video-card"
+          :class="{ 'completed': video.progressRate >= 100 || video.isCompleted }"
         >
           <div class="thumbnail-wrapper">
             <img 
-              v-if="video.image"
-              :src="video.image"
+              :src="`https://img.youtube.com/vi/${video.videoId}/mqdefault.jpg`"
               :alt="video.vTitle"
               @click="goToVideo(video.vno)"
+              @error="handleImageError($event, video)"
             >
-            <div 
-              v-else 
-              class="thumbnail-placeholder"
-              @click="goToVideo(video.vno)"
-            >
-              <i class="bi bi-play-circle"></i>
-            </div>
             <div class="progress-bar">
               <div 
                 class="progress" 
@@ -58,6 +84,17 @@
 
           <div class="video-info">
             <h3>{{ video.vTitle || '제목 없음' }}</h3>
+            <div class="badges" v-if="video.progressRate >= 100">
+              <span class="badge" v-if="isFirstComplete(video)">
+                <i class="bi bi-1-circle-fill"></i> 첫 완강!
+              </span>
+              <span class="badge" v-if="isQuickLearner(video)">
+                <i class="bi bi-lightning-fill"></i> 빠른 학습
+              </span>
+              <span class="badge" v-if="isPerfectWatch(video)">
+                <i class="bi bi-star-fill"></i> 완벽 시청
+              </span>
+            </div>
             <p class="progress-text">
               진도율: {{ video.progressRate || 0 }}%
             </p>
@@ -83,14 +120,15 @@
         </div>
         
         <div class="custom-player-container">
-          <!-- YouTube 플레이어를 숨기고 커스텀 오버레이 추가 -->
+          <!-- YouTube 플레이어를 숨기고 커스텀 오버레 추가 -->
           <div class="player-wrapper">
             <iframe
               :id="`video-player-${selectedVideo.vno}`"
-              :src="`https://www.youtube.com/embed/${selectedVideo.videoId}?enablejsapi=1&controls=0&modestbranding=1&rel=0&showinfo=0&autoplay=0`"
+              :src="`https://www.youtube.com/embed/${selectedVideo.videoId}?enablejsapi=1&controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&disablekb=1&playsinline=1&annotations=0`"
               frameborder="0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowfullscreen
+              class="youtube-player"
             ></iframe>
             
             <!-- 커스텀 컨기 화면 오버레이 -->
@@ -109,44 +147,53 @@
             </div>
             
             <!-- 기존 컨트롤 -->
-            <div class="custom-controls" v-show="hasStarted">
+            <div class="custom-controls" :class="{ 'show-controls': hasStarted || isHovering }">
               <button class="play-btn" @click="togglePlay">
                 <i :class="isPlaying ? 'bi bi-pause-fill' : 'bi bi-play-fill'"></i>
               </button>
               
-              <div class="progress-bar-container" @click="seekVideo">
+              <div 
+                class="progress-bar-container" 
+                @click="handleSeek"
+                @mousedown="startDragging"
+                @mousemove="handleDragging"
+                @mouseup="stopDragging"
+                @mouseleave="stopDragging"
+              >
                 <div class="progress-bar">
-                  <div class="progress" :style="{ width: `${currentProgress}%` }"></div>
-                  <div class="progress-handle" 
-                       :style="{ left: `${currentProgress}%` }"></div>
+                  <div class="progress-background"></div>
+                  <div 
+                    class="progress-filled" 
+                    :style="{ width: `${currentProgress}%` }"
+                  ></div>
+                  <div 
+                    class="progress-handle"
+                    :style="{ left: `${currentProgress}%` }"
+                  ></div>
                 </div>
                 <div class="time-display">
                   {{ formatTime(currentTime) }} / {{ formatTime(duration) }}
                 </div>
               </div>
               
-              <div class="volume-control">
-                <button class="volume-btn" @click="toggleMute">
-                  <i :class="isMuted ? 'bi bi-volume-mute-fill' : 'bi bi-volume-up-fill'"></i>
-                </button>
-                <input 
-                  type="range" 
-                  class="volume-slider" 
-                  :value="volume" 
-                  @input="updateVolume" 
-                  min="0" 
-                  max="100"
-                  :style="{ '--volume-percentage': volume + '%' }"
-                >
-                <div class="volume-tooltip">
-                  볼륨: {{ volume }}%
+              <div class="right-controls">
+                <div class="volume-control">
+                  <button class="volume-btn" @click="toggleMute">
+                    <i :class="isMuted ? 'bi bi-volume-mute-fill' : 'bi bi-volume-up-fill'"></i>
+                  </button>
+                  <input 
+                    type="range" 
+                    class="volume-slider" 
+                    :value="volume" 
+                    @input="updateVolume" 
+                    min="0" 
+                    max="100"
+                  >
                 </div>
+                <button class="fullscreen-btn" @click="toggleFullscreen">
+                  <i class="bi" :class="isFullscreen ? 'bi-fullscreen-exit' : 'bi-fullscreen'"></i>
+                </button>
               </div>
-
-              <!-- 전체화면 버튼 추가 -->
-              <button class="fullscreen-btn" @click="toggleFullscreen">
-                <i class="bi" :class="isFullscreen ? 'bi-fullscreen-exit' : 'bi-fullscreen'"></i>
-              </button>
             </div>
           </div>
         </div>
@@ -157,6 +204,20 @@
     <div class="volume-notification" :class="{ show: showVolumeNotification }">
       볼륨: {{ volume }}%
     </div>
+
+    <div class="badges">
+      <h3>획득한 뱃지</h3>
+      <div class="badge-container">
+        <span v-for="(badge, index) in badges" :key="index" class="badge">{{ badge }}</span>
+      </div>
+    </div>
+
+    <!-- 기존 스타일에 추가 -->
+    <Transition name="toast">
+      <div v-if="showToast" class="toast-message">
+        {{ toastMessage }}
+      </div>
+    </Transition>
   </div>
 </template>
 
@@ -183,17 +244,18 @@ const showVolumeNotification = ref(false);
 let volumeNotificationTimeout;
 const isFullscreen = ref(false);
 const videoContent = ref(null);
+const isHovering = ref(false);
 
-// YouTube API 키 설정
-const YOUTUBE_API_KEY = 'YOUR_API_KEY';
+// API 키를 직접 사용하는 대신 경변수에서 가져옴
+const API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY;
 
-// 필터링된 디오 목록
+// 필링된 디오 목록
 const filteredVideos = computed(() => {
   switch (activeTab.value) {
     case 'completed':
-      return savedVideos.value.filter(video => video.isCompleted);
+      return savedVideos.value.filter(video => video.progressRate >= 100 || video.isCompleted);
     case 'inProgress':
-      return savedVideos.value.filter(video => !video.isCompleted);
+      return savedVideos.value.filter(video => video.progressRate < 100 && !video.isCompleted);
     default:
       return savedVideos.value;
   }
@@ -206,20 +268,36 @@ const fetchSavedVideos = async () => {
     if (!userInfo) return;
 
     const response = await axios.get(`/api/saved-videos/user/${userInfo.userNo}`);
-    console.log('API 응답:', response.data);
     
     if (response.data.success && response.data.videos) {
-      // 각 저장된 비디오에 대해 상세 정보 가져오기
+      // 각 비디오의 상세 정보와 재생시간을 함께 가져오기
       const videosWithDetails = await Promise.all(
         response.data.videos.map(async (savedVideo) => {
           try {
-            // vno를 사용하여 비디오 상세 정보 가져오기
             const videoResponse = await axios.get(`/api/videos/${savedVideo.vno}`);
-            console.log('비디오 상세 정보:', videoResponse.data);
             
+            // YouTube API로 비디오 상세 정보 가져오기
+            const youtubeResponse = await axios.get(
+              `https://www.googleapis.com/youtube/v3/videos`,
+              {
+                params: {
+                  part: 'contentDetails',
+                  id: videoResponse.data.videoId,
+                  key: API_KEY
+                }
+              }
+            );
+
+            // YouTube duration string을 분으로 변환
+            let duration = 0;
+            if (youtubeResponse.data.items && youtubeResponse.data.items[0]) {
+              duration = convertYouTubeDuration(youtubeResponse.data.items[0].contentDetails.duration);
+            }
+
             return {
               ...savedVideo,
               ...videoResponse.data,
+              duration: duration, // 영상 길이(분)
               image: videoResponse.data.videoId 
                 ? `https://img.youtube.com/vi/${videoResponse.data.videoId}/mqdefault.jpg`
                 : null,
@@ -227,18 +305,30 @@ const fetchSavedVideos = async () => {
               isCompleted: savedVideo.isCompleted || false
             };
           } catch (error) {
-            console.error(`비디오 ${savedVideo.vno} 상세 정보  실패:`, error);
+            console.error(`비디오 ${savedVideo.vno} 상세 정보 가져오기 실패:`, error);
             return savedVideo;
           }
         })
       );
 
       savedVideos.value = videosWithDetails;
-      console.log('최종 변환된 데이터:', savedVideos.value);
     }
   } catch (error) {
     console.error('저장된 영상 로딩 실패:', error);
+  } finally {
+    isLoading.value = false;
   }
+};
+
+// YouTube duration string을 분으로 변환하는 함수
+const convertYouTubeDuration = (duration) => {
+  const match = duration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
+  
+  const hours = (match[1] ? parseInt(match[1].slice(0, -1)) : 0);
+  const minutes = (match[2] ? parseInt(match[2].slice(0, -1)) : 0);
+  const seconds = (match[3] ? parseInt(match[3].slice(0, -1)) : 0);
+  
+  return hours * 60 + minutes + seconds / 60;
 };
 
 // 비디오 저장 취소
@@ -248,7 +338,16 @@ const unsaveVideo = async (videoNo) => {
     const response = await axios.delete(`/api/saved-videos/${videoNo}`, {
       params: { userNo: userInfo.userNo }
     });
+    
     if (response.data.success) {
+      // localStorage에서 해당 비디오의 재생 시간 정보 삭제
+      const video = savedVideos.value.find(v => v.vno === videoNo);
+      if (video && video.videoId) {
+        const savedTimes = JSON.parse(localStorage.getItem('videoTimes') || '{}');
+        delete savedTimes[video.videoId];
+        localStorage.setItem('videoTimes', JSON.stringify(savedTimes));
+      }
+      
       await fetchSavedVideos();
     }
   } catch (error) {
@@ -264,44 +363,94 @@ const getThumbUrl = (videoId) => {
 // 진도율 추적 시작
 const startProgressTracking = () => {
   if (progressInterval) clearInterval(progressInterval);
-  progressInterval = setInterval(updateProgress, 1000);
+  progressInterval = setInterval(() => {
+    updateProgress();
+    // 현재 재생 위치 저장 (매 1초마다)
+    if (player && selectedVideo.value) {
+      const currentTime = player.getCurrentTime();
+      saveVideoTime(selectedVideo.value.videoId, currentTime);
+    }
+  }, 1000); // 1초마다 업데이트
 };
 
 // 진도율 추 중지
 const stopProgressTracking = () => {
   if (progressInterval) {
     clearInterval(progressInterval);
-    updateProgress(); // 마지막 상태 저장
+    updateProgress(); // 마지 상태 저장
   }
 };
 
-// 진도율 업데이트
+// 디디오 재생 위치 저장 함수 수정
+const saveVideoTime = (videoId, currentTime) => {
+  const savedTimes = JSON.parse(localStorage.getItem('videoTimes') || '{}');
+  savedTimes[videoId] = currentTime;
+  localStorage.setItem('videoTimes', JSON.stringify(savedTimes));
+};
+
+// 저장된 재생 위치 가져오기 함수
+const getSavedTime = (videoId) => {
+  const savedTimes = JSON.parse(localStorage.getItem('videoTimes') || '{}');
+  return savedTimes[videoId] || 0;
+};
+
+// 재생바 관련 함수들 수정
+const handleSeek = (event) => {
+  if (!player || !duration.value) return;
+  
+  const progressBar = event.currentTarget;
+  const rect = progressBar.getBoundingClientRect();
+  const clickPosition = (event.clientX - rect.left) / rect.width;
+  const newTime = duration.value * clickPosition;
+  
+  player.seekTo(newTime, true);
+  currentProgress.value = clickPosition * 100;
+  currentTime.value = newTime;
+};
+
+// 진행률 업데이트 함수 수정
 const updateProgress = async () => {
-  if (!player || !player.getCurrentTime || !selectedVideo.value) return;
+  if (!player || !selectedVideo.value) return;
   
   try {
     const videoDuration = player.getDuration();
     const videoCurrentTime = player.getCurrentTime();
+    
+    // 재생 시간 업데이트
     duration.value = videoDuration;
     currentTime.value = videoCurrentTime;
-    const progress = Math.floor((videoCurrentTime / videoDuration) * 100);
     
-    // 1% 이상 변경이 있을 때만 UI 업데이트
-    if (Math.abs(progress - currentProgress.value) >= 1) {
-      currentProgress.value = progress;
+    // 진행률 계산 (0-100%)
+    const progress = (videoCurrentTime / videoDuration) * 100;
+    currentProgress.value = Math.min(100, progress);
+    
+    // 진도율 업데이트 (기존 코드)
+    const savedVideo = savedVideos.value.find(v => v.vno === selectedVideo.value.vno);
+    if (savedVideo && !savedVideo.isCompleted) {
+      const finalProgress = progress >= 99 ? 100 : Math.ceil(progress);
       
-      // 5% 단위로 서버 업데이트 (선택사항)
-      if (progress % 5 === 0) {
+      if (finalProgress > (savedVideo?.progressRate || 0)) {
+        const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+        
         await axios.put(`/api/saved-videos/${selectedVideo.value.vno}/progress`, null, {
           params: {
-            userNo: JSON.parse(localStorage.getItem('userInfo')).userNo,
-            progressRate: progress
+            userNo: userInfo.userNo,
+            progressRate: finalProgress
           }
         });
+        
+        const videoIndex = savedVideos.value.findIndex(v => v.vno === selectedVideo.value.vno);
+        if (videoIndex !== -1) {
+          savedVideos.value[videoIndex].progressRate = finalProgress;
+          if (finalProgress >= 100) {
+            savedVideos.value[videoIndex].isCompleted = true;
+            checkForBadges(savedVideos.value[videoIndex]);
+          }
+        }
       }
     }
   } catch (error) {
-    console.error('진도율 업데이트 실패:', error);
+    console.error('진행률 업데이트 실패:', error);
   }
 };
 
@@ -326,9 +475,20 @@ const goToVideo = async (vno) => {
   try {
     const video = savedVideos.value.find(v => v.vno === vno);
     if (video && video.videoId) {
+      // 새로 추가된 영상인지 확인
+      if (video.progressRate === 0) {
+        // localStorage에서 이전 시청 기록 삭제
+        const savedTimes = JSON.parse(localStorage.getItem('videoTimes') || '{}');
+        delete savedTimes[video.videoId];
+        localStorage.setItem('videoTimes', JSON.stringify(savedTimes));
+        
+        // 진행률 초기화
+        await resetVideoProgress(vno);
+      }
+
       selectedVideo.value = video;
       
-      // 비디오 내용 가져오기
+      // 디오 내용 가져오기
       const content = await fetchVideoContent(video.videoId);
       if (content) {
         // 내용을 상태에 저장
@@ -340,7 +500,7 @@ const goToVideo = async (vno) => {
       
       // body에 modal-open 클래스 추가
       document.body.classList.add('modal-open');
-      // 스크롤바 너비 계산하여 CSS 변수로 설정
+      // 스크롤바 너비 산하여 CSS 수로 설정
       document.documentElement.style.setProperty(
         '--scrollbar-width',
         `${getScrollbarWidth()}px`
@@ -361,18 +521,23 @@ const goToVideo = async (vno) => {
 
 // YouTube API 로드
 const loadYouTubeAPI = () => {
-  if (!window.YT) {
-    const tag = document.createElement('script');
-    tag.src = 'https://www.youtube.com/iframe_api';
-    const firstScriptTag = document.getElementsByTagName('script')[0];
-    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-    
-    window.onYouTubeIframeAPIReady = () => {
-      if (selectedVideo.value) {
-        initPlayer();
-      }
-    };
-  }
+  return new Promise((resolve) => {
+    if (!window.YT) {
+      const tag = document.createElement('script');
+      tag.src = 'https://www.youtube.com/iframe_api';
+      const firstScriptTag = document.getElementsByTagName('script')[0];
+      firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+      
+      window.onYouTubeIframeAPIReady = () => {
+        if (selectedVideo.value) {
+          initPlayer();
+        }
+        resolve();
+      };
+    } else {
+      resolve();
+    }
+  });
 };
 
 // 자막 가져오기 함수 수정
@@ -421,7 +586,7 @@ const fetchTranscript = async () => {
     return null;
 
   } catch (error) {
-    console.error('자막 가져오기 실패:', error);
+    console.error('자막 져오기 실패:', error);
     return null;
   }
 };
@@ -439,8 +604,8 @@ const showTranscript = (transcript) => {
 
   if (currentCaption) {
     // 자막 표시 로직
-    console.log('현재 자막:', currentCaption.text);
-    // 여기에 자막 표시 UI 업데이트 코드 추가
+    console.log('현재 자:', currentCaption.text);
+    // 여기에 자막 표시 UI 업데이트 코드 가
   }
 };
 
@@ -451,23 +616,39 @@ const initPlayer = () => {
   try {
     player = new window.YT.Player(`video-player-${selectedVideo.value.vno}`, {
       events: {
-        onReady: async (event) => {
+        onReady: (event) => {
           isLoading.value = false;
-          console.log('Player ready');
           duration.value = event.target.getDuration();
+          
+          // 저장된 재생 위치 불러오기
+          const savedTime = getSavedTime(selectedVideo.value.videoId);
+          if (savedTime > 0) {
+            event.target.seekTo(savedTime, true);
+          }
+          
           currentTime.value = event.target.getCurrentTime();
           event.target.setVolume(volume.value);
-          
-          // 자막 가져오기
-          const transcript = await fetchTranscript();
-          if (transcript) {
-            // 주기적으로 자막 업데이트
-            setInterval(() => showTranscript(transcript), 100);
-          }
         },
-        onStateChange: (event) => {
+        onStateChange: async (event) => {
           isPlaying.value = event.data === window.YT.PlayerState.PLAYING;
+          
+          // 영상이 끝났을 때 (ENDED 상태)
+          if (event.data === window.YT.PlayerState.ENDED) {
+            const videoIndex = savedVideos.value.findIndex(v => v.vno === selectedVideo.value.vno);
+            if (videoIndex !== -1) {
+              savedVideos.value[videoIndex].isCompleted = true;
+              savedVideos.value[videoIndex].progressRate = 100;
+              
+              // 잠시 대기 후 모달 닫기 및 알림 표시
+              setTimeout(() => {
+                closeVideo();
+                displayToast('축하합니다! 영상을 완료하셨습니다. 🎉');
+              }, 500);
+            }
+          }
+          
           if (event.data === window.YT.PlayerState.PLAYING) {
+            hasStarted.value = true;
             startProgressTracking();
           } else {
             stopProgressTracking();
@@ -483,17 +664,20 @@ const initPlayer = () => {
 
 // 모달 닫기 함수 수정
 const closeVideo = () => {
-  hasStarted.value = false;
-  stopProgressTracking();
-  if (player && player.stopVideo) {
+  if (player && selectedVideo.value) {
+    // 현재 재생 위치 저장
+    const currentTime = player.getCurrentTime();
+    saveVideoTime(selectedVideo.value.videoId, currentTime);
+    
     player.stopVideo();
   }
+  
+  hasStarted.value = false;
+  stopProgressTracking();
   selectedVideo.value = null;
   isLoading.value = true;
   
-  // body에서 modal-open 클래스 제거
   document.body.classList.remove('modal-open');
-  // CSS 변수 초기화
   document.documentElement.style.setProperty('--scrollbar-width', '0px');
 };
 
@@ -516,12 +700,12 @@ const handleKeyPress = (e) => {
       e.preventDefault();
       togglePlay();
     } else if (e.key === 'ArrowLeft') {
-      // 왼쪽 방향키: 5초 뒤로
+      // 왼쪽 방키: 5초 뒤로
       e.preventDefault();
       const newTime = Math.max(0, player.getCurrentTime() - 5);
       player.seekTo(newTime, true);
     } else if (e.key === 'ArrowRight') {
-      // 오른쪽 방향키: 5초 앞으로
+      // 오른쪽 방향키: 5초 앞으��
       e.preventDefault();
       const newTime = Math.min(player.getDuration(), player.getCurrentTime() + 5);
       player.seekTo(newTime, true);
@@ -569,6 +753,11 @@ const formatTime = (seconds) => {
 const updateVolume = (event) => {
   const newVolume = event.target.value;
   volume.value = newVolume;
+  
+  // 볼 슬라더의 배경 업데이트
+  const volumeSlider = event.target;
+  volumeSlider.style.setProperty('--volume-percentage', `${newVolume}%`);
+  
   if (player) {
     player.setVolume(newVolume);
     if (newVolume > 0) {
@@ -603,7 +792,7 @@ const toggleMute = () => {
   }
 };
 
-// 비디오 탐색
+// 비디 탐색
 const seekVideo = (event) => {
   if (!player) return;
   
@@ -615,10 +804,19 @@ const seekVideo = (event) => {
 };
 
 const startVideo = () => {
+  if (!player) return;
+  
   hasStarted.value = true;
-  if (player) {
-    player.playVideo();
-  }
+  player.playVideo();
+  isPlaying.value = true;
+  
+  // 컨트롤 표시를 위한 타임아 추가
+  setTimeout(() => {
+    const controls = document.querySelector('.custom-controls');
+    if (controls) {
+      controls.style.opacity = '1';
+    }
+  }, 100);
 };
 
 // 전체화면 토글 함수
@@ -641,36 +839,172 @@ onMounted(() => {
 
 // 비디오 내용 가져오기 함수
 const fetchVideoContent = async (videoId) => {
+  if (!videoId) return null;
+  
   try {
-    // 1. 비디오 상세 정보 가져오기
-    const response = await axios.get(`https://www.googleapis.com/youtube/v3/videos`, {
+    const response = await axios.get('https://www.googleapis.com/youtube/v3/videos', {
       params: {
         part: 'snippet',
         id: videoId,
-        key: YOUTUBE_API_KEY
+        key: API_KEY
       }
     });
 
     if (response.data.items && response.data.items.length > 0) {
-      const videoData = response.data.items[0].snippet;
-      
-      // 2. 필요한 정보 추출
-      const content = {
-        title: videoData.title,
-        description: videoData.description,
-        tags: videoData.tags || [],
-        publishedAt: videoData.publishedAt,
-        channelTitle: videoData.channelTitle
-      };
-
-      console.log('비디오 내용:', content);
-      return content;
+      return response.data.items[0].snippet;
     }
-    
     return null;
   } catch (error) {
     console.error('비디오 내용 가져오기 실패:', error);
     return null;
+  }
+};
+
+// 레벨 계산
+const userLevel = computed(() => {
+  const level = Math.floor(completedCount.value / 5) + 1; // 5개 완료할 때마다 레벨업
+  return level;
+});
+
+// 다음 레벨까지 남은 영상 수
+const videosUntilNextLevel = computed(() => {
+  return 5 - (completedCount.value % 5);
+});
+
+// 통계를 위한 computed 속성들
+const formatTotalTime = computed(() => {
+  const totalMinutes = savedVideos.value.reduce((total, video) => {
+    const duration = video.duration || 0;
+    const progress = video.progressRate || 0;
+    return total + (duration * progress / 100);
+  }, 0);
+  
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = Math.floor(totalMinutes % 60);
+  
+  if (hours > 0) {
+    return `${hours}시간 ${minutes}분`;
+  }
+  return `${minutes}분`;
+});
+
+const completedCount = computed(() => {
+  return savedVideos.value.filter(video => 
+    video.progressRate >= 100 || video.isCompleted
+  ).length;
+});
+
+const inProgressCount = computed(() => {
+  return savedVideos.value.filter(video => 
+    video.progressRate > 0 && video.progressRate < 100 && !video.isCompleted
+  ).length;
+});
+
+const averageProgress = computed(() => {
+  if (savedVideos.value.length === 0) return 0;
+  const total = savedVideos.value.reduce((sum, video) => 
+    sum + (video.progressRate || 0), 0
+  );
+  return Math.round(total / savedVideos.value.length);
+});
+
+// 재생바 관련 상태
+const progressBarRef = ref(null);
+
+// 재생바 클릭 처리
+const handleProgressBarClick = (event) => {
+  if (!player || !progressBarRef.value) return;
+  
+  const rect = progressBarRef.value.getBoundingClientRect();
+  const clickPosition = (event.clientX - rect.left) / rect.width;
+  
+  // 이미 완료된 영상이 아닐 경우에만 진행률 업데이트
+  const savedVideo = savedVideos.value.find(v => v.vno === selectedVideo.value.vno);
+  if (!savedVideo || (!savedVideo.isCompleted && savedVideo.progressRate < 100)) {
+    const newTime = player.getDuration() * clickPosition;
+    player.seekTo(newTime, true);
+    currentProgress.value = Math.min(100, clickPosition * 100);
+  }
+};
+
+// 첫 완강 뱃지
+const isFirstComplete = (video) => {
+  const completedVideos = savedVideos.value.filter(v => v.progressRate >= 100);
+  return completedVideos.length === 1 && completedVideos[0].vno === video.vno;
+};
+
+// 빠른 학습 뱃지
+const isQuickLearner = (video) => {
+  const watchTime = video.watchTime || 0;
+  const videoDuration = video.duration || 0;
+  return watchTime > 0 && watchTime <= videoDuration * 1.2;
+};
+
+// 완벽 시청 뱃지
+const isPerfectWatch = (video) => {
+  return video.progressRate >= 95; // 95% 이상 시청한 경우
+};
+
+const badges = ref([]); // 뱃지 상태 관리
+
+// 뱃지 추가 함수
+const addBadge = (badge) => {
+  if (!badges.value.includes(badge)) {
+    badges.value.push(badge);
+    console.log(`뱃지 획득: ${badge}`);
+  }
+};
+
+// 비디오 완료 시 뱃지 부여
+const checkForBadges = (video) => {
+  if (video.progressRate >= 100) {
+    if (completedCount.value === 1) {
+      addBadge("첫 완강!");
+    }
+    if (completedCount.value === 10) {
+      addBadge("10개 완료!");
+    }
+    // 추가적인 뱃지 조건을 여기에 추가할 수 있습니.
+  }
+};
+
+const handleImageError = (event, video) => {
+  // 이미지 로드 실패시 기본 이미지로 대체
+  event.target.src = 'path/to/fallback-image.jpg'; // 기본 이미지 경로를 지정하세요
+  console.error(`Failed to load thumbnail for video ${video.vno}`);
+};
+
+// 컴포넌트 상단에 ref 추가
+const showToast = ref(false);
+const toastMessage = ref('');
+
+// 토스트 메시지 표시 함수
+const displayToast = (message) => {
+  toastMessage.value = message;
+  showToast.value = true;
+  setTimeout(() => {
+    showToast.value = false;
+  }, 3000);
+};
+
+// 비디오 시청 시작 시점 초기화 함수 추가
+const resetVideoProgress = async (videoNo) => {
+  try {
+    const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+    await axios.put(`/api/saved-videos/${videoNo}/progress`, null, {
+      params: {
+        userNo: userInfo.userNo,
+        progressRate: 0
+      }
+    });
+
+    const videoIndex = savedVideos.value.findIndex(v => v.vno === videoNo);
+    if (videoIndex !== -1) {
+      savedVideos.value[videoIndex].progressRate = 0;
+      savedVideos.value[videoIndex].isCompleted = false;
+    }
+  } catch (error) {
+    console.error('진행률 초기화 실패:', error);
   }
 };
 </script>
@@ -722,13 +1056,23 @@ const fetchVideoContent = async (videoId) => {
 
 .thumbnail-wrapper {
   position: relative;
-  cursor: pointer;
+  width: 100%;
+  padding-top: 56.25%; /* 16:9 비율 */
+  overflow: hidden;
 }
 
 .thumbnail-wrapper img {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
-  aspect-ratio: 16/9;
+  height: 100%;
   object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.thumbnail-wrapper:hover img {
+  transform: scale(1.05);
 }
 
 .progress-bar {
@@ -819,40 +1163,24 @@ const fetchVideoContent = async (videoId) => {
 }
 
 .modal-content {
-  max-height: 90vh;
-  width: 90%;
-  margin: auto;
-  position: relative;
+  width: 80%;
+  max-width: 1200px;
+  background: #1a1a1a;
+  border-radius: 12px;
   overflow: hidden;
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px;
-  border-bottom: 1px solid #eee;
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  font-size: 24px;
-  cursor: pointer;
-  color: #666;
 }
 
 .custom-player-container {
   position: relative;
+  width: 100%;
   background: #000;
   overflow: hidden;
-  border-radius: 8px;
 }
 
 .player-wrapper {
   position: relative;
   padding-top: 56.25%;
-  background: #000;
+  width: 100%;
 }
 
 .player-wrapper iframe {
@@ -861,7 +1189,7 @@ const fetchVideoContent = async (videoId) => {
   left: 0;
   width: 100%;
   height: 100%;
-  pointer-events: none;
+  z-index: 2;
 }
 
 .custom-controls {
@@ -870,12 +1198,17 @@ const fetchVideoContent = async (videoId) => {
   left: 0;
   right: 0;
   background: linear-gradient(transparent, rgba(0,0,0,0.8));
-  padding: 20px;
+  padding: 16px 20px;
   display: flex;
   align-items: center;
   gap: 15px;
   opacity: 0;
   transition: opacity 0.3s ease;
+  z-index: 100;
+}
+
+.custom-controls.show-controls {
+  opacity: 1;
 }
 
 .player-wrapper:hover .custom-controls {
@@ -907,60 +1240,92 @@ const fetchVideoContent = async (videoId) => {
 
 .progress-bar-container {
   flex: 1;
+  margin: 0 15px;
+  position: relative;
   padding: 10px 0;
 }
 
 .progress-bar {
-  height: 4px;
-  background: rgba(255,255,255,0.2);
-  position: relative;
-  border-radius: 2px;
-  cursor: pointer;
-  transition: height 0.2s ease;
-}
-
-.progress-bar:hover {
   height: 6px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  cursor: pointer;
+  position: relative;
+  overflow: visible;
+  transition: all 0.2s ease;
 }
 
-.progress-bar .progress {
+.progress-background {
   position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+.progress-filled {
+  position: absolute;
+  top: 0;
+  left: 0;
   height: 100%;
-  background: #FFD700;
-  border-radius: 2px;
-  position: relative;
-  transition: background-color 0.3s ease;
+  background: linear-gradient(90deg, #FFD700, #FFA500);
+  border-radius: 10px;
+  transition: width 0.1s linear;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
 }
 
 .progress-handle {
-  width: 12px;
-  height: 12px;
-  background: #FFD700;
-  border: 2px solid #FFF;
-  border-radius: 50%;
   position: absolute;
   top: 50%;
+  width: 12px;
+  height: 12px;
+  background: #FFF;
+  border: 2px solid #FFD700;
+  border-radius: 50%;
   transform: translate(-50%, -50%);
-  cursor: pointer;
-  transition: transform 0.2s ease, background-color 0.3s ease;
   opacity: 0;
+  transition: all 0.2s ease;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+.progress-bar:hover {
+  height: 8px;
 }
 
 .progress-bar:hover .progress-handle {
   opacity: 1;
+  width: 16px;
+  height: 16px;
+  border-color: #FFA500;
 }
 
-.progress-handle:hover {
-  transform: translate(-50%, -50%) scale(1.2);
-  background: #FFED4A;
+.progress-bar:hover .progress-filled {
+  background: linear-gradient(90deg, #FFD700, #FFDB58);
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.7);
 }
 
 .time-display {
-  color: #FFF;
-  font-size: 13px;
-  margin-top: 5px;
+  position: absolute;
+  bottom: -18px;
+  left: 0;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 12px;
   font-family: 'Arial', sans-serif;
-  text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* 호버 효과 */
+.progress-bar:hover .progress-filled {
+  background: linear-gradient(90deg, #FFD700, #FFDB58);
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.7);
+}
+
+.progress-bar:hover .progress-handle {
+  border-color: #FFA500;
+  background: #FFF;
+  transform: translate(-50%, -50%) scale(1.1);
 }
 
 .volume-control {
@@ -1011,12 +1376,15 @@ const fetchVideoContent = async (videoId) => {
   outline: none;
   transition: all 0.3s ease;
   cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
-.volume-slider:hover {
-  height: 8px;
+.volume-control:hover .volume-slider {
+  opacity: 1;
 }
 
+/* Webkit (Chrome, Safari, Edge) 브라우저용 스타일 */
 .volume-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   width: 12px;
@@ -1030,21 +1398,51 @@ const fetchVideoContent = async (videoId) => {
   margin-top: -4px;
 }
 
-.volume-slider::-webkit-slider-thumb:hover {
-  background: #FFED4A;
-  transform: scale(1.2);
-  box-shadow: 0 0 15px rgba(255, 215, 0, 0.7);
-}
-
 .volume-slider::-webkit-slider-runnable-track {
   background: linear-gradient(
     to right,
-    #FFD700 var(--volume-percentage),
-    rgba(255, 215, 0, 0.2) var(--volume-percentage)
+    #FFD700 var(--volume-percentage, 100%),
+    rgba(255, 255, 255, 0.2) var(--volume-percentage, 100%)
   );
   border-radius: 2px;
   height: 4px;
+}
+
+/* Firefox 브라우저용 스타일 */
+.volume-slider::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  background: #FFD700;
+  border: 2px solid #FFF;
+  border-radius: 50%;
+  cursor: pointer;
   transition: all 0.3s ease;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+.volume-slider::-moz-range-progress {
+  background-color: #FFD700;
+  height: 4px;
+  border-radius: 2px;
+}
+
+.volume-slider::-moz-range-track {
+  background-color: rgba(255, 255, 255, 0.2);
+  height: 4px;
+  border-radius: 2px;
+}
+
+/* 호버 효과 */
+.volume-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  background: #FFED4A;
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.7);
+}
+
+.volume-slider::-moz-range-thumb:hover {
+  transform: scale(1.2);
+  background: #FFED4A;
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.7);
 }
 
 .volume-tooltip {
@@ -1066,41 +1464,22 @@ const fetchVideoContent = async (videoId) => {
   opacity: 1;
 }
 
-.modal-content {
-  background: #1a1a1a;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-}
-
 .modal-header {
-  background: #222;
   padding: 15px 20px;
+  background: #222;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid #333;
 }
 
 .modal-header h2 {
-  color: #FFF;
-  font-size: 18px;
+  color: #fff;
+  font-size: 1.2rem;
   margin: 0;
-  font-weight: 500;
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  color: #FFD700;
-  font-size: 24px;
-  cursor: pointer;
-  padding: 5px;
-  transition: color 0.2s ease;
-}
-
-.close-btn:hover {
-  color: #FFF;
+  max-width: 80%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .loading-overlay {
@@ -1135,20 +1514,12 @@ const fetchVideoContent = async (videoId) => {
 }
 
 @media (max-width: 768px) {
-  .custom-controls {
-    padding: 15px;
+  .modal-content {
+    width: 95%;
   }
   
-  .play-btn {
-    font-size: 24px;
-  }
-  
-  .volume-control {
-    display: none;
-  }
-  
-  .time-display {
-    font-size: 12px;
+  .modal-header h2 {
+    font-size: 1rem;
   }
 }
 
@@ -1160,7 +1531,7 @@ const fetchVideoContent = async (videoId) => {
   height: 100%;
   background: #000;
   cursor: pointer;
-  z-index: 2;
+  z-index: 3;
 }
 
 .thumbnail-container {
@@ -1269,7 +1640,7 @@ const fetchVideoContent = async (videoId) => {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-left: auto; /* 오른쪽 정렬 */
+  margin-left: auto; /* 오쪽 정렬 */
 }
 
 /* 전체화면 버튼 스타일 */
@@ -1335,7 +1706,7 @@ const fetchVideoContent = async (videoId) => {
   background: black;
 }
 
-/* 전체화면 시 컨트롤 위치 조정 */
+/* 전체화면 시 컨트롤 위치 조 */
 .custom-player-container:fullscreen .custom-controls {
   padding: 20px 30px;
 }
@@ -1367,7 +1738,7 @@ const fetchVideoContent = async (videoId) => {
   visibility: visible;
 }
 
-/* 모달 오픈 시 body 스타일 */
+/* 모달 오픈 시 body 타일 */
 :root {
   --scrollbar-width: 0px;
 }
@@ -1375,5 +1746,240 @@ const fetchVideoContent = async (videoId) => {
 body.modal-open {
   overflow: hidden;
   padding-right: var(--scrollbar-width); /* 스크롤바 너비만큼 패딩 추가 */
+}
+
+/* YouTube 브랜딩 숨기기를 위한 스타일 추가 */
+.youtube-player {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* iframe 위에 투명한 오버레이 추가 */
+.player-wrapper::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* 컨트롤바의 z-index 증가 */
+.custom-controls {
+  z-index: 2;
+}
+
+/* YouTube 워터마크와 타이틀 숨기기 */
+.ytp-chrome-top,
+.ytp-watermark,
+.ytp-title-channel,
+.ytp-title,
+.ytp-share-button,
+.ytp-watch-later-button {
+  display: none !important;
+}
+
+.video-card.completed {
+  border: 2px solid #4CAF50;
+  box-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+}
+
+.video-card.completed .progress-bar .progress {
+  background-color: #4CAF50;
+}
+
+.video-card.completed .progress-text {
+  color: #4CAF50;
+  font-weight: bold;
+}
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #FFD700;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.no-data {
+  text-align: center;
+  padding: 2rem;
+  color: #666;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.stats-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 10px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  transition: transform 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+}
+
+.stat-card i {
+  font-size: 2rem;
+  color: #DEB887;
+}
+
+.stat-info h3 {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.stat-info p {
+  margin: 5px 0 0 0;
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #333;
+}
+
+.youtube-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  background: transparent;
+}
+
+:deep(.ytp-pause-overlay),
+:deep(.ytp-chrome-top),
+:deep(.ytp-chrome-bottom),
+:deep(.ytp-watermark),
+:deep(.ytp-show-cards-title),
+:deep(.ytp-cards-button),
+:deep(.ytp-cards-teaser),
+:deep(.ytp-ce-element),
+:deep(.ytp-endscreen-content),
+:deep(.ytp-endscreen-previous),
+:deep(.ytp-endscreen-next) {
+  display: none !important;
+}
+
+.badges {
+  display: flex;
+  gap: 8px;
+  margin: 8px 0;
+  flex-wrap: wrap;
+}
+
+.badge {
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #FFD700, #FFA500);
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  animation: badgeAppear 0.3s ease-out;
+}
+
+.badge i {
+  font-size: 14px;
+}
+
+@keyframes badgeAppear {
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* 뱃지 호버 효과 */
+.badge:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  background: linear-gradient(135deg, #FFE44D, #FFB347);
+}
+
+.badge-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+/* 기존 스타일에 추가 */
+.toast-message {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 15px 30px;
+  border-radius: 25px;
+  font-size: 16px;
+  z-index: 9999;
+  animation: toastFadeIn 0.5s, toastFadeOut 0.5s 2.5s;
+}
+
+@keyframes toastFadeIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 20px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+@keyframes toastFadeOut {
+  from {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, 20px);
+  }
 }
 </style> 
