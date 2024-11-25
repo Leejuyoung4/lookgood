@@ -115,52 +115,83 @@
 
    <!-- 게시글 목록 -->
    <div class="list-container">
-    <RouterLink
-      v-for="(post, index) in filteredPosts" 
-      :key="index"
-      :to="`/community/group/detail/${post.gBoardNo}`">
-      <div class="list-item" >
-        <div class="item-header">
-        <!-- 태그 (상태에 따라 색상 변경) -->
-        <span
-        class="tag"
-        :class="{ ongoing: post.gBoardCategory === '모집중', 
-        completed: post.gBoardCategory === '모집완료'
-        }">
-        {{ post.gBoardCategory }}
-        </span>
-        <!-- 제목 -->
-        <div class="title">{{ post.gBoardTitle }}</div>
-      </div>
-      <!-- 설명 -->
-      <div class="description">{{ post.gBoardContent }}</div>
-      <!-- 작성자 -->
-      <div class="author">{{ post.gBoardAuthor }}</div>
-      <!-- 정보 -->
-      <div class="info">
-        <span class="info-item"
-          ><i class="icon-heart"></i> ❤️ {{ post.gBoardLikeCount }}</span>
-        <span class="info-item"
-          ><i class="icon-eye"></i> 👀 {{ post.gBoardViews }}</span>
-        <span class="info-item"
-          ><i class="icon-comment"></i> 🗨️ {{ post.gBoardCommentsCount }}</span>
+    <div class="list-grid">
+      <RouterLink
+        v-for="post in paginatedPosts" 
+        :key="post.boardNo"
+        :to="`/community/group/detail/${post.boardNo}`"
+        class="list-link"
+        @click="incrementViewCount(post.boardNo)"
+      >
+        <div class="list-item">
+          <div class="item-header">
+            <span class="tag" :class="{ ongoing: !post.boardIsResolved, completed: post.boardIsResolved }">
+              {{ post.boardIsResolved ? '모집완료' : '모집중' }}
+            </span>
+            <div class="title">{{ truncateText(post.boardTitle, 30) }}</div>
+          </div>
+          <div class="description">{{ truncateText(post.boardContent, 100) }}</div>
+          <div class="item-footer">
+            <div class="author">{{ post.boardAuthor }}</div>
+            <div class="info">
+              <span class="info-item">
+                <i class="fas fa-heart"></i>
+                {{ post.boardLikeCount || 0 }}
+              </span>
+              <span class="info-item">
+                <i class="fas fa-eye"></i>
+                {{ post.boardViews || 0 }}
+              </span>
+              <span class="info-item">
+                <i class="fas fa-comment"></i>
+                {{ post.boardCommentsCount || 0 }}
+              </span>
+            </div>
+          </div>
         </div>
-      </div>
-      </RouterLink> 
+      </RouterLink>
     </div>
-    
-  
 
+    <!-- 페이지네이션 추가 -->
+    <div class="pagination">
+      <button 
+        :disabled="currentPage === 1"
+        @click="currentPage--"
+        class="page-button"
+      >
+        이전
+      </button>
+      <span class="page-info">{{ currentPage }} / {{ totalPages }}</span>
+      <button 
+        :disabled="currentPage === totalPages"
+        @click="currentPage++"
+        class="page-button"
+      >
+        다음
+      </button>
+    </div>
   </div>
+
+  <!-- 로그인 모달만 Teleport로 추가 -->
+  <Teleport to="body">
+    <div v-if="showLoginModal" class="modal">
+      <LoginViewModal 
+        @close="closeLoginModal"
+        @login-success="handleLoginSuccess"
+      />
+    </div>
+  </Teleport>
+</div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'; 
+import { ref, computed, onMounted, watch } from 'vue'; 
 import axios from 'axios';
 import router from '@/router';
 
 import searchImage from '@/assets/img/search1.svg';
 import penImg from '@/assets/img/pen.svg';
+import LoginViewModal from '@/views/LoginViewModal.vue';
 
 // 게시글 데이터
 const posts = ref([]);
@@ -175,12 +206,19 @@ const sortBy = ref('latest');
 // API 호출 함수
 onMounted(async () => {
   try {
+    // 게시글 목록만 가져오기
     const response = await axios.get('http://localhost:8080/api/group');
-    // 데이터 변환 (gBoardIsResolved 값을 기반으로 gBoardCategory 생성)
+    
+    // 게시글 데이터 매핑
     posts.value = response.data.map(post => ({
       ...post,
-      gBoardCategory: post.gBoardIsResolved ? '모집완료' : '모집중' // 상태 변환
+      boardCategory: post.boardIsResolved ? '모집완료' : '모집중',
+      boardLikeCount: post.boardLikeCount || 0,
+      boardViews: post.boardViews || 0,
+      boardCommentsCount: post.boardCommentsCount || 0
     }));
+
+    console.log('게시글 데이터:', posts.value);
   } catch (error) {
     console.error('API 호출 오류:', error);
     alert('게시글을 불러오는 중 문제가 발생했습니다. 다시 시도해주세요.');
@@ -193,26 +231,31 @@ const filteredPosts = computed(() => {
 
   // 카테고리 필터링
   if (selectedCategory.value !== '전체') {
-    filtered = filtered.filter(post => post.gBoardCategory === selectedCategory.value);
+    filtered = filtered.filter(post => post.boardCategory === selectedCategory.value);
   }
 
   // 검색어 필터링
   if (searchQuery.value) {
-      const sanitizedQuery = searchQuery.value.trim();
-      filtered = filtered.filter(post =>
-        post.gBoardTitle.includes(sanitizedQuery) || post.gBoardContent.includes(sanitizedQuery)
-      );
-    }
+    const sanitizedQuery = searchQuery.value.trim().toLowerCase();
+    filtered = filtered.filter(post =>
+      post.boardTitle.toLowerCase().includes(sanitizedQuery) || 
+      post.boardContent.toLowerCase().includes(sanitizedQuery)
+    );
+  }
 
   // 정렬 기준 적용
-  if (sortBy.value === 'latest') {
-    return filtered.sort((a, b) => new Date(b.gBoardRegDate) - new Date(a.gBoardRegDate)); // 최신순
-  } else if (sortBy.value === 'likes') {
-    return filtered.sort((a, b) => b.gBoardLikeCount - a.gBoardLikeCount); // 좋아요순
-  } else if (sortBy.value === 'comments') {
-    return filtered.sort((a, b) => b.gBoardCommentsCount - a.gBoardCommentsCount); // 댓글 많은 순
-  }
-  return filtered;
+  return [...filtered].sort((a, b) => {
+    switch (sortBy.value) {
+      case 'latest':
+        return new Date(b.boardRegDate) - new Date(a.boardRegDate);
+      case 'likes':
+        return (b.boardLikeCount || 0) - (a.boardLikeCount || 0);
+      case 'comments':
+        return (b.boardCommentsCount || 0) - (a.boardCommentsCount || 0);
+      default:
+        return 0;
+    }
+  });
 });
 
 // 카테고리 필터링
@@ -220,7 +263,7 @@ const filterCategory = category => {
   selectedCategory.value = category;
 };
 
-// 게시글 검색
+// 게시글 색
 const searchPosts = () => {
   const sanitizedKeyword = searchQuery.value.trim();
   if (!sanitizedKeyword) {
@@ -246,7 +289,7 @@ const newPostContent = ref(''); // 새 글 내용
 // 데이터 초기화 함수
 const resetWriteModalData = () => {
   newPostTitle.value = ""; // 제목 초기화
-  newPostContent.value = ""; // 내용 초기화
+  newPostContent.value = ""; // 내 초기화
   selectedFiles.value = []; // 파일 초기화
   filePreviews.value = []; // 미리보기 초기화
 };
@@ -259,7 +302,11 @@ const closeWriteModal = () => {
 
 // 글쓰기 버튼 클릭 이벤트
 const openWriteModal = () => {
-  resetWriteModalData(); // 기존 입력 데이터 초기화
+  if (!isLoggedIn.value) {
+    showLoginModal.value = true;
+    return;
+  }
+  resetWriteModalData(); // 기존 력 데이터 초기화
   showWriteModal.value = true; // 모달 열기
 };
 
@@ -283,30 +330,96 @@ const handleFileUpload = (event) => {
 const submitPost = async () => {
   try {
     const formData = new FormData();
-    formData.append("gBoardTitle", newPostTitle.value);
-    formData.append("gBoardContent", newPostContent.value);
+    formData.append("boardTitle", newPostTitle.value);
+    formData.append("boardContent", newPostContent.value);
 
-    // 첨부된 파일 추가
     if (selectedFiles.value.length > 0) {
       selectedFiles.value.forEach((file) => {
-        formData.append("gBoardFiles", file);
+        formData.append("boardFiles", file);
       });
     }
 
-    // 서버에 데이터 전송
     const response = await axios.post("http://localhost:8080/api/group", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
 
     alert("게시글이 성공적으로 등록되었습니다!");
-
-    // 작성 후 페이지 새로고침
-    const createdPostId = response.data.gBoardNo; // 서버에서 생성된 게시글 ID 반환
+    const createdPostId = response.data.boardNo;
     router.push(`/community/group/detail/${createdPostId}`);
-    window.location.reload(); // 페이지 새로고침
+    window.location.reload();
   } catch (error) {
     console.error("글 등록 중 오류 발생:", error);
     alert("게시글 등록에 실패했습니다.");
+  }
+};
+
+// 로그인 상태 확인
+const isLoggedIn = computed(() => {
+  return !!localStorage.getItem('userInfo');
+});
+
+// 로그인 모달 상태
+const showLoginModal = ref(false);
+
+// 로그인 모달 관련 함수들
+const closeLoginModal = () => {
+  showLoginModal.value = false;
+};
+
+const handleLoginSuccess = () => {
+  showLoginModal.value = false;
+  showWriteModal.value = true;
+};
+
+// 페이징 관련 로직 추가
+const currentPage = ref(1);
+const postsPerPage = 8; // 한 페이지당 게시글 수
+
+// 페이징된 게시글 목록
+const paginatedPosts = computed(() => {
+  const startIndex = (currentPage.value - 1) * postsPerPage;
+  return filteredPosts.value.slice(startIndex, startIndex + postsPerPage);
+});
+
+// 전체 페이지 수 계산
+const totalPages = computed(() => {
+  return Math.ceil(filteredPosts.value.length / postsPerPage);
+});
+
+// 텍스트 자르기 함수
+const truncateText = (text, maxLength) => {
+  if (!text) return '';
+  if (text.length <= maxLength) return text;
+  return text.slice(0, maxLength) + '...';
+};
+
+// 페이지 변경 시 유효성 검사 추가
+watch(currentPage, (newPage) => {
+  if (newPage > totalPages.value) {
+    currentPage.value = totalPages.value;
+  }
+  if (newPage < 1) {
+    currentPage.value = 1;
+  }
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+// 필터링/정렬 시 페이지 초기화
+watch([selectedCategory, sortBy, searchQuery], () => {
+  currentPage.value = 1;
+});
+
+// 조회수 증가 함수
+const incrementViewCount = async (boardNo) => {
+  try {
+    await axios.put(`http://localhost:8080/api/group/${boardNo}/view`);
+    // 조회수 증가 후 로컬 상태 업데이트
+    const post = posts.value.find(p => p.boardNo === boardNo);
+    if (post) {
+      post.boardViews = (post.boardViews || 0) + 1;
+    }
+  } catch (error) {
+    console.error('조회수 증가 실패:', error);
   }
 };
 
@@ -353,13 +466,13 @@ const submitPost = async () => {
 
 .board-tab1 .tab-item {
   position: relative;
-  padding: 10px 20px; /* 기존 패딩 유지 */
+  padding: 10px 20px;
   background: none;
   border: none;
   cursor: pointer;
   font-size: 18px;
-  color: #666; /* 기본 색상 */
-  transition: color 0.3s ease, transform 0.2s ease; /* 부드러운 전환 효과 */
+  color: #666;
+  transition: color 0.3s ease, transform 0.2s ease;
 }
 
 .board-tab1 .tab-item:hover {
@@ -367,16 +480,6 @@ const submitPost = async () => {
   transform: translateY(-2px); /* 살짝 위로 이동 */
 }
 
-.board-tab1 .tab-item {
-  position: relative; /* 하단 선 위치 조정을 위해 필요 */
-  padding: 10px 20px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 16px;
-  color: #333;
-  }
-  
 .board-tab1 .tab-item.active {
   color: #000; /* 활성화된 상태의 글자 색상 */
   font-weight: bold;
@@ -445,12 +548,20 @@ const submitPost = async () => {
 /* 반응형 디자인 (위치는 유지, 크기만 조정) */
 @media (max-width: 768px) {
   .board-tab1, .board-tab2 {
-    width: 90%; /* 너비만 살짝 줄임 */
-    margin: 140px auto 0;
+    width: 90%;
+    margin: 20px auto 0;
   }
 
-  .tab-item, .tab-item2 {
-    font-size: 16px; /* 작은 화면에서 폰트 크기 조정 */
+  .search-wrapper {
+    width: 80%;
+  }
+
+  .write-wrapper {
+    margin: 20px;
+  }
+
+  .list-container {
+    padding: 20px 5%;
   }
 }
 
@@ -549,6 +660,7 @@ const submitPost = async () => {
   display: flex;
   justify-content: center;
   align-items: center;
+  z-index: 1000;
 }
 
 .modal-content {
@@ -617,6 +729,10 @@ const submitPost = async () => {
   padding: 20px;
   box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
   transition: transform 0.2s ease, box-shadow 0.3s ease;
+  height: 200px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .list-item:hover {
@@ -662,14 +778,80 @@ const submitPost = async () => {
 
 .info {
   display: flex;
-  gap: 20px;
-  color: #555;
+  gap: 15px;
+  color: #666;
 }
 
 .info-item {
   display: flex;
   align-items: center;
   gap: 5px;
+  font-size: 14px;
+}
+
+.info-item i {
+  color: #ffd987;
+  font-size: 16px;
+}
+
+.list-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.list-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.list-item {
+  height: 200px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.item-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  margin-top: 40px;
+  padding: 20px 0;
+}
+
+.page-button {
+  padding: 8px 16px;
+  background-color: #ffd987;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.page-button:disabled {
+  background-color: #d3d3d3;
+  cursor: not-allowed;
+}
+
+.page-button:not(:disabled):hover {
+  background-color: #f8cd71;
+  transform: translateY(-2px);
+}
+
+.page-info {
+  font-size: 16px;
+  color: #666;
 }
 
 </style>

@@ -36,7 +36,7 @@
     <section class="saved-videos-section">
       <h2>저장된 영상</h2>
       
-      <!-- ���뉴 -->
+      <!-- 메뉴 -->
       <div class="video-tabs">
         <button 
           :class="{ active: activeTab === 'all' }" 
@@ -139,7 +139,7 @@
             </div>
             <iframe
               :id="`video-player-${selectedVideo.vno}`"
-              :src="`https://www.youtube.com/embed/${selectedVideo.videoId}?enablejsapi=1&controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&disablekb=1&playsinline=1&annotations=0`"
+              :src="`https://www.youtube.com/embed/${selectedVideo.videoId}?enablejsapi=1&controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&disablekb=1&playsinline=1&annotations=0&cc_load_policy=0&sub_confirmation=1`"
               frameborder="0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowfullscreen
@@ -169,6 +169,15 @@
             <div class="custom-controls" :class="{ 'show-controls': hasStarted || isHovering }">
               <button class="play-btn" @click="togglePlay">
                 <i :class="isPlaying ? 'bi bi-pause-fill' : 'bi bi-play-fill'"></i>
+              </button>
+              
+              <!-- 메모 버튼 추가 -->
+              <button 
+                class="memo-btn" 
+                @click="toggleMemoSidebar" 
+                title="메모 목록"
+              >
+                <i class="bi bi-sticky"></i>
               </button>
               
               <div 
@@ -217,13 +226,22 @@
           </div>
         </div>
         
-        <!-- 메모 사이드바 수정 -->
-        <div class="memo-sidebar">
+        <!-- 메모 사이드바에 v-show 추가 -->
+        <div class="memo-sidebar" v-show="showMemoSidebar">
           <h3 class="memo-title">
             <i class="bi bi-sticky"></i>
             메모 목록
           </h3>
           
+          <!-- 정렬 옵션 추가 -->
+          <div class="memo-sort">
+            <select v-model="sortOption" class="sort-select">
+              <option value="newest">최신순</option>
+              <option value="oldest">오래된순</option>
+              <option value="timestamp">영상 시간순</option>
+            </select>
+          </div>
+
           <div class="memo-list">
             <div 
               v-for="memo in paginatedMemos" 
@@ -279,7 +297,7 @@
     </div>
 
     <div class="badges">
-      <h3>획��한 뱃지</h3>
+      <h3>획득한 뱃지</h3>
       <div class="badge-container">
         <span v-for="(badge, index) in badges" :key="index" class="badge">{{ badge }}</span>
       </div>
@@ -341,6 +359,19 @@
         @blur="handleBlur"
         placeholder="메모를 입력하세요..."
       ></textarea>
+    </div>
+
+    <!-- 글쓰기 버튼에 조건부 스타일 추가 -->
+    <div class="write-wrapper">
+      <button 
+        class="write-button" 
+        @click="openWriteModal"
+        :disabled="!isLoggedIn"
+        :class="{ 'disabled': !isLoggedIn }"
+      >
+        <img :src="penImg" class="button-icon"/>
+        {{ isLoggedIn ? '글쓰기' : '로그인 필요' }}
+      </button>
     </div>
   </div>
 </template>
@@ -682,7 +713,7 @@ const initPlayer = () => {
     player.value = new window.YT.Player(`video-player-${selectedVideo.value.vno}`, {
       events: {
         onReady: (event) => {
-          player.value = event.target;  // player 객체 올바르게 할당
+          player.value = event.target;  // player 객체 올바르�� 할당
           isLoading.value = false;
           isPlayerReady.value = true;  // player 준비 완료
           duration.value = player.value.getDuration();
@@ -812,7 +843,7 @@ const togglePlay = () => {
       player.value.playVideo();
     }
   } catch (error) {
-    console.error('재생/일시정지 전환 실패:', error);
+    console.error('재��/일시정지 전환 실패:', error);
   }
 };
 
@@ -914,7 +945,7 @@ const userLevel = computed(() => {
   return level;
 });
 
-// ���음 레벨까지 남은 영상 수
+// �����음 레벨까지 남은 영상 수
 const videosUntilNextLevel = computed(() => {
   return 5 - (completedCount.value % 5);
 });
@@ -956,7 +987,7 @@ const averageProgress = computed(() => {
   return Math.round(total / savedVideos.value.length);
 });
 
-// 재생바 관련 상태
+// 재생바 ���련 상태
 const progressBarRef = ref(null);
 
 // 재생바 클릭 처리
@@ -966,7 +997,7 @@ const handleProgressBarClick = (event) => {
   const rect = progressBarRef.value.getBoundingClientRect();
   const clickPosition = (event.clientX - rect.left) / rect.width;
   
-  // 이미 완���된 ���상��� 아닐 경우에만 진행 업데이트
+  // 이미 완���된 ���상��� 아닐 경우���만 진행 업데이트
   const savedVideo = savedVideos.value.find(v => v.vno === selectedVideo.value.vno);
   if (!savedVideo || (!savedVideo.isCompleted && savedVideo.progressRate < 100)) {
     const newTime = player.value.getDuration() * clickPosition;
@@ -1026,7 +1057,7 @@ const handleImageError = (event, video) => {
 const showToast = ref(false);
 const toastMessage = ref('');
 
-// 토스트 메시지 표시 함수
+// 토스트 메시지 표시 함��
 const displayToast = (message) => {
   toastMessage.value = message;
   showToast.value = true;
@@ -1240,7 +1271,7 @@ const startVideo = () => {
   }
 };
 
-// 커스텀 오버레이 클릭 핸들����� 수정
+// 커스텀 오버레이 클릭 핸�������� 수정
 const handleOverlayClick = () => {
   if (isPlayerReady.value) {
     startVideo();
@@ -1306,13 +1337,29 @@ const getCurrentVideoTime = () => {
 
 // 페이지네이션 관련 상태 추가
 const currentPage = ref(1);
-const itemsPerPage = 5; // 페이지당 메모 수
+const itemsPerPage = 4; // 페이지당 아이템 수를 4개로 수정
 
-// 페이지네이션된 메모 목록 계산
+// 메모 정렬 함수
+const sortMemos = (memos, option) => {
+  const sorted = [...memos];
+  
+  switch (option) {
+    case 'oldest':
+      return sorted.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+    case 'timestamp':
+      return sorted.sort((a, b) => a.timeStamp - b.timeStamp);
+    case 'newest':
+    default:
+      return sorted.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  }
+};
+
+// 페이지네이션 처리
 const paginatedMemos = computed(() => {
+  const sorted = sortMemos(savedMemos.value, sortOption.value);
   const startIndex = (currentPage.value - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  return sortedMemos.value.slice(startIndex, endIndex);
+  return sorted.slice(startIndex, endIndex);
 });
 
 // 전체 페이지 수 계산
@@ -1327,6 +1374,89 @@ watch(sortedMemos, () => {
   }
 });
 
+// 정렬 옵션
+const sortOption = ref('newest');
+
+// sortOption이 변경될 때마다 currentPage를 1로 리셋
+watch(sortOption, () => {
+  currentPage.value = 1;
+});
+
+// 메모 입력 함수 수정
+const openMemoInput = () => {
+  showMemoInput.value = true;
+};
+
+// 메모 사이드바 표시 상태 관리
+const showMemoSidebar = ref(false);
+
+// 메모 사이드바 토글 함수
+const toggleMemoSidebar = () => {
+  showMemoSidebar.value = !showMemoSidebar.value;
+  const container = document.querySelector('.custom-player-container');
+  const sidebar = document.querySelector('.memo-sidebar');
+  
+  if (showMemoSidebar.value) {
+    container.classList.add('with-sidebar');
+    sidebar.classList.add('show');
+  } else {
+    container.classList.remove('with-sidebar');
+    sidebar.classList.remove('show');
+  }
+};
+
+// 글쓰기 버튼 클릭 이벤트 수정
+const openWriteModal = () => {
+  if (!isLoggedIn.value) {
+    alert('로그인이 필요한 서비스입니다.');
+    router.push('/login');
+    return;
+  }
+  resetWriteModalData();
+  showWriteModal.value = true;
+};
+
+// 게시글 제출 시에도 로그인 확인
+const submitPost = async () => {
+  const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+  
+  if (!userInfo) {
+    alert('로그인이 필요한 서비스입니다.');
+    router.push('/login');
+    return;
+  }
+
+  try {
+    const formData = new FormData();
+    formData.append("gBoardTitle", newPostTitle.value);
+    formData.append("gBoardContent", newPostContent.value);
+    formData.append("userNo", userInfo.userNo); // 사용자 번호 추가
+
+    // ... 기존 파일 처리 코드 ...
+
+    const response = await axios.post("http://localhost:8080/api/group", formData, {
+      headers: { 
+        "Content-Type": "multipart/form-data",
+        "Authorization": `Bearer ${userInfo.token}` // 토큰이 있다면 추가
+      },
+    });
+
+    // ... 기존 성공 처리 코드 ...
+  } catch (error) {
+    console.error("글 등록 중 오류 발생:", error);
+    if (error.response?.status === 401) {
+      alert('로그인이 만료되었습니다. 다시 로그인해주세요.');
+      router.push('/login');
+    } else {
+      alert("게시글 등록에 실패했습니다.");
+    }
+  }
+};
+
+// 로그인 상태 확인을 위한 computed 속성 추가
+const isLoggedIn = computed(() => {
+  return !!localStorage.getItem('userInfo');
+});
 </script>
 
 <style scoped>
@@ -1485,13 +1615,14 @@ watch(sortedMemos, () => {
 
 
 .modal-content {
+  position: relative;
   display: flex;
-  flex-direction: row;
   width: 90%;
   max-width: 1400px;
   background: #1a1a1a;
   border-radius: 12px;
   overflow: hidden;
+  transition: all 0.3s ease;
 }
 
 
@@ -1499,16 +1630,25 @@ watch(sortedMemos, () => {
 .custom-player-container {
   flex: 1;
   min-width: 0;
+  transition: all 0.3s ease;
 }
 
 .memo-sidebar {
+  position: absolute;
+  right: 0;
+  top: 0;
+  height: 100%;
   width: 300px;
   background: #242424;
   padding: 15px;
   border-left: 1px solid #333;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
+  transform: translateX(100%);
+  transition: transform 0.3s ease;
+  z-index: 5;
+}
+
+.memo-sidebar.show {
+  transform: translateX(0);
 }
 
 .memo-title {
@@ -1529,15 +1669,19 @@ watch(sortedMemos, () => {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  max-height: calc(100vh - 180px); /* 헤더와 정렬 옵션 영역을 제외한 높이 */
 }
 
 .memo-list-item {
   background: #2a2a2a;
   border-radius: 8px;
-  padding: 12px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border: 1px solid #333;
+  padding: 16px; /* 패딩 증가 */
+  height: 150px; /* 높이 증가 */
+  min-height: 150px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  margin-bottom: 16px; /* 메모 간 간격 증가 */
 }
 
 .memo-list-item:hover {
@@ -1550,7 +1694,12 @@ watch(sortedMemos, () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
+  position: sticky;
+  top: 0;
+  background: #2a2a2a;
+  z-index: 1;
+  padding-bottom: 8px;
 }
 
 .memo-timestamp {
@@ -1568,15 +1717,23 @@ watch(sortedMemos, () => {
 
 .memo-content {
   color: #fff;
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 12px; /* 스크롤바 공간 더 확보 */
   word-break: break-word;
-  line-height: 1.4;
-  margin-bottom: 8px;
+  line-height: 1.5; /* 줄간격 증가 */
   font-size: 0.95rem;
 }
 
 .memo-footer {
   display: flex;
   justify-content: flex-end;
+  margin-top: 12px;
+  position: sticky;
+  bottom: 0;
+  background: #2a2a2a;
+  z-index: 1;
+  padding-top: 8px;
 }
 
 .memo-date {
@@ -1606,11 +1763,12 @@ watch(sortedMemos, () => {
 
 /* 스크롤바 스타일링 */
 .memo-list::-webkit-scrollbar {
-  width: 6px;
+  width: 6px; /* 스크롤바 너비 증가 */
 }
 
 .memo-list::-webkit-scrollbar-track {
   background: #1a1a1a;
+  border-radius: 3px;
 }
 
 .memo-list::-webkit-scrollbar-thumb {
@@ -1634,8 +1792,9 @@ watch(sortedMemos, () => {
 
 .player-wrapper {
   position: relative;
-  padding-top: 56.25%;
+  padding-top: 56.25%; /* 16:9 비율 */
   width: 100%;
+  height: 100%; /* 부모 컨테이너 기준으로 맞춤 */
 }
 
 .player-wrapper iframe {
@@ -1823,29 +1982,30 @@ watch(sortedMemos, () => {
   animation: pulse 1s infinite;
 }
 
+/* 기본 슬라이더 스타일 */
 .volume-slider {
-
   width: 80px;
   height: 4px;
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.2); /* 기본 배경 검은색 */
   border-radius: 2px;
   outline: none;
-  transition: all 0.3s ease;
   cursor: pointer;
-  opacity: 0;
-  transition: opacity 0.3s ease;
+  opacity: 1; /* 항상 보이게 설정 */
+  transition: all 0.3s ease;
+  color: #FFD700;
 }
 
 .volume-control:hover .volume-slider {
   opacity: 1;
 }
 
-/* Webkit (Chrome, Safari, Edge) 브라우저용 스타일 */
+
+/* Webkit (Chrome, Safari, Edge) 브라우저 */
 .volume-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   width: 12px;
   height: 12px;
-  background: #FFD700;
+  background: #FFD700; /* 손잡이를 노란색으로 설정 */
   border: 2px solid #FFF;
   border-radius: 50%;
   cursor: pointer;
@@ -1857,18 +2017,18 @@ watch(sortedMemos, () => {
 .volume-slider::-webkit-slider-runnable-track {
   background: linear-gradient(
     to right,
-    #FFD700 var(--volume-percentage, 100%),
-    rgba(255, 255, 255, 0.2) var(--volume-percentage, 100%)
+    #FFD700 var(--volume-percentage, 100%), /* 진행 바를 노란색으로 설정 */
+    rgba(0, 0, 0, 0.2) var(--volume-percentage, 100%) /* 나머지는 검은색 */
   );
   border-radius: 2px;
   height: 4px;
 }
 
-/* Firefox 브라우저용 스타일 */
+/* Firefox 브라우저 */
 .volume-slider::-moz-range-thumb {
   width: 12px;
   height: 12px;
-  background: #FFD700;
+  background: #FFD700; /* 손잡이를 노란색으로 설정 */
   border: 2px solid #FFF;
   border-radius: 50%;
   cursor: pointer;
@@ -1877,13 +2037,13 @@ watch(sortedMemos, () => {
 }
 
 .volume-slider::-moz-range-progress {
-  background-color: #FFD700;
+  background-color: #FFD700; /* 진행 바를 노란색으로 설정 */
   height: 4px;
   border-radius: 2px;
 }
 
 .volume-slider::-moz-range-track {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(0, 0, 0, 0.2); /* 나머지는 검은색 */
   height: 4px;
   border-radius: 2px;
 }
@@ -2201,7 +2361,7 @@ watch(sortedMemos, () => {
 
 body.modal-open {
   overflow: hidden;
-  padding-right: var(--scrollbar-width); /* 스크롤바 너비만큼 패딩 추가 */
+  padding-right: var(--scrollbar-width); /* 크롤바 너비만큼 패딩 추가 */
 }
 
 /* YouTube 브랜딩 숨기기를 위한 스타일 추가 */
@@ -2211,10 +2371,9 @@ body.modal-open {
   left: 0;
   width: 100%;
   height: 100%;
-  pointer-events: none;
+  pointer-events: none; /* YouTube UI 요소를 클릭할 수 없도록 설정 */
 }
 
-/* iframe 위에 투명한 오버레이 추가 */
 .player-wrapper::after {
   content: '';
   position: absolute;
@@ -2222,8 +2381,8 @@ body.modal-open {
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 1;
-  pointer-events: none;
+  z-index: 1; /* iframe 위에 위치 */
+  pointer-events: auto; /* 오버레이 클릭 가능 */
 }
 
 /* 트롤바의 z-index 증가 */
@@ -2231,7 +2390,7 @@ body.modal-open {
   z-index: 2;
 }
 
-/* YouTube 워터���크와 타이틀 숨기기 */
+/* YouTube 워터크와 타이틀 숨기기 */
 .ytp-chrome-top,
 .ytp-watermark,
 .ytp-title-channel,
@@ -2519,20 +2678,26 @@ body.modal-open {
   max-width: 1400px;
 }
 
+
 .memo-sidebar {
   width: 300px;
   background: #242424;
   padding: 15px;
   border-left: 1px solid #333;
+  display: flex;
+  flex-direction: column;
+  height: 100%; /* 부모 컨테이너와 동일한 높이 */
 }
 
 .memo-list {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  max-height: 80vh; /* 높이를 조정하여 더 많은 메모 표시 */
+  overflow-y: hidden; /* 스크롤을 없앰 */
 }
 
-.memo-item {
+.memo-list-item {
   background: #2a2a2a;
   border-radius: 8px;
   padding: 12px;
@@ -2568,7 +2733,7 @@ body.modal-open {
 }
 
 .close-btn {
-  position: absolute;
+  position: fixed;
   top: 15px;
   right: 15px;
   background: rgba(0, 0, 0, 0.5);
@@ -2638,7 +2803,7 @@ body.modal-open {
   transform: scale(0.9);
 }
 
-/* 삭제 ��인 모달 스타일 */
+/* 삭제 인 모달 스타일 */
 .delete-modal-overlay {
   position: fixed;
   top: 0;
@@ -2867,8 +3032,12 @@ body.modal-open {
   justify-content: center;
   gap: 12px;
   margin-top: 20px;
-  padding: 10px 0;
+  padding: 15px;
+  background: #242424;
   border-top: 1px solid #333;
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
 }
 
 .page-btn {
@@ -2919,5 +3088,134 @@ body.modal-open {
 
 .memo-list::-webkit-scrollbar-thumb:hover {
   background: #555;
+}
+
+/* 정렬 옵션 스타일 */
+.memo-sort {
+  padding: 10px 15px;
+  border-bottom: 1px solid #333;
+  background: #242424; /* 배경색 설정 */
+  position: sticky; /* 스크롤 시 고정 */
+  top: 0;
+  z-index: 1;
+}
+
+.sort-select {
+  width: 100%;
+  padding: 8px;
+  background: #2a2a2a;
+  border: 1px solid #444;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 0.9rem;
+  cursor: pointer;
+  outline: none;
+}
+
+.sort-select:hover {
+  border-color: #FFD700;
+}
+
+.sort-select option {
+  background: #2a2a2a;
+  color: #fff;
+}
+/* 메모 버튼 스타일 */
+.memo-btn {
+  background: none;
+  border: none; /* 테두리를 없앰 */
+  color: #FFD700; /* Gold text color */
+  font-size: 20px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  transition: all 0.3s ease, transform 0.2s ease; /* 효과에 스케일 전환 추가 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  outline: none;
+}
+
+.memo-btn:hover {
+  background: rgba(255, 215, 0, 0.1); /* Hover 시 배경색을 조금 추가 */
+  transform: scale(1.1); /* 살짝 커지게 효과 추가 */
+}
+
+.memo-btn:active {
+  transform: scale(0.95); /* 클릭 시 살짝 작아지는 효과 */
+}
+
+/* 메모 버튼 활성화 상태 스타일 */
+.memo-btn.active {
+  background: rgba(255, 215, 0, 0.4); /* 배경을 더 진하�� 하여 활성화 표시 */
+  color: #FFF; /* 활성화 시 텍스트 색상 변경 */
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.6); /* 활성화 시 그림자 효과 추가 */
+}
+
+/* 메모 사이드바가 열릴 때 플레이어 컨테이너 조정 */
+.custom-player-container {
+  width: calc(100% - 300px); /* Adjust width to accommodate sidebar */
+  transition: width 0.3s ease; /* Smooth transition for width change */
+}
+
+/* Ensure the video player maintains its aspect ratio */
+.player-wrapper {
+  position: relative;
+  padding-top: 56.25%; /* 16:9 aspect ratio */
+  width: 100%;
+  height: 100%; /* Maintain height */
+}
+
+.write-wrapper {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 10;
+}
+
+.write-button {
+  background: none;
+  border: none;
+  color: #FFD700;
+  font-size: 24px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.write-button:hover {
+  transform: scale(1.1);
+}
+
+.button-icon {
+  width: 32px;
+  height: 32px;
+}
+
+/* 기존 스타일에 추가 */
+.write-button.disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.write-button.disabled:hover {
+  background-color: #ccc;
+  transform: none;
 }
 </style> 

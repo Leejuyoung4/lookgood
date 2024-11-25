@@ -3,77 +3,70 @@ package com.oo.groupcomment.model.dto;
 import java.time.LocalDateTime;
 
 public class GroupComment {
-    private int gBoardCommentNo;        // 댓글 고유 번호
-    private String gBoardCommentContent; // 댓글 내용
-    private LocalDateTime gBoardCommentRegDate; // 댓글 등록일
-    private LocalDateTime gBoardCommentModDate; // 댓글 수정일
-    private int gBoardNo;              // 게시글 번호
-    private int userNo;                // 사용자 번호
-    
-	public GroupComment() {}
-
-	public GroupComment(int gBoardCommentNo, String gBoardCommentContent, LocalDateTime gBoardCommentRegDate,
-			LocalDateTime gBoardCommentModDate, int gBoardNo, int userNo) {
-		this.gBoardCommentNo = gBoardCommentNo;
-		this.gBoardCommentContent = gBoardCommentContent;
-		this.gBoardCommentRegDate = gBoardCommentRegDate;
-		this.gBoardCommentModDate = gBoardCommentModDate;
-		this.gBoardNo = gBoardNo;
+    private int boardCommentNo;           // gBoard -> board
+    private String boardCommentContent;    // gBoard -> board
+    private LocalDateTime boardCommentRegDate;  // gBoard -> board
+    private LocalDateTime boardCommentModDate;  // gBoard -> board
+    private int boardNo;                  // gBoard -> board
+    private int userNo;                   // 이미 올바름
+	public GroupComment() {
+		super();
+		// TODO Auto-generated constructor stub
+	}
+	public GroupComment(int boardCommentNo, String boardCommentContent, LocalDateTime boardCommentRegDate,
+			LocalDateTime boardCommentModDate, int boardNo, int userNo) {
+		super();
+		this.boardCommentNo = boardCommentNo;
+		this.boardCommentContent = boardCommentContent;
+		this.boardCommentRegDate = boardCommentRegDate;
+		this.boardCommentModDate = boardCommentModDate;
+		this.boardNo = boardNo;
 		this.userNo = userNo;
 	}
-
-	public int getgBoardCommentNo() {
-		return gBoardCommentNo;
+	public int getBoardCommentNo() {
+		return boardCommentNo;
 	}
-
-	public void setgBoardCommentNo(int gBoardCommentNo) {
-		this.gBoardCommentNo = gBoardCommentNo;
+	public void setBoardCommentNo(int boardCommentNo) {
+		this.boardCommentNo = boardCommentNo;
 	}
-
-	public String getgBoardCommentContent() {
-		return gBoardCommentContent;
+	public String getBoardCommentContent() {
+		return boardCommentContent;
 	}
-
-	public void setgBoardCommentContent(String gBoardCommentContent) {
-		this.gBoardCommentContent = gBoardCommentContent;
+	public void setBoardCommentContent(String boardCommentContent) {
+		this.boardCommentContent = boardCommentContent;
 	}
-
-	public LocalDateTime getgBoardCommentRegDate() {
-		return gBoardCommentRegDate;
+	public LocalDateTime getBoardCommentRegDate() {
+		return boardCommentRegDate;
 	}
-
-	public void setgBoardCommentRegDate(LocalDateTime gBoardCommentRegDate) {
-		this.gBoardCommentRegDate = gBoardCommentRegDate;
+	public void setBoardCommentRegDate(LocalDateTime boardCommentRegDate) {
+		this.boardCommentRegDate = boardCommentRegDate;
 	}
-
-	public LocalDateTime getgBoardCommentModDate() {
-		return gBoardCommentModDate;
+	public LocalDateTime getBoardCommentModDate() {
+		return boardCommentModDate;
 	}
-
-	public void setgBoardCommentModDate(LocalDateTime gBoardCommentModDate) {
-		this.gBoardCommentModDate = gBoardCommentModDate;
+	public void setBoardCommentModDate(LocalDateTime boardCommentModDate) {
+		this.boardCommentModDate = boardCommentModDate;
 	}
-
-	public int getgBoardNo() {
-		return gBoardNo;
+	public int getBoardNo() {
+		return boardNo;
 	}
-
-	public void setgBoardNo(int gBoardNo) {
-		this.gBoardNo = gBoardNo;
+	public void setBoardNo(int boardNo) {
+		this.boardNo = boardNo;
 	}
-
 	public int getUserNo() {
 		return userNo;
 	}
-
 	public void setUserNo(int userNo) {
 		this.userNo = userNo;
 	}
-
 	@Override
 	public String toString() {
-		return "GroupComment [gBoardCommentNo=" + gBoardCommentNo + ", gBoardCommentContent=" + gBoardCommentContent
-				+ ", gBoardCommentRegDate=" + gBoardCommentRegDate + ", gBoardCommentModDate=" + gBoardCommentModDate
-				+ ", gBoardNo=" + gBoardNo + ", userNo=" + userNo + "]";
+		return "GroupComment [boardCommentNo=" + boardCommentNo + ", boardCommentContent=" + boardCommentContent
+				+ ", boardCommentRegDate=" + boardCommentRegDate + ", boardCommentModDate=" + boardCommentModDate
+				+ ", boardNo=" + boardNo + ", userNo=" + userNo + "]";
 	}
+    
+    // 생성자, getter/setter도 모두 board로 변경 필요
+    
+    
 }
