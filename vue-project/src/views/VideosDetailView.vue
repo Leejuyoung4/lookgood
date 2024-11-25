@@ -293,14 +293,14 @@ const handleSaveClick = async () => {
 
     if (response.data.success) {
       isSaved.value = true;
-      displayToast('영상이 저장되었습니다.');
+      displayToast('영상이 저장되었습���다.');
     }
   } catch (error) {
     console.error('저장/취소 처리 중 오류 발생:', error);
     
     if (error.response?.data?.message) {
       displayToast(error.response.data.message);
-      // 이미 저장된 경우 ���태 업데이트
+      // 이미 저장된 경우 태 업데이트
       if (error.response.data.message.includes('이미 저장된')) {
         isSaved.value = true;
       }
@@ -339,7 +339,7 @@ const getAuthHeader = () => {
   };
 };
 
-// 저장 상태 확인 함수 수정
+// 저장 상태 ��인 함수 수정
 const checkSavedStatus = async () => {
   try {
     const userInfo = JSON.parse(localStorage.getItem('userInfo'));
@@ -455,7 +455,7 @@ const initPlayer = () => {
         iv_load_policy: 3,    // 동영상 주석 숨기기
         modestbranding: 1,    // YouTube 로고 최소화
         rel: 0,               // 관련 동영상 숨기
-        showinfo: 0,          // 동영상 정보 숨기기
+        showinfo: 0,          // ���영상 정보 숨기기
         autoplay: 0,          // 자동재생 비활성화
         playsinline: 1,       // iOS에서 인라인 재생
         enablejsapi: 1,       // JavaScript API 활성화
@@ -685,6 +685,7 @@ watch(() => route.params.id, () => {
 .action-buttons {
   display: flex;
   gap: 15px;
+  align-items: center;
 }
 
 .action-btn {
@@ -700,7 +701,7 @@ watch(() => route.params.id, () => {
   font-size: 15px;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(255, 217, 61, 0.3);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
 .action-btn:hover {
@@ -709,8 +710,18 @@ watch(() => route.params.id, () => {
 }
 
 .action-btn.save.saved {
-  background: #FFB84C;
+  background: linear-gradient(135deg, #FFB84C, #FF9642);
   color: white;
+}
+
+.action-btn.like {
+  background: linear-gradient(135deg, #FF6B6B, #FF5252);
+  color: white;
+}
+
+.action-btn.like:hover {
+  background: linear-gradient(135deg, #FF5252, #FF4141);
+  box-shadow: 0 6px 20px rgba(255, 82, 82, 0.3);
 }
 
 /* 6. 설명 섹션 */
@@ -795,14 +806,15 @@ watch(() => route.params.id, () => {
 }
 
 .video-item {
-  display: flex;
+  display: grid;
+  grid-template-columns: 160px 1fr;
   gap: 16px;
   padding: 16px;
   border-radius: 16px;
   background: white;
   transition: all 0.3s ease;
-  border: 1px solid #FFE5A5;
-  align-items: flex-start;
+  border: 1px solid rgba(255, 184, 76, 0.2);
+  align-items: start;
 }
 
 .video-item:hover {
@@ -812,7 +824,7 @@ watch(() => route.params.id, () => {
 }
 
 .thumbnail {
-  flex: 0 0 160px;
+  width: 160px;
   height: 90px;
   border-radius: 12px;
   overflow: hidden;
@@ -831,37 +843,34 @@ watch(() => route.params.id, () => {
 }
 
 .video-info {
-  flex: 1;
-  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  min-width: 0;
 }
 
 .video-info h3 {
   font-size: 15px;
   font-weight: 600;
-  color: #333;
-  line-height: 1.4;
   margin: 0;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  
   -webkit-box-orient: vertical;
   overflow: hidden;
-  letter-spacing: -0.3px;
+  line-height: 1.4;
 }
 
 .video-info .speaker {
   font-size: 13px;
   color: #FFB84C;
   font-weight: 500;
-  margin: 0;
+  margin: 4px 0;
 }
 
 .video-info .meta {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   font-size: 12px;
   color: #666;
   margin-top: 2px;
@@ -975,5 +984,96 @@ watch(() => route.params.id, () => {
   .action-buttons {
     flex-wrap: wrap;
   }
+}
+
+/* 다크모드 스타일 추가 */
+:root.dark-mode .video-detail {
+  background: #1a1a1a;
+}
+
+:root.dark-mode .content-wrapper {
+  background: #1a1a1a;
+}
+
+:root.dark-mode .video-title {
+  color: #fff;
+}
+
+:root.dark-mode .video-meta {
+  background: #2a2a2a;
+  color: #ddd;
+}
+
+:root.dark-mode .action-btn {
+  background: #333;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+:root.dark-mode .action-btn:hover {
+  background: #444;
+}
+
+:root.dark-mode .action-btn.save.saved {
+  background: #FFB84C;
+  color: #1a1a1a;
+}
+
+:root.dark-mode .description,
+:root.dark-mode .about-speaker {
+  background: #242424;
+  color: #ddd;
+  border-color: #333;
+}
+
+:root.dark-mode .sidebar {
+  background: #242424;
+  border-color: #333;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+}
+
+:root.dark-mode .watch-next {
+  color: #fff;
+  border-bottom-color: #333;
+}
+
+:root.dark-mode .video-item {
+  background: #2a2a2a;
+  border-color: #333;
+}
+
+:root.dark-mode .video-item:hover {
+  border-color: #FFD93D;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+:root.dark-mode .video-info h3 {
+  color: #fff;
+}
+
+:root.dark-mode .video-info .meta {
+  color: #bbb;
+}
+
+:root.dark-mode .meta .views,
+:root.dark-mode .meta .date {
+  color: #999;
+}
+
+:root.dark-mode .no-recommendations {
+  background: #2a2a2a;
+  color: #bbb;
+}
+
+:root.dark-mode .next-videos::-webkit-scrollbar-track {
+  background: #333;
+}
+
+:root.dark-mode .next-videos::-webkit-scrollbar-thumb {
+  background: #555;
+}
+
+:root.dark-mode .action-bar {
+  border-color: #333;
 }
 </style>
