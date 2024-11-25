@@ -20,9 +20,9 @@
             placeholder="아이디를 입력하세요"
             @input="resetCheckMessage" 
           />
-          <button class="check-button" @click="checkUserId">
+          <!-- <button class="check-button" @click="checkUserId">
             중복 확인 <span class="button-emoji">🔍</span>
-          </button>
+          </button> -->
         </div>
         <p v-if="idCheckMessage" :class="['check-message', idCheckStatus]">
           {{ idCheckMessage }}
@@ -976,5 +976,43 @@ option {
 
 :root[class='dark-mode'] .close-button:hover {
   background: #333;
+}
+
+.close-btn {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: rgba(0, 0, 0, 0.5);
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 5;  /* 메모 입력 영역보다 위에 위치 */
+}
+
+.close-btn i {
+  color: white;
+  font-size: 20px;
+}
+
+.close-btn:hover {
+  background: rgba(255, 0, 0, 0.7);
+  transform: scale(1.1);
+}
+
+/* modal-memo의 높이를 나가기 버튼 영역 제외하도록 수정 */
+.modal-memo {
+  position: absolute;
+  top: 60px;  /* 나가기 버튼 영역 제외 */
+  left: 0;
+  width: 100%;
+  height: calc(100% - 140px);  /* 상단 60px + 하단 컨트롤바 80px 제외 */
+  z-index: 3;
+  pointer-events: auto;
 }
 </style>

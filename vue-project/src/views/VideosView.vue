@@ -407,7 +407,7 @@ const isActiveCategory = (category) => {
 
 :root.dark-mode .video-menu {
   background: #242424;
-  border-bottom-color: #FFC107;
+  border-color: #FFC107;
 }
 
 :root.dark-mode .video {
@@ -430,5 +430,99 @@ const isActiveCategory = (category) => {
 :root.dark-mode .menu-item:hover,
 :root.dark-mode .menu-item.active {
   background: rgba(255, 193, 7, 0.1);
+}
+
+/* 이미지 관련 스타일 추가 */
+:root.dark-mode .menu-item img {
+  filter: invert(1) brightness(0.8) !important; /* 색상 반전 및 밝기 조정 */
+}
+
+:root.dark-mode .video-thumbnail img {
+  filter: brightness(1) !important;
+}
+
+/* 버튼 스타일 다크모드 추가 */
+:root.dark-mode .pagination button {
+  background: #242424;
+  color: #fff;
+  border-color: #FFC107;
+}
+
+:root.dark-mode .pagination button:hover:not(:disabled) {
+  background: rgba(255, 193, 7, 0.1);
+  border-color: #FFC107;
+}
+
+:root.dark-mode .pagination button:disabled {
+  background: #1a1a1a;
+  border-color: #333;
+  color: #666;
+}
+
+/* 기타 버튼들에 대한 다크모드 스타일 */
+:root.dark-mode button {
+  color: #fff;
+}
+
+:root.dark-mode .menu-item {
+  color: #fff;
+}
+
+:root.dark-mode .instructor {
+  color: #FFC107; /* 다크모드에서 강사명 색상 조정 */
+}
+
+/* 다크모드 스타일 수정 및 추가 */
+:root.dark-mode .video-div {
+  background: #1a1a1a;
+}
+
+:root.dark-mode .video-menu {
+  background: #242424;
+  border-color: #FFC107;
+}
+
+/* 메뉴바 다크모드 스타일 추가 */
+:root.dark-mode nav {
+  background: #242424 !important;
+  border-bottom: 1px solid #333;
+}
+
+:root.dark-mode nav a {
+  color: #fff !important;
+}
+
+:root.dark-mode nav a:hover {
+  color: #FFC107 !important;
+}
+
+:root.dark-mode nav .router-link-active {
+  color: #FFC107 !important;
+  border-bottom-color: #FFC107;
+}
+
+:root.dark-mode .nav-item {
+  color: #fff !important;
+}
+
+:root.dark-mode .nav-link {
+  color: #fff !important;
+}
+
+:root.dark-mode .nav-link:hover {
+  color: #FFC107 !important;
+}
+
+:root.dark-mode .navbar-brand {
+  color: #fff !important;
+}
+
+:root.dark-mode .navbar-toggler {
+  border-color: #333;
+  color: #fff;
+}
+
+:root.dark-mode .navbar-toggler-icon {
+  filter: invert(1);
 }
 </style>
