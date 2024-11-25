@@ -13,7 +13,7 @@ import UpdateInquiryView from '@/views/UpdateInquiryView.vue';
 import MyPage from '@/views/MyPage.vue'
 import LoginViewModal from '@/views/LoginViewModal.vue';    // 모달 컴포넌트 import
 import SignupViewModal from '@/views/SignupViewModal.vue';  // 모달 컴포넌트 import
-
+import SearchResultView from '@/views/SearchResultView.vue';
 
 const routes = [
   { 
@@ -89,7 +89,11 @@ const routes = [
   name: 'signup',
   component: SignupViewModal
 },
-
+{ 
+  path: '/search', 
+  name: 'search', 
+  component: SearchResultView 
+},
 
 
 ];

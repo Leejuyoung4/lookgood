@@ -3,7 +3,7 @@
     <!-- 헤더 -->
     <header class="header">
       <!-- 로고 -->
-      <router-link to="/" class="logo">
+      <router-link to="/" class="logo" @click="clearSearchQuery">
         <div class="logo-container">
           <span class="logo">
             <span class="logo-item">L</span>
@@ -41,11 +41,27 @@
 
         <!-- 검색 바 -->
         <div class="search-bar">
-          <input type="text" placeholder="검색어를 입력하세요" />
-          <router-link to="/search">
+          <input
+            type="text"
+            placeholder="검색어를 입력하세요"
+            v-model="searchQuery"
+            @keyup.enter="handleSearch"
+          />
+          <button @click="handleSearch" class="search-bar-btn">
             <img :src="searchImage" alt="Search Icon" />
-          </router-link>
+          </button>
         </div>
+
+        <!-- 검색 결과 -->
+        <div class="search-results" v-if="searchResults.length > 0">
+          <ul>
+            <li v-for="result in searchResults" :key="result.id">
+              <p><strong>{{ result.source }}</strong>: {{ result.title }}</p>
+              <p>{{ result.content }}</p>
+            </li>
+          </ul>
+        </div>
+
       </div>
 
       <!-- 로그인 메뉴 -->
@@ -101,6 +117,7 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
+import axios from 'axios';
 import { useThemeStore } from '@/stores/theme'
 import { useRouter, useRoute } from 'vue-router';
 import LoginViewModal from '@/views/LoginViewModal.vue';
@@ -128,6 +145,10 @@ const themeStore = useThemeStore();
 
 const router = useRouter();
 const route = useRoute();
+
+const clearSearchQuery = () => {
+  searchQuery.value = ''; // 검색어 초기화
+};
 
 // 로그인 체크
 const checkLoginStatus = () => {
@@ -202,6 +223,26 @@ window.addEventListener('storage', (e) => {
     checkLoginStatus();
   }
 });
+
+const searchQuery = ref(''); // 사용자가 입력한 검색어
+const searchResults = ref([]); // 검색 결과 저장
+const isSearching = ref(false); // 검색 로딩 상태
+
+const handleSearch = () => {
+  if (!searchQuery.value.trim()) return; // 빈 검색어 무시
+  router.push({
+    name: 'search', // SearchResultView.vue의 라우트 이름
+    query: { query: searchQuery.value }, // 검색어를 query로 전달
+  }).catch(() => {
+    // 동일 경로일 경우 검색 결과 업데이트를 위한 처리
+    router.replace({
+      name: 'search',
+      query: { query: searchQuery.value },
+    });
+  });
+};
+
+
 </script>
 
 <style scoped>
@@ -371,6 +412,11 @@ window.addEventListener('storage', (e) => {
 .search-bar img {
   height: 24px;
   flex-shrink: 0;
+}
+
+.search-bar-btn {
+  background: var(--hover-color);
+  border: none;
 }
 
 .log-menu {
@@ -729,6 +775,7 @@ window.addEventListener('storage', (e) => {
   position: relative;
   padding-bottom: 20px;
   margin-bottom: -20px;
+  z-index: 2000;
 }
 
 .dropdown-menu {
@@ -816,16 +863,13 @@ window.addEventListener('storage', (e) => {
 }
 
 .dropdown-item {
-  color: #333;
+  color: #333333;
   text-decoration: none;
   padding: 10px 20px;
   font-size: 18px;
   transition: background-color 0.3s ease;
 }
 
-.dropdown-item:hover {
-  background-color: #f1f1f1;
-}
 
 /* 다크모드 토 버튼 스타일 */
 .theme-toggle {
@@ -886,11 +930,6 @@ window.addEventListener('storage', (e) => {
 
 .dropdown-item {
   color: var(--text-color);
-}
-
-.dropdown-item:hover {
-  background-color: var(--text-color);
-  color: var(--bg-color);
 }
 
 /* 이미지 필터 관련 스타일 추가 */
@@ -1217,8 +1256,8 @@ window.addEventListener('storage', (e) => {
 }
 
 .logo:hover .logo-item {
-  text-shadow: 0 0 15px rgba(235, 208, 59, 0.5),
-               0 0 25px rgba(235, 208, 59, 0.3);
+  text-shadow: 0 0 15px rgba(235, 208, 59, 0.3),
+               0 0 25px rgba(235, 208, 59, 0.2);
 }
 
 /* 이미지 기본 스타일 - 라이트모드 (검은색) */
