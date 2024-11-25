@@ -19,7 +19,7 @@ import com.oo.inquirycomment.model.dto.InquiryComment;
 import com.oo.inquirycomment.model.service.InquiryCommentService;
 
 @RestController
-@RequestMapping("/api/")
+@RequestMapping("/api/inquiry/comments")
 @CrossOrigin(origins = "*", allowCredentials = "false")
 public class InquiryCommentController {
 	// 서비스 의존성 주입
@@ -33,16 +33,15 @@ public class InquiryCommentController {
 		@GetMapping("{iNo}")
 		public ResponseEntity<?> getCommentsBygINo(@PathVariable("iNo") int iNo) {
 		    List<InquiryComment> inquiryComments = inquiryCommentService.getCommentsBygINo(iNo);
-		    if (!inquiryComments.isEmpty()) {
-		        return ResponseEntity.ok(inquiryComments); // 댓글 목록 반환
-		    }
-		    return ResponseEntity.status(HttpStatus.NOT_FOUND).body("댓글이 존재하지 않습니다."); // 에러 메시지 반환
+		    return ResponseEntity.ok(inquiryComments); // 빈 목록도 200 OK로 반환
 		}
 
-		
 		// 댓글 등록
 		@PostMapping("{iNo}")
 		public ResponseEntity<?> addComment(@PathVariable("iNo") int iNo, @RequestBody InquiryComment inquiryComment) {
+		    System.out.println("userNo 확인: " + inquiryComment.getUserNo()); // userNo 로그 확인
+		    System.out.println("iCommentContent 확인: " + inquiryComment.getiCommentContent()); // 내용 확인
+
 		    inquiryComment.setiNo(iNo);
 		    boolean added = inquiryCommentService.addComment(inquiryComment);
 		    if (added) {

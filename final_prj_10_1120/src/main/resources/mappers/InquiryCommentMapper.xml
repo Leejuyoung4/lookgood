@@ -5,12 +5,12 @@
 
 	<!-- 댓글 목록 조회 -->
     <select id="selectCommentsByInquiryNo" resultType="InquiryComment">
-        SELECT i_comment_no AS iCommentNo,
-               i_comment_content AS iCommentContent,
-               i_comment_reg_date AS iCommentRegDate,
-               i_comment_mod_date AS iCommentModDate,
-               i_no AS iNo,
-               user_no AS userNo
+        SELECT i_comment_no,
+               i_comment_content,
+               i_comment_reg_date,
+               i_comment_mod_date,
+               i_no,
+               user_no
         FROM inquiry_comments
         WHERE i_no = #{iNo}
         ORDER BY i_comment_reg_date DESC

@@ -20,9 +20,9 @@
             placeholder="아이디를 입력하세요"
             @input="resetCheckMessage" 
           />
-          <!-- <button class="check-button" @click="checkUserId">
+          <button class="check-button" @click="checkUserId">
             중복 확인 <span class="button-emoji">🔍</span>
-          </button> -->
+          </button>
         </div>
         <p v-if="idCheckMessage" :class="['check-message', idCheckStatus]">
           {{ idCheckMessage }}
