@@ -16,10 +16,10 @@ public class GroupServiceImpl implements GroupService {
 	}
 
 	// 전체 게시글 조회
-	@Override
-	public List<Group> getGroupList() {
-		return groupDao.selectAll();
-	}
+	 @Override
+	    public List<Group> getAllGroups() {
+	        return groupDao.selectAll();
+	    }
 
 	// 상세 게시글 조회
 	@Override

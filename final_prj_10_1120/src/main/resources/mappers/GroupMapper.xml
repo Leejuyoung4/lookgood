@@ -1,136 +1,143 @@
-<?xml version="1.0" encoding="UTF-8" ?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper
   PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
 <mapper namespace="com.oo.group.model.dao.GroupDao">
+    <!-- 전체 게시글 조회 -->
+    <select id="selectAll" resultType="Group">
+        SELECT 
+            board_no AS boardNo,
+            board_title AS boardTitle,
+            board_content AS boardContent,
+            board_file AS boardFile,
+            board_reg_date AS boardRegDate,
+            board_views AS boardViews,
+            board_is_resolved AS boardIsResolved,
+            board_comments_count AS boardCommentsCount,
+            board_like_count AS boardLikeCount,
+            board_hate_count AS boardHateCount,
+            user_no AS userNo
+        FROM group_board
+    </select>
 
-	<!-- resultMap 정의 -->
-	<resultMap type="com.oo.group.model.dto.Group"
-		id="GroupResultMap">
-	</resultMap>
+    <!-- 상세 게시글 조회 -->
+    <select id="selectOne" parameterType="int" resultType="Group">
+        SELECT 
+            board_no AS boardNo,
+            board_title AS boardTitle,
+            board_content AS boardContent,
+            board_file AS boardFile,
+            board_reg_date AS boardRegDate,
+            board_views AS boardViews,
+            board_is_resolved AS boardIsResolved,
+            board_comments_count AS boardCommentsCount,
+            board_like_count AS boardLikeCount,
+            board_hate_count AS boardHateCount,
+            user_no AS userNo
+        FROM group_board
+        WHERE board_no = #{boardNo}
+    </select>
 
-	<!-- 전체 게시글 조회 -->
-	<select id="selectAll" resultMap="GroupResultMap">
-		SELECT *
-		FROM group_board;
-	</select>
+    <!-- 게시글 등록 -->
+    <insert id="insertGroup" parameterType="Group">
+        INSERT INTO group_board (
+            board_title,
+            board_content,
+            board_file,
+            board_reg_date,
+            board_views,
+            board_is_resolved,
+            board_comments_count,
+            board_like_count,
+            board_hate_count,
+            user_no
+        ) VALUES (
+            #{boardTitle},
+            #{boardContent},
+            #{boardFile},
+            CURRENT_TIMESTAMP,
+            #{boardViews},
+            #{boardIsResolved},
+            #{boardCommentsCount},
+            #{boardLikeCount},
+            #{boardHateCount},
+            #{userNo}
+        )
+    </insert>
 
-	<!-- 상세 게시글 조회 -->
-	<select id="selectOne" resultType="Group" parameterType="int">
-		SELECT *
-		FROM group_board
-		WHERE g_board_no = #{gBoardNo};
-	</select>
+    <!-- 게시글 삭제 -->
+    <delete id="removeGroup" parameterType="int">
+        DELETE FROM group_board
+        WHERE board_no = #{boardNo}
+    </delete>
 
-	<!-- 게시글 등록 -->
-	<insert id="insertGroup" parameterType="Group">
-		INSERT INTO group_board (
-			g_board_title,
-			g_board_content,
-			g_board_files,
-			g_board_reg_date,
-			g_board_views,
-			g_board_is_resolved,
-			g_board_comments_count,
-			g_board_like_count,
-			g_board_hate_count,
-			user_no
-		) VALUES (
-			#{gBoardTitle},
-			#{gBoardContent},
-			#{gBoardFiles},
-			CURRENT_TIMESTAMP, -- 등록 날짜는 DB에서 자동으로 생성
-			#{gBoardViews}, -- 조회수 기본값 0
-			#{gBoardIsResolved},
-			#{gBoardCommentsCount},
-			#{gBoardLikeCount},
-			#{gBoardHateCount},
-			#{userNo}
-		);
-	</insert>
-	
-	<insert id="createGroup">
-	  INSERT INTO group_table (gBoardTitle, gBoardContent, gBoardFiles)
-	  VALUES (#{gBoardTitle}, #{gBoardContent}, #{gBoardFiles})
-	</insert>
-	
-	<select id="readGroup" resultType="Group">
-	  SELECT gBoardNo, gBoardTitle, gBoardContent, gBoardFiles
-	  FROM group_table
-	  WHERE gBoardNo = #{gBoardNo}
-	</select>
+    <!-- 게시글 수정 -->
+    <update id="modifyGroup" parameterType="Group">
+        UPDATE group_board
+        SET
+            board_title = #{boardTitle},
+            board_content = #{boardContent},
+            board_file = #{boardFile},
+            board_is_resolved = #{boardIsResolved}
+        WHERE board_no = #{boardNo}
+    </update>
 
-	
+    <!-- 게시글 검색 -->
+    <select id="searchPosts" parameterType="string" resultType="Group">
+        SELECT 
+            board_no AS boardNo,
+            board_title AS boardTitle,
+            board_content AS boardContent,
+            board_file AS boardFile,
+            board_reg_date AS boardRegDate,
+            board_views AS boardViews,
+            board_is_resolved AS boardIsResolved,
+            board_comments_count AS boardCommentsCount,
+            board_like_count AS boardLikeCount,
+            board_hate_count AS boardHateCount,
+            user_no AS userNo
+        FROM group_board
+        WHERE 
+            board_title LIKE CONCAT('%', #{keyword}, '%')
+            OR board_content LIKE CONCAT('%', #{keyword}, '%')
+    </select>
 
+    <!-- 조회수 증가 -->
+    <update id="incrementViewCount" parameterType="int">
+        UPDATE group_board
+        SET board_views = board_views + 1
+        WHERE board_no = #{boardNo}
+    </update>
 
-	<!-- 게시글 삭제 -->
-	<delete id="removeGroup" parameterType="int">
-		DELETE FROM group_board
-		WHERE g_board_no = #{gBoardNo};
-	</delete>
+    <!-- 좋아요 관련 쿼리들 -->
+    <update id="incrementLikeCount" parameterType="int">
+        UPDATE group_board
+        SET board_like_count = board_like_count + 1
+        WHERE board_no = #{boardNo}
+    </update>
 
-	<!-- 게시글 수정 -->
-	<update id="modifyGroup" parameterType="Group">
-		UPDATE group_board
-		SET
-			g_board_title = #{gBoardTitle},
-			g_board_content = #{gBoardContent},
-			g_board_files = #{gBoardFiles},
-			g_board_is_resolved = #{gBoardIsResolved}
-		WHERE g_board_no = #{gBoardNo};
-	</update>
+    <update id="decrementLikeCount" parameterType="int">
+        UPDATE group_board
+        SET board_like_count = board_like_count - 1
+        WHERE board_no = #{boardNo}
+    </update>
 
-	<!-- 게시글 검색 -->
-	<select id="searchPosts" parameterType="string" resultType="Group">
-	  SELECT *
-	  FROM group_board
-	  WHERE 
-	      REPLACE(REPLACE(REPLACE(g_board_title, ' ', ''), '\n', ''), '\t', '') LIKE CONCAT('%', REPLACE(#{keyword}, ' ', ''), '%')
-	      OR REPLACE(REPLACE(REPLACE(g_board_content, ' ', ''), '\n', ''), '\t', '') LIKE CONCAT('%', REPLACE(#{keyword}, ' ', ''), '%');
-	</select>
-	
-	<!-- 조회수 증가 -->
-	<update id="incrementViewCount" parameterType="int">
-	    UPDATE group_board
-	    SET g_board_views = g_board_views + 1
-	    WHERE g_board_no = #{gBoardNo};
-	</update>
-	
-	<!-- 좋아요수 증가 -->
-	<update id="incrementLikeCount" parameterType="int">
-	    UPDATE group_board
-	    SET g_board_like_count = g_board_like_count + 1
-	    WHERE g_board_no = #{gBoardNo};
-	</update>
-	
-	<!-- 좋아요 감소 -->
-<update id="decrementLikeCount" parameterType="int">
-    UPDATE group_board
-    SET g_board_like_count = g_board_like_count - 1
-    WHERE g_board_no = #{gBoardNo};
-</update>
-	
-	
-	<!-- 좋아요 여부 확인 -->
-	<select id="isUserLiked" parameterType="map" resultType="boolean">
-	    SELECT EXISTS (
-	        SELECT 1
-	        FROM g_board_likes
-	        WHERE g_board_no = #{gBoardNo} AND user_no = #{userNo}
-	    )
-	</select>
-	
-	<!-- 좋아요 추가 -->
-	<insert id="addLike" parameterType="map">
-	    INSERT INTO g_board_likes (g_board_no, user_no)
-	    VALUES (#{gBoardNo}, #{userNo});
-	</insert>
-	
-	<!-- 좋아요 삭제 -->
-	<delete id="deleteLike" parameterType="map">
-	    DELETE FROM g_board_likes
-	    WHERE g_board_no = #{gBoardNo} AND user_no = #{userNo};
-	</delete>
-	
+    <select id="isUserLiked" parameterType="map" resultType="boolean">
+        SELECT EXISTS (
+            SELECT 1
+            FROM board_likes
+            WHERE board_no = #{boardNo} AND user_no = #{userNo}
+        )
+    </select>
 
+    <insert id="addLike" parameterType="map">
+        INSERT INTO board_likes (board_no, user_no)
+        VALUES (#{boardNo}, #{userNo})
+    </insert>
+
+    <delete id="deleteLike" parameterType="map">
+        DELETE FROM board_likes
+        WHERE board_no = #{boardNo} AND user_no = #{userNo}
+    </delete>
 </mapper>

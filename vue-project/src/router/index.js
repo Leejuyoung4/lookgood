@@ -48,12 +48,12 @@ const routes = [
     component: GroupView
   },
   {
-    path: '/community/group/detail/:gBoardNo',
-    name: 'groupDetail',
+    path: '/community/group/detail/:boardNo',
+    name: 'GroupDetail',
     component: GroupDetailView
   },
   {
-    path: '/community/group/edit/:gBoardNo',
+    path: '/community/group/edit/:boardNo',
     name: 'updateGroupDetail',
     component: UpdateGroupView
   },

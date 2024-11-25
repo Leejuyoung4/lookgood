@@ -4,125 +4,125 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public class Group {
-	private int gBoardNo;
-    private String gBoardTitle;
-    private String gBoardContent;
-    private String gBoardFiles;
-    private List<String> gBoardFilesList; // 파일명을 리스트로 저장
-    private LocalDateTime gBoardRegDate;
-    private int gBoardViews;
-    private boolean gBoardIsResolved;
-    private int gBoardCommentsCount;
-    private int gBoardLikeCount;
-    private int gBoardHateCount;
-    private int userNo;
- 
+    private int boardNo;              // g 제거
+    private String boardTitle;        // g 제거
+    private String boardContent;      // g 제거
+    private String boardFile;        // g 제거
+    private List<String> boardFilesList;  // g 제거
+    private LocalDateTime boardRegDate;   // g 제거
+    private int boardViews;          // g 제거
+    private boolean boardIsResolved;  // g 제거
+    private int boardCommentsCount;   // g 제거
+    private int boardLikeCount;       // g 제거
+    private int boardHateCount;       // g 제거
+    private int userNo;              // 이미 올바름
+    
 	public Group() {}
 
-	public Group(int gBoardNo, String gBoardTitle, String gBoardContent, String gBoardFiles,
-			List<String> gBoardFilesList, LocalDateTime gBoardRegDate, int gBoardViews, boolean gBoardIsResolved,
-			int gBoardCommentsCount, int gBoardLikeCount, int gBoardHateCount, int userNo) {
+	public Group(int boardNo, String boardTitle, String boardContent, String boardFile, List<String> boardFilesList,
+			LocalDateTime boardRegDate, int boardViews, boolean boardIsResolved, int boardCommentsCount,
+			int boardLikeCount, int boardHateCount, int userNo) {
 		super();
-		this.gBoardNo = gBoardNo;
-		this.gBoardTitle = gBoardTitle;
-		this.gBoardContent = gBoardContent;
-		this.gBoardFiles = gBoardFiles;
-		this.gBoardFilesList = gBoardFilesList;
-		this.gBoardRegDate = gBoardRegDate;
-		this.gBoardViews = gBoardViews;
-		this.gBoardIsResolved = gBoardIsResolved;
-		this.gBoardCommentsCount = gBoardCommentsCount;
-		this.gBoardLikeCount = gBoardLikeCount;
-		this.gBoardHateCount = gBoardHateCount;
+		this.boardNo = boardNo;
+		this.boardTitle = boardTitle;
+		this.boardContent = boardContent;
+		this.boardFile = boardFile;
+		this.boardFilesList = boardFilesList;
+		this.boardRegDate = boardRegDate;
+		this.boardViews = boardViews;
+		this.boardIsResolved = boardIsResolved;
+		this.boardCommentsCount = boardCommentsCount;
+		this.boardLikeCount = boardLikeCount;
+		this.boardHateCount = boardHateCount;
 		this.userNo = userNo;
 	}
 
-	public int getgBoardNo() {
-		return gBoardNo;
+	public int getBoardNo() {
+		return boardNo;
 	}
 
-	public void setgBoardNo(int gBoardNo) {
-		this.gBoardNo = gBoardNo;
+	public void setBoardNo(int boardNo) {
+		this.boardNo = boardNo;
 	}
 
-	public String getgBoardTitle() {
-		return gBoardTitle;
+	public String getBoardTitle() {
+		return boardTitle;
 	}
 
-	public void setgBoardTitle(String gBoardTitle) {
-		this.gBoardTitle = gBoardTitle;
+	public void setBoardTitle(String boardTitle) {
+		this.boardTitle = boardTitle;
 	}
 
-	public String getgBoardContent() {
-		return gBoardContent;
+	public String getBoardContent() {
+		return boardContent;
 	}
 
-	public void setgBoardContent(String gBoardContent) {
-		this.gBoardContent = gBoardContent;
+	public void setBoardContent(String boardContent) {
+		this.boardContent = boardContent;
 	}
 
-	public String getgBoardFiles() {
-		return gBoardFiles;
+	public String getBoardFile() {
+		return boardFile;
 	}
 
-	public void setgBoardFiles(String gBoardFiles) {
-		this.gBoardFiles = gBoardFiles;
+	public void setBoardFiles(String boardFile) {
+		this.boardFile = boardFile;
 	}
 
-	public List<String> getgBoardFilesList() {
-		return gBoardFilesList;
+	public List<String> getBoardFilesList() {
+		return boardFilesList;
 	}
 
-	public void setgBoardFilesList(List<String> gBoardFilesList) {
-		this.gBoardFilesList = gBoardFilesList;
+	public void setBoardFilesList(List<String> boardFilesList) {
+		this.boardFilesList = boardFilesList;
 	}
 
-	public LocalDateTime getgBoardRegDate() {
-		return gBoardRegDate;
+	public LocalDateTime getBoardRegDate() {
+		return boardRegDate;
 	}
 
-	public void setgBoardRegDate(LocalDateTime gBoardRegDate) {
-		this.gBoardRegDate = gBoardRegDate;
+	public void setBoardRegDate(LocalDateTime boardRegDate) {
+		this.boardRegDate = boardRegDate;
 	}
 
-	public int getgBoardViews() {
-		return gBoardViews;
+	public int getBoardViews() {
+		return boardViews;
 	}
 
-	public void setgBoardViews(int gBoardViews) {
-		this.gBoardViews = gBoardViews;
+	public void setBoardViews(int boardViews) {
+		this.boardViews = boardViews;
 	}
 
-	public boolean isgBoardIsResolved() {
-		return gBoardIsResolved;
+	public boolean isBoardIsResolved() {
+		return boardIsResolved;
 	}
 
-	public void setgBoardIsResolved(boolean gBoardIsResolved) {
-		this.gBoardIsResolved = gBoardIsResolved;
+	public void setBoardIsResolved(boolean boardIsResolved) {
+		this.boardIsResolved = boardIsResolved;
 	}
 
-	public int getgBoardCommentsCount() {
-		return gBoardCommentsCount;
+	public int getBoardCommentsCount() {
+		return boardCommentsCount;
 	}
 
-	public void setgBoardCommentsCount(int gBoardCommentsCount) {
-		this.gBoardCommentsCount = gBoardCommentsCount;
+	public void setBoardCommentsCount(int boardCommentsCount) {
+		this.boardCommentsCount = boardCommentsCount;
 	}
 
-	public int getgBoardLikeCount() {
-		return gBoardLikeCount;
+	public int getBoardLikeCount() {
+		return boardLikeCount;
 	}
 
-	public void setgBoardLikeCount(int gBoardLikeCount) {
-		this.gBoardLikeCount = gBoardLikeCount;
+	public void setBoardLikeCount(int boardLikeCount) {
+		this.boardLikeCount = boardLikeCount;
 	}
 
-	public int getgBoardHateCount() {
-		return gBoardHateCount;
+	public int getBoardHateCount() {
+		return boardHateCount;
 	}
 
-	public void setgBoardHateCount(int gBoardHateCount) {
-		this.gBoardHateCount = gBoardHateCount;
+	public void setBoardHateCount(int boardHateCount) {
+		this.boardHateCount = boardHateCount;
 	}
 
 	public int getUserNo() {
@@ -133,16 +133,5 @@ public class Group {
 		this.userNo = userNo;
 	}
 
-	@Override
-	public String toString() {
-		return "Group [gBoardNo=" + gBoardNo + ", gBoardTitle=" + gBoardTitle + ", gBoardContent=" + gBoardContent
-				+ ", gBoardFiles=" + gBoardFiles + ", gBoardFilesList=" + gBoardFilesList + ", gBoardRegDate="
-				+ gBoardRegDate + ", gBoardViews=" + gBoardViews + ", gBoardIsResolved=" + gBoardIsResolved
-				+ ", gBoardCommentsCount=" + gBoardCommentsCount + ", gBoardLikeCount=" + gBoardLikeCount
-				+ ", gBoardHateCount=" + gBoardHateCount + ", userNo=" + userNo + "]";
-	}
-
-	
-
-	
+    
 }
