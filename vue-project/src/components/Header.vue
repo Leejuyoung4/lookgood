@@ -131,7 +131,7 @@ import communityImage from '@/assets/img/iconoir-community0.svg';
 import userCheckImage from '@/assets/img/user-check0.svg';
 import userPlusImage from '@/assets/img/user-plus0.svg';
 import fluentHomePersonImage from '@/assets/img/fluent-home-person-24-regular0.svg';
-import logoutImage from '@/assets/img/Logout.png';
+import logoutImage from '@/assets/img/logout-04.svg';
 
 // 상태 관리
 const userInfo = ref(null);

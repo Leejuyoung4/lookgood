@@ -2,24 +2,69 @@ CREATE DATABASE IF NOT EXISTS final_prj_10;
 USE final_prj_10;
 
 -- 회원정보
-CREATE TABLE users (
-    user_no INT AUTO_INCREMENT PRIMARY KEY,      -- 회원 고유 번호
-    user_id VARCHAR(100) UNIQUE NOT NULL,        -- 회원 아이디 (고유)
-    password VARCHAR(100) NOT NULL,              -- 비밀번호
-    user_name VARCHAR(20) NOT NULL,              -- 회원 이름
-    phone_num VARCHAR(100) UNIQUE NOT NULL,      -- 전화번호 (고유)
-    email VARCHAR(200) UNIQUE NOT NULL,          -- 이메일 (고유)
-    join_date DATETIME NOT NULL                  -- 가입 날짜
+CREATE TABLE IF NOT EXISTS `user` (
+    user_no INT AUTO_INCREMENT PRIMARY KEY,
+    user_id VARCHAR(100) UNIQUE,
+    user_name VARCHAR(20) NOT NULL,
+    password VARCHAR(100) NOT NULL,
+    email VARCHAR(200) NOT NULL,
+    phone_num VARCHAR(100) UNIQUE,
+    join_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-INSERT INTO users (user_id, password, user_name, phone_num, email, join_date)
-VALUES
-('user101', 'password101', '홍길동', '010-1234-5678', 'user101@example.com', '2024-01-01 10:00:00'),
-('user102', 'password102', '김철수', '010-2345-6789', 'user102@example.com', '2024-02-01 11:00:00'),
-('user103', 'password103', '이영희', '010-3456-7890', 'user103@example.com', '2024-03-01 12:00:00'),
-('user104', 'password104', '박영수', '010-4567-8901', 'user104@example.com', '2024-04-01 13:00:00'),
-('user105', 'password105', '최민호', '010-5678-9012', 'user105@example.com', '2024-05-01 14:00:00');
+INSERT INTO `user` (user_id, user_name, password, email, phone_num) VALUES
+('john_doe01', 'John Doe', 'p@ssword123', 'john.doe@example.com', '555-201-0001'),
+('emma.smith02', 'Emma Smith', 'qwerty789', 'emma.smith@example.com', '555-201-0002'),
+('mike_hunter', 'Mike Hunter', 'hunter123!', 'mike.hunter@example.com', '555-201-0003'),
+('lisa.martinez', 'Lisa Martinez', 'password456', 'lisa.martinez@example.com', '555-201-0004'),
+('oliver.jones', 'Oliver Jones', 'oliver_pw', 'oliver.jones@example.com', '555-201-0005'),
+('ava.brown', 'Ava Brown', 'brownie@123', 'ava.brown@example.com', '555-201-0006'),
+('ethan_wilson', 'Ethan Wilson', 'wilson@456', 'ethan.wilson@example.com', '555-201-0007'),
+('sophia.lee', 'Sophia Lee', 'sofia$Lee', 'sophia.lee@example.com', '555-201-0008'),
+('james_moore', 'James Moore', 'mooreJames!', 'james.moore@example.com', '555-201-0009'),
+('mia.perez', 'Mia Perez', 'Perez#999', 'mia.perez@example.com', '555-201-0010'),
+('lucas_anderson', 'Lucas Anderson', 'lucas_pw2023', 'lucas.anderson@example.com', '555-201-0011'),
+('isabella.kim', 'Isabella Kim', 'Isab3ll@!', 'isabella.kim@example.com', '555-201-0012'),
+('benjamin_taylor', 'Benjamin Taylor', 'ben@Taylor', 'benjamin.taylor@example.com', '555-201-0013'),
+('charlotte.wong', 'Charlotte Wong', 'Charlott3$', 'charlotte.wong@example.com', '555-201-0014'),
+('daniel.harris', 'Daniel Harris', 'Dan_Harris123', 'daniel.harris@example.com', '555-201-0015'),
+('amelia.clark', 'Amelia Clark', 'Amelia#C2023', 'amelia.clark@example.com', '555-201-0016'),
+('henry_morris', 'Henry Morris', 'Morris!Henry', 'henry.morris@example.com', '555-201-0017'),
+('scarlett_white', 'Scarlett White', 'sc@rlettW', 'scarlett.white@example.com', '555-201-0018'),
+('leo.garcia', 'Leo Garcia', 'garciaLeo!', 'leo.garcia@example.com', '555-201-0019'),
+('zoe.young', 'Zoe Young', 'YoungZoe#9', 'zoe.young@example.com', '555-201-0020'),
+('liam_davis', 'Liam Davis', 'davisL!@m', 'liam.davis@example.com', '555-201-0021'),
+('ella.thomas', 'Ella Thomas', 'Ell@Thom!', 'ella.thomas@example.com', '555-201-0022'),
+('jackson_clark', 'Jackson Clark', 'clarkJack$', 'jackson.clark@example.com', '555-201-0023'),
+('chloe.mitchell', 'Chloe Mitchell', 'Clo!Mitch', 'chloe.mitchell@example.com', '555-201-0024'),
+('matthew.martinez', 'Matthew Martinez', 'M@thew2023', 'matthew.martinez@example.com', '555-201-0025'),
+('lily.allen', 'Lily Allen', 'Al!Lily99', 'lily.allen@example.com', '555-201-0026'),
+('alex.roberts', 'Alex Roberts', 'R0berts@lex', 'alex.roberts@example.com', '555-201-0027'),
+('sophia.wright', 'Sophia Wright', 'Wright#Soph', 'sophia.wright@example.com', '555-201-0028'),
+('ryan.king', 'Ryan King', 'K!ngRyan1', 'ryan.king@example.com', '555-201-0029'),
+('emma.johnson', 'Emma Johnson', 'john$0Emma', 'emma.johnson@example.com', '555-201-0030'),
+('harry_morgan', 'Harry Morgan', 'Harr@Morg', 'harry.morgan@example.com', '555-201-0031'),
+('amelie.foster', 'Amelie Foster', 'FosterAm!', 'amelie.foster@example.com', '555-201-0032'),
+('olivia.evans', 'Olivia Evans', 'Oli#Evans', 'olivia.evans@example.com', '555-201-0033'),
+('lucas.watson', 'Lucas Watson', 'W@ts0nL!', 'lucas.watson@example.com', '555-201-0034'),
+('ella.brooks', 'Ella Brooks', 'BrooksEll$', 'ella.brooks@example.com', '555-201-0035'),
+('oscar.gonzalez', 'Oscar Gonzalez', 'Osc@rG123', 'oscar.gonzalez@example.com', '555-201-0036'),
+('hannah.ramirez', 'Hannah Ramirez', 'Rami!Han', 'hannah.ramirez@example.com', '555-201-0037'),
+('michael.phillips', 'Michael Phillips', 'Ph!lMike', 'michael.phillips@example.com', '555-201-0038'),
+('abigail.price', 'Abigail Price', 'Abby!Pr1ce', 'abigail.price@example.com', '555-201-0039'),
+('isaac.cooper', 'Isaac Cooper', 'CooP@1saac', 'isaac.cooper@example.com', '555-201-0040'),
+('natalie.bell', 'Natalie Bell', 'BellNat@!', 'natalie.bell@example.com', '555-201-0041'),
+('gabriel.ward', 'Gabriel Ward', 'W@rdGab!', 'gabriel.ward@example.com', '555-201-0042'),
+('eva.roberts', 'Eva Roberts', 'R0bEva23', 'eva.roberts@example.com', '555-201-0043'),
+('william.green', 'William Green', 'W!llGreen', 'william.green@example.com', '555-201-0044'),
+('grace.baker', 'Grace Baker', 'Grac@B@ke', 'grace.baker@example.com', '555-201-0045'),
+('jacob.reed', 'Jacob Reed', 'ReedJacob#', 'jacob.reed@example.com', '555-201-0046'),
+('mia.young', 'Mia Young', 'YouNg@Mia', 'mia.young@example.com', '555-201-0047'),
+('elizabeth.cook', 'Elizabeth Cook', 'C00kLiz', 'elizabeth.cook@example.com', '555-201-0048'),
+('jackson.taylor', 'Jackson Taylor', 'TaylJ@cks', 'jackson.taylor@example.com', '555-201-0049'),
+('charlie.hill', 'Charlie Hill', 'HiLL$Char', 'charlie.hill@example.com', '555-201-0050');
 
+select * from user;
 
 
 -- 문의사항 게시판
@@ -27,30 +72,53 @@ CREATE TABLE inquiry_board (
     i_no INT AUTO_INCREMENT PRIMARY KEY,  -- 게시글 번호
     i_title VARCHAR(200) NOT NULL,        -- 제목
     i_contents VARCHAR(1000) NOT NULL,    -- 내용
-    i_file VARCHAR(200),                  -- 파일 경로
+    i_files VARCHAR(200),                  -- 파일 경로
     i_reg_date DATETIME NOT NULL,         -- 등록일
     i_views INT NOT NULL DEFAULT 0,       -- 조회수
     i_is_resolved BOOLEAN NOT NULL DEFAULT FALSE, -- 해결 여부
     i_comments_count INT NOT NULL DEFAULT 0, -- 댓글 수
-    i_category_name VARCHAR(200) NOT NULL -- 카테고리 이름
+    i_category_name VARCHAR(200) NOT NULL, -- 카테고리 이름
+    user_no INT NOT NULL,
+    FOREIGN KEY (user_no) REFERENCES user(user_no) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 INSERT INTO inquiry_board 
-    (i_title, i_contents, i_file, i_reg_date, i_views, i_is_resolved, i_comments_count, i_category_name) 
+    (i_title, i_contents, i_files, i_reg_date, i_views, i_is_resolved, i_comments_count, i_category_name, user_no) 
 VALUES
-    ('첫 번째 문의', '첫 번째 문의 내용입니다.', 'file1.png', NOW(), 10, FALSE, 2, '회원'),
-    ('두 번째 문의', '두 번째 문의 내용입니다.', NULL, NOW(), 20, TRUE, 5, '영상'),
-    ('세 번째 문의', '세 번째 문의 내용입니다.', 'file3.pdf', NOW(), 30, FALSE, 0, '모임'),
-    ('네 번째 문의', '네 번째 문의 내용입니다.', 'file4.docx', NOW(), 40, TRUE, 1, '기타'),
-    ('다섯 번째 문의', '다섯 번째 문의 내용입니다.', NULL, NOW(), 50, FALSE, 10, '회원'),
-    ('여섯 번째 문의', '여섯 번째 문의 내용입니다.', 'file6.jpg', NOW(), 60, TRUE, 3, '영상'),
-    ('일곱 번째 문의', '일곱 번째 문의 내용입니다.', NULL, NOW(), 15, FALSE, 4, '모임'),
-    ('여덟 번째 문의', '여덟 번째 문의 내용입니다.', 'file8.png', NOW(), 25, TRUE, 6, '기타'),
-    ('아홉 번째 문의', '아홉 번째 문의 내용입니다.', 'file9.gif', NOW(), 35, FALSE, 8, '회원'),
-    ('열 번째 문의', '열 번째 문의 내용입니다.', NULL, NOW(), 45, TRUE, 7, '영상');
+    ('첫 번째 문의', '첫 번째 문의 내용입니다.', 'file1.png', NOW(), 10, FALSE, 2, '회원', 1),
+    ('두 번째 문의', '두 번째 문의 내용입니다.', NULL, NOW(), 20, TRUE, 5, '영상', 2),
+    ('세 번째 문의', '세 번째 문의 내용입니다.', 'file3.pdf', NOW(), 30, FALSE, 0, '모임', 3),
+    ('네 번째 문의', '네 번째 문의 내용입니다.', 'file4.docx', NOW(), 40, TRUE, 1, '기타', 4),
+    ('다섯 번째 문의', '다섯 번째 문의 내용입니다.', NULL, NOW(), 50, FALSE, 10, '회원', 5),
+    ('여섯 번째 문의', '여섯 번째 문의 내용입니다.', 'file6.jpg', NOW(), 60, TRUE, 3, '영상', 6),
+    ('일곱 번째 문의', '일곱 번째 문의 내용입니다.', NULL, NOW(), 15, FALSE, 4, '모임', 7),
+    ('여덟 번째 문의', '여덟 번째 문의 내용입니다.', 'file8.png', NOW(), 25, TRUE, 6, '기타', 8),
+    ('아홉 번째 문의', '아홉 번째 문의 내용입니다.', 'file9.gif', NOW(), 35, FALSE, 8, '회원', 9),
+    ('열 번째 문의', '열 번째 문의 내용입니다.', NULL, NOW(), 45, TRUE, 7, '영상', 10);
 
 SELECT * FROM inquiry_board;
 
+-- 문의사항 게시판 댓글
+-- 문의사항 게시판 댓글 테이블 생성
+CREATE TABLE inquiry_comments (
+    i_comment_no INT AUTO_INCREMENT PRIMARY KEY,          -- 댓글 번호 (Primary Key)
+    i_comment_content VARCHAR(1000) NOT NULL,            -- 댓글 내용
+    i_comment_reg_date DATETIME NOT NULL DEFAULT NOW(),  -- 댓글 등록일
+    i_comment_mod_date DATETIME NOT NULL DEFAULT NOW() ON UPDATE NOW(), -- 댓글 수정일
+    i_no INT NOT NULL,                                   -- 관련된 문의 게시글 번호 (Foreign Key)
+    user_no INT NOT NULL,                                -- 작성자 번호 (Foreign Key)
+    FOREIGN KEY (i_comment_no) REFERENCES inquiry_board(i_no) ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY (user_no) REFERENCES user(user_no) ON UPDATE CASCADE ON DELETE CASCADE
+);
+
+-- 더미 데이터 삽입
+INSERT INTO inquiry_comments (i_comment_content, i_no, user_no)
+VALUES 
+('이 문의에 공감합니다!', 1, 1),
+('추가적인 정보가 궁금합니다.', 1, 2),
+('좋은 의견 감사합니다.', 2, 3),
+('의견 감사합니다.', 2, 4),
+('좋은 의견 감사.', 2, 5);
 
 
 -- 모임게시판
@@ -58,7 +126,7 @@ CREATE TABLE group_board (
     g_board_no INT AUTO_INCREMENT PRIMARY KEY, -- 게시글 번호
     g_board_title VARCHAR(200) NOT NULL, -- 게시글 제목
     g_board_content VARCHAR(1000) NOT NULL, -- 게시글 내용
-    g_board_file VARCHAR(1000) NULL, -- 첨부 파일
+    g_board_files VARCHAR(1000) NULL, -- 첨부 파일
     g_board_reg_date DATETIME NOT NULL DEFAULT NOW(), -- 등록 날짜
     g_board_views INT NOT NULL DEFAULT 0, -- 조회수
     g_board_is_resolved BOOLEAN NOT NULL DEFAULT FALSE, -- 해결 여부
@@ -69,7 +137,7 @@ CREATE TABLE group_board (
 );
 
 INSERT INTO group_board 
-    (g_board_title, g_board_content, g_board_file, g_board_views, g_board_is_resolved, g_board_comments_count, g_board_like_count, g_board_hate_count, user_no)
+    (g_board_title, g_board_content, g_board_files, g_board_views, g_board_is_resolved, g_board_comments_count, g_board_like_count, g_board_hate_count, user_no)
 VALUES
     ('모임 장소 변경 문의', '모임 장소를 변경하려면 어떻게 해야 하나요?', NULL, 25, FALSE, 2, 5, 1, 1),
     ('모임 후기 작성', '이번 모임 정말 즐거웠어요! 감사합니다.', NULL, 42, TRUE, 10, 15, 0, 2),
@@ -79,6 +147,15 @@ VALUES
 
 SELECT * FROM group_board;
 
+CREATE TABLE g_board_likes (
+    like_no INT AUTO_INCREMENT PRIMARY KEY, -- 좋아요 번호
+    user_no INT NOT NULL, -- 사용자 ID
+    g_board_no INT NOT NULL, -- 게시글 ID
+    created_at DATETIME NOT NULL DEFAULT NOW(), -- 좋아요 등록 시간
+    UNIQUE KEY (user_no, g_board_no) -- 사용자-게시글 조합은 유일해야 함
+);
+
+
 -- 모임게시판 댓글
 CREATE TABLE group_board_comment (
     g_board_comment_no INT AUTO_INCREMENT PRIMARY KEY,      -- 댓글 고유 번호
@@ -87,8 +164,8 @@ CREATE TABLE group_board_comment (
     g_board_comment_mod_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,   -- 댓글 수정일
     g_board_no INT NOT NULL,                                -- 게시글 번호 (외래키)
     user_no INT NOT NULL,                                   -- 사용자 번호 (외래키)
-    FOREIGN KEY (g_board_no) REFERENCES group_board(g_board_no), -- 게시글 참조
-    FOREIGN KEY (user_no) REFERENCES users(user_no)         -- 사용자 참조
+    FOREIGN KEY (g_board_no) REFERENCES group_board(g_board_no) ON UPDATE CASCADE ON DELETE CASCADE, -- 게시글 참조
+    FOREIGN KEY (user_no) REFERENCES user(user_no) ON UPDATE CASCADE ON DELETE CASCADE         -- 사용자 참조
 );
 
 INSERT INTO group_board_comment (g_board_comment_content, g_board_no, user_no)
@@ -110,7 +187,7 @@ CREATE TABLE group_board_comment_like (
     user_no INT NOT NULL,                               -- 사용자 번호
     UNIQUE (g_board_comment_no, user_no),               -- 중복 좋아요 방지
     FOREIGN KEY (g_board_comment_no) REFERENCES group_board_comment(g_board_comment_no) ON UPDATE CASCADE ON DELETE CASCADE,
-    FOREIGN KEY (user_no) REFERENCES users(user_no) ON UPDATE CASCADE ON DELETE CASCADE
+    FOREIGN KEY (user_no) REFERENCES user(user_no) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 INSERT INTO group_board_comment_like (g_board_like_no, g_board_like_reg_date, g_board_comment_no, user_no)
@@ -119,3 +196,331 @@ VALUES
     (2, '2024-11-21 10:05:00', 2, 2), -- 댓글 2번에 사용자 2번이 좋아요
     (3, '2024-11-21 10:10:00', 1, 3), -- 댓글 1번에 사용자 3번이 좋아요
     (4, '2024-11-21 10:15:00', 3, 4); -- 댓글 3번에 사용자 4번이 좋아요
+    
+    
+CREATE TABLE events (
+    e_no INT NOT NULL AUTO_INCREMENT PRIMARY KEY, -- 이벤트 고유 번호
+    e_title VARCHAR(200) NOT NULL,               -- 이벤트 제목
+    e_short VARCHAR(100) NOT NULL,               -- 이벤트 간단 설명
+    e_content VARCHAR(1000) NOT NULL,            -- 이벤트 상세 설명
+    e_start_date DATE NOT NULL,                  -- 이벤트 시작일
+    e_end_date DATE NOT NULL,                    -- 이벤트 종료일
+    e_big_city VARCHAR(100) NOT NULL,            -- 대도시 이름
+    e_small_city VARCHAR(100) NOT NULL           -- 소도시 이름
+);
+
+-- 이벤트 테이블 데이터 삽입
+INSERT INTO events (e_no, e_title, e_short, e_content, e_start_date, e_end_date, e_big_city, e_small_city)
+VALUES
+(1, '2024 서울 마라톤 대회', '서울의 중심에서 펼쳐지는 마라톤', '서울 도심을 가로지르며 자연을 만끽할 수 있는 대회입니다.', '2024-03-15', '2024-03-15', '서울특별시', '중구'),
+(2, '부산 국제 트라이애슬론', '수영, 자전거, 달리기의 조화', '부산 해운대에서 시작되는 세계적 트라이애슬론 대회입니다.', '2024-05-10', '2024-05-10', '부산광역시', '해운대구'),
+(3, '제주 요가 페스티벌', '자연 속 요가의 시간', '제주의 자연과 함께하는 요가와 명상의 특별한 축제입니다.', '2024-06-01', '2024-06-03', '제주특별자치도', '제주시'),
+(4, '인천 국제 펜싱 대회', '펜싱 선수들의 치열한 승부', '세계 최고 수준의 펜싱 선수들이 참여하는 대회입니다.', '2024-07-10', '2024-07-12', '인천광역시', '남동구'),
+(5, '광주 클라이밍 챔피언십', '최고의 클라이머들이 모인다', '광주에서 개최되는 국내외 클라이밍 선수들의 챔피언십입니다.', '2024-08-20', '2024-08-21', '광주광역시', '북구'),
+(6, '대전 사이클링 대회', '대전의 자연을 즐기며 사이클링', '대전의 도로를 따라 펼쳐지는 대규모 사이클링 대회입니다.', '2024-09-01', '2024-09-01', '대전광역시', '유성구'),
+(7, '울산 국제 배드민턴 대회', '국내외 배드민턴 선수들의 대결', '울산에서 열리는 국제 배드민턴 대회로 다양한 이벤트도 준비되어 있습니다.', '2024-10-05', '2024-10-06', '울산광역시', '중구'),
+(8, '강원도 트레일 러닝 페스티벌', '산과 숲 속을 달리는 즐거움', '강원도의 산악 코스를 즐기며 달릴 수 있는 특별한 대회입니다.', '2024-04-20', '2024-04-21', '강원도', '춘천시'),
+(9, '경기도 축구 토너먼트', '전국 축구팀의 대결', '경기도에서 진행되는 축구 토너먼트 대회로 뜨거운 열기가 가득합니다.', '2024-11-15', '2024-11-16', '경기도', '수원시'),
+(10, '서울 국제 철인 3종 경기', '극한의 도전을 경험하세요', '수영, 사이클, 달리기를 모두 포함한 철인 3종 경기가 서울에서 열립니다.', '2024-12-01', '2024-12-01', '서울특별시', '강남구');
+
+
+CREATE TABLE events_details (
+    e_details_no INT NOT NULL AUTO_INCREMENT PRIMARY KEY, -- 상세 정보 고유 번호
+    description TEXT NOT NULL,                            -- 상세 설명
+    address VARCHAR(200) NULL,                            -- 주소
+    inquiry_number VARCHAR(20) NULL,                      -- 문의 번호
+    website_url VARCHAR(200) NULL,                        -- 웹사이트 URL
+    check_in_time VARCHAR(200) NULL,                      -- 체크인 시간
+    check_out_time VARCHAR(200) NULL,                     -- 체크아웃 시간
+    parking_available BOOLEAN NULL,                       -- 주차 가능 여부
+    facilities VARCHAR(200) NULL,                         -- 시설 정보
+    entry_fee INT NULL,                                   -- 참가비용
+    e_no INT NOT NULL,                                    -- 이벤트 고유 번호 (외래 키)
+
+    -- 외래 키 설정
+    CONSTRAINT fk_events_details_e_no FOREIGN KEY (e_no) REFERENCES events(e_no) ON DELETE CASCADE
+);
+
+INSERT INTO events_details (e_details_no, description, address, inquiry_number, website_url, check_in_time, check_out_time, parking_available, facilities, entry_fee, e_no)
+VALUES
+(1, 
+    '서울 마라톤 대회는 도심을 가로지르며 자연을 만끽할 수 있는 마라톤으로, 초보자와 전문가 모두 즐길 수 있습니다.', 
+    '서울특별시 중구 세종대로 110', 
+    '02-1234-5678', 
+    'https://seoulmarathon.com', 
+    '06:00', 
+    '18:00', 
+    TRUE, 
+    '화장실, 음료 제공, 안전 요원 배치', 
+    50000, 
+    1),
+(2, 
+    '부산 국제 트라이애슬론은 수영, 자전거, 달리기를 결합한 도전적이고 독특한 스포츠 이벤트로 세계적 수준을 자랑합니다.', 
+    '부산광역시 해운대구 해운대해변로 120', 
+    '051-9876-5432', 
+    'https://busantriathlon.com', 
+    '07:00', 
+    '19:00', 
+    TRUE, 
+    '샤워실, 자전거 보관소, 응급처치 스테이션', 
+    80000, 
+    2),
+(3, 
+    '제주 요가 페스티벌은 한라산과 올레길을 배경으로 자연과 조화를 이루며 심신을 힐링할 수 있는 요가 행사입니다.', 
+    '제주특별자치도 제주시 한라산길 50', 
+    '064-2222-3333', 
+    'https://jejuyoga.com', 
+    '08:00', 
+    '17:00', 
+    TRUE, 
+    '야외 매트 제공, 자연 산책로, 휴식 공간', 
+    30000, 
+    3),
+(4, 
+    '인천 국제 펜싱 대회는 국내외 최정상급 펜싱 선수들이 참가하여 박진감 넘치는 경기를 펼치는 명실상부한 국제 대회입니다.', 
+    '인천광역시 남동구 남동대로 250', 
+    '032-5555-7777', 
+    'https://incheonfencing.com', 
+    '09:00', 
+    '20:00', 
+    TRUE, 
+    '대형 주차장, 관람석, 선수 라운지', 
+    60000, 
+    4),
+(5, 
+    '광주 클라이밍 챔피언십은 국내외 클라이머들이 참여해 기술과 체력을 겨루는 클라이밍 축제입니다.', 
+    '광주광역시 북구 클라이밍로 25', 
+    '062-1234-5678', 
+    'https://gwangjuclimbing.com', 
+    '10:00', 
+    '18:00', 
+    FALSE, 
+    '클라이밍 장비 대여, 응급의료 지원', 
+    40000, 
+    5),
+(6, 
+    '대전 사이클링 대회는 아름다운 대전의 자연과 도시 경관을 따라 사이클링의 즐거움을 만끽할 수 있는 대규모 이벤트입니다.', 
+    '대전광역시 유성구 자전거길 77', 
+    '042-4444-5555', 
+    'https://daejeoncycling.com', 
+    '07:30', 
+    '16:30', 
+    TRUE, 
+    '사이클 스탠드, 물 보급소, 의료 지원', 
+    25000, 
+    6),
+(7, 
+    '울산 국제 배드민턴 대회는 국내외 배드민턴 동호인과 전문가들이 함께하는 축제의 장으로 다양한 경기가 펼쳐집니다.', 
+    '울산광역시 중구 배드민턴로 85', 
+    '052-8888-9999', 
+    'https://ulsanbadminton.com', 
+    '08:30', 
+    '19:30', 
+    TRUE, 
+    '라켓 대여, 휴게실, 음료 제공', 
+    20000, 
+    7),
+(8, 
+    '강원도 트레일 러닝 페스티벌은 강원도의 아름다운 산악 코스를 따라 자연 속에서 달리는 기회를 제공합니다.', 
+    '강원도 춘천시 산길로 100', 
+    '033-1111-2222', 
+    'https://gangwontrailrun.com', 
+    '06:00', 
+    '15:00', 
+    FALSE, 
+    '의료 지원팀, 음료 제공, 완주 메달', 
+    30000, 
+    8),
+(9, 
+    '경기도 축구 토너먼트는 전국 각지에서 모인 축구팀들이 실력을 겨루며 뜨거운 열기와 재미를 선사합니다.', 
+    '경기도 수원시 축구장로 200', 
+    '031-5555-6666', 
+    'https://gyeonggisoccer.com', 
+    '09:00', 
+    '18:00', 
+    TRUE, 
+    '샤워실, 관중석, 음료 제공', 
+    10000, 
+    9),
+(10, 
+    '서울 국제 철인 3종 경기는 수영, 사이클링, 달리기를 통해 극한의 도전을 경험할 수 있는 대회로, 참가자들의 뜨거운 열정이 가득합니다.', 
+    '서울특별시 강남구 철인로 300', 
+    '02-7777-8888', 
+    'https://seoulironman.com', 
+    '05:00', 
+    '22:00', 
+    TRUE, 
+    '수영장, 자전거 정비소, 응급 지원', 
+    100000, 
+    10);
+    
+    
+ CREATE TABLE videos (
+        v_no INT AUTO_INCREMENT PRIMARY KEY, -- 비디오 번호 (기본 키)
+    v_title VARCHAR(255) NOT NULL, -- 비디오 제목
+    v_description TEXT, -- 비디오 설명
+    v_upload_date DATETIME NOT NULL, -- 업로드 날짜
+    v_views INT DEFAULT 0, -- 조회수
+    v_likes INT DEFAULT 0, -- 좋아요 수
+    v_hates INT DEFAULT 0, -- 싫어요 수
+    v_instructor VARCHAR(255), -- 강사 이름
+    v_instructor_intro TEXT, -- 강사 소개
+    v_category_name VARCHAR(100), -- 카테고리 이름
+    saved_no INT, -- 저장 번호
+    video_id VARCHAR(255) NOT NULL UNIQUE, -- 비디오 ID (중복 방지)
+    playlist_name VARCHAR(100), -- 재생목록 이름
+    playlist_order INT, -- 재생목록 순서
+    user_no INT -- 사용자 번호 (참조 가능)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT INTO videos (
+    v_title, 
+    v_description, 
+    v_upload_date, 
+    v_views, 
+    v_likes, 
+    v_hates, 
+    v_instructor, 
+    v_instructor_intro, 
+    v_category_name, 
+    saved_no, 
+    video_id, 
+    playlist_name, 
+    playlist_order, 
+    user_no
+)
+VALUES
+-- 첫 번째 비디오
+('팔굽혀펴기 본전 확실히 뽑는 법', 
+ '누구나 할 수 있는 팔굽혀펴기 운동의 본전을 확실히 뽑는 방법이 있습니다. 바로 "병합팔굽혀펴기"라는 것인데요. 병합팔굽혀펴기 한 가지 동작에 세 가지 근력운동 동작이 포함됩니다.',
+ '2020-05-02 00:00:00', 1012718, 1004, 59, 
+ '정선근', 
+ '서울대학교 의과대학 재활의학교실 주임교수이자 서울대학교병원 재활의학과 과장으로 재직 중인 재활의학 전문의입니다.', 
+ '헬스', 1, 'OQjv-MZCHJU', '상체운동', 1, 1),
+
+-- 두 번째 비디오
+('8분으로 끝내는 골반교정 풀 루틴', 
+ '현대인의 대부분은 골반 전방경사를 겪고 있으며, 이는 허리 통증, 자세 불균형, 코어 근육 약화를 초래합니다. 이를 해결하기 위해 Bird Dog, Hollow Body, Glute Bridge 등의 운동으로 복부와 둔근을 강화합니다.',
+ '2021-04-06 00:00:00', 2202142, 4892, 102, 
+ '최하늘', 
+ '마스터 최는 대한민국의 운동 전문가로, "싱무브 그라운드"라는 교육센터를 운영하며 다양한 운동법과 건강 철학을 공유하고 있습니다.', 
+ '헬스', 2, 'PvIhCUOsZSM', '스트레칭', 1, 1),
+
+-- 세 번째 비디오
+('이두, 삼두를 크게 키우는 팔 운동', 
+ '스탠딩 바벨 컬과 프리처 컬 머신을 활용해 이두근을, 케이블 푸시다운과 라잉 트라이셉스 익스텐션으로 삼두근을 효과적으로 발달시킬 수 있습니다. 운동 시에는 정확한 자세를 유지하는 것이 중요합니다.',
+ '2024-10-09 00:00:00', 59698, 567, 126, 
+ '강경원', 
+ '1999년 미스터 코리아 대상을 수상하며 국내외 보디빌딩 대회에서 뛰어난 성적을 거두었습니다. 특히, 아시아인 최초로 올림피아 진출권을 획득하는 등 국제 무대에서도 활약했습니다.', 
+ '헬스', 3, 'RBbPy8Y2GC4', '상체운동', 2, 1),
+
+-- 네 번째 비디오
+('필라테스 입문자를 위한 초급 레슨', 
+ '초급자를 위한 기초 전신 필라테스 루틴으로, 동작 하나하나를 정확히 수행하며 체내 심부 근육을 활성화하고 균형을 기르는 데 도움을 줍니다. 호흡과 동작을 통합적으로 컨트롤하며 체계적인 결과를 얻을 수 있습니다.',
+ '2021-08-23 00:00:00', 1232674, 5434, 65, 
+ '이서연', 
+ '"빵느"는 물리치료사이자 필라테스 강사로, "빵느 필라테스 스튜디오"를 운영하며 맞춤형 프로그램을 제공합니다.', 
+ '필라테스', 4, 'gcpiKiweo2I', '필라테스', 1, 1);
+select * from videos;
+
+CREATE TABLE saved_videos (
+    saved_no INT AUTO_INCREMENT PRIMARY KEY,
+    user_no INT NOT NULL,                    -- 사용자 번호
+    v_no INT NOT NULL,                       -- 비디오 번호
+    progress_rate INT DEFAULT 0,             -- 진도율 (0-100%)
+    is_completed BOOLEAN DEFAULT FALSE,      -- 완료 여부
+    saved_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- 저장한 날짜
+    FOREIGN KEY (user_no) REFERENCES user(user_no) ON DELETE CASCADE,
+    FOREIGN KEY (v_no) REFERENCES videos(v_no) ON DELETE CASCADE,
+    UNIQUE KEY unique_user_video (user_no, v_no) -- 동일한 사용자가 같은 영상을 중복 저장하지 못하도록
+);
+
+-- 테스트용 데이터 삽입 (실제 존재하는 user_no와 v_no 사용)
+INSERT INTO saved_videos (user_no, v_no) 
+SELECT u.user_no, v.v_no
+FROM user u, videos v
+WHERE u.user_id = 'test_user' AND v.v_title = '테스트 비디오'
+LIMIT 1;
+
+-- 저장 취소하기
+DELETE FROM saved_videos 
+WHERE user_no = (SELECT user_no FROM user WHERE user_id = 'test_user')
+AND v_no = (SELECT v_no FROM videos WHERE v_title = '테스트 비디오');
+
+-- 저장 여부 확인하기
+SELECT COUNT(*) 
+FROM saved_videos sv
+JOIN user u ON sv.user_no = u.user_no
+JOIN videos v ON sv.v_no = v.v_no
+WHERE u.user_id = 'test_user' 
+AND v.v_title = '테스트 비디오';
+
+-- 사용자의 저장된 영상 목록 조회
+SELECT 
+    v.v_no,
+    v.v_title,
+    v.v_description,
+    v.v_upload_date,
+    v.v_views,
+    v.v_likes,
+    v.v_hates,
+    v.v_instructor,
+    v.v_instructor_intro,
+    v.v_category_name,
+    v.video_id,
+    sv.saved_date,
+    sv.progress_rate,
+    sv.is_completed
+FROM videos v
+JOIN saved_videos sv ON v.v_no = sv.v_no
+JOIN user u ON sv.user_no = u.user_no
+WHERE u.user_id = 'test_user'
+ORDER BY sv.saved_date DESC;
+
+-- 진도율 업데이트
+UPDATE saved_videos sv
+JOIN user u ON sv.user_no = u.user_no
+JOIN videos v ON sv.v_no = v.v_no
+SET 
+    sv.progress_rate = 50,
+    sv.is_completed = CASE WHEN sv.progress_rate >= 100 THEN TRUE ELSE FALSE END
+WHERE u.user_id = 'test_user' 
+AND v.v_title = '테스트 비디오';
+
+-- 완료된 영상 목록 조회
+SELECT 
+    v.v_no,
+    v.v_title,
+    v.v_description,
+    v.video_id,
+    v.v_instructor,
+    v.v_category_name,
+    sv.saved_date,
+    sv.progress_rate
+FROM videos v
+JOIN saved_videos sv ON v.v_no = sv.v_no
+JOIN user u ON sv.user_no = u.user_no
+WHERE u.user_id = 'test_user' 
+AND sv.is_completed = TRUE
+ORDER BY sv.saved_date DESC;
+
+-- 진행 중인 영상 목록 조회
+SELECT 
+    v.v_no,
+    v.v_title,
+    v.v_description,
+    v.video_id,
+    v.v_instructor,
+    v.v_category_name,
+    sv.saved_date,
+    sv.progress_rate
+FROM videos v
+JOIN saved_videos sv ON v.v_no = sv.v_no
+JOIN user u ON sv.user_no = u.user_no
+WHERE u.user_id = 'test_user' 
+AND sv.is_completed = FALSE
+ORDER BY sv.progress_rate DESC;
+
+select * from videos;
+
+SELECT * FROM events WHERE e_title LIKE '%서울%';
