@@ -101,6 +101,10 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
+  scrollBehavior(to, from, savedPosition) {
+    // 항상 페이지 상단으로 이동
+    return { top: 0 };
+  },
 });
 
 export default router;
