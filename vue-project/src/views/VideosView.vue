@@ -1,22 +1,53 @@
 <template>
-  <div class="video-list">
-    <div class="video" 
-         v-for="video in paginatedVideos" 
-         :key="video.vNo"
-         @click="goToVideo(video.vNo)">
-      <div class="video-thumbnail">
-        <img :src="video.image" :alt="video.title" />
+  <div class="video-div">
+    <!-- 메뉴바 추가 -->
+    <div class="video-menu">
+      <div class="menu-item" 
+           v-for="(icon, index) in icons" 
+           :key="index" 
+           @click="filterVideos(icon.category)"
+           :class="{ active: selectedCategory === icon.category }">
+        <img :src="icon.src" />
+        <span>{{ icon.name }}</span>
       </div>
-      <div class="video-content">
-        <h3 class="video-title">{{ video.title || '제목 없음' }}</h3>
-        <div class="video-info">
-          <span class="instructor">{{ video.instructor || '강사 미정' }}</span>
-          <div class="stats">
-            <span class="views">조회수 {{ formatViews(video.views) }}회</span>
-            <span class="upload-date">{{ formatDate(video.uploadDate) }}</span>
+    </div>
+
+    <!-- 로딩 상태 표시 -->
+    <div v-if="loading" class="loading">
+      데이터를 불러오는 중...
+    </div>
+
+    <!-- 에러 메시지 표시 -->
+    <div v-if="error" class="error">
+      {{ error }}
+    </div>
+
+    <!-- 비디오 리스트 -->
+    <div v-else class="video-list">
+      <div class="video" 
+           v-for="video in paginatedVideos" 
+           :key="video.vNo"
+           @click="goToVideo(video.vNo)">
+        <div class="video-thumbnail">
+          <img :src="`https://img.youtube.com/vi/${video.videoId}/mqdefault.jpg`" :alt="video.title" />
+        </div>
+        <div class="video-content">
+          <h3 class="video-title">{{ video.title || '제목 없음' }}</h3>
+          <div class="video-info">
+            <span class="instructor">{{ video.instructor || '강사 미정' }}</span>
+            <div class="stats">
+              <span class="views">조회수 {{ formatViews(video.views) }}회</span>
+              <span class="upload-date">{{ formatDate(video.uploadDate) }}</span>
+            </div>
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- 페이지네이션 버튼 -->
+    <div class="pagination" v-if="filteredVideos.length > itemsPerPage">
+      <button @click="prevPage" :disabled="currentPage === 1">이전</button>
+      <button @click="nextPage" :disabled="currentPage === totalPages">다음</button>
     </div>
   </div>
 </template>
@@ -219,23 +250,24 @@ const isActiveCategory = (category) => {
 
 <style scoped>
 .video-div {
-  background: var(--bg-color);
-  box-sizing: border-box;
-  height: auto;
+  background: #FFFDF7;
+  min-height: 100vh;
+  padding: 40px;
   position: relative;
-  overflow: hidden;
-  padding-bottom: 50px;
-  transition: background-color 0.3s ease;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
 .video-menu {
   display: flex;
   justify-content: center;
-  gap: 70px;
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  top: 100px;
+  gap: 30px;
+  background: white;
+  padding: 25px 40px;
+  margin-bottom: 40px;
+  border-radius: 16px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  border: 1px solid #FFE082;
 }
 
 .menu-item {
@@ -244,51 +276,60 @@ const isActiveCategory = (category) => {
   align-items: center;
   cursor: pointer;
   transition: all 0.3s ease;
+  padding: 10px 20px;
+  border-radius: 12px;
+  min-width: 100px;
 }
 
 .menu-item img {
-  width: 60px;
-  height: auto;
-  transition: filter 0.3s ease;
+  width: 40px;
+  height: 40px;
+  transition: all 0.3s ease;
+  filter: brightness(1.2);
 }
 
 .menu-item span {
-  margin-top: 10px;
-  font-size: 20px;
-  font-family: "Inter-Medium", sans-serif;
+  margin-top: 8px;
+  font-size: 15px;
   font-weight: 500;
-  color: var(--text-color);
-  transition: color 0.3s ease;
+  color: #666;
+}
+
+.menu-item:hover {
+  background: #FFF8E1;
+}
+
+.menu-item.active {
+  background: #FFF8E1;
+  border-bottom: 3px solid #FFC107;
 }
 
 .video-list {
+  margin-top: 200px;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 24px;
-  margin-top: 400px;
-  padding: 0 50px;
+  margin-top: 20px;
 }
 
 .video {
-  display: flex;
-  flex-direction: column;
-  background: var(--bg-color);
-  border-radius: 12px;
+  background: white;
+  border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s ease, background-color 0.3s ease;
-  border: 1px solid var(--border-color);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.2s ease;
+  border: 1px solid #FFE082;
 }
 
 .video:hover {
   transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(255, 193, 7, 0.2);
 }
 
 .video-thumbnail {
-  width: 100%;
   position: relative;
-  padding-top: 56.25%; /* 16:9 비율 */
-  overflow: hidden;
+  padding-top: 56.25%;
+  background: #f5f5f5;
 }
 
 .video-thumbnail img {
@@ -302,124 +343,92 @@ const isActiveCategory = (category) => {
 
 .video-content {
   padding: 16px;
-  background: var(--bg-color);
 }
 
 .video-title {
+  color: #333;
   font-size: 16px;
   font-weight: 600;
-  margin: 0 0 8px 0;
   line-height: 1.4;
+  margin-bottom: 8px;
   display: -webkit-box;
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  color: var(--text-color);
-}
-
-.video-description {
-  font-size: 14px;
-  color: var(--text-color);
-  opacity: 0.8;
-  margin-bottom: 12px;
-}
-
-.video-info {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
 }
 
 .instructor {
+  color: #FFA000;
   font-size: 14px;
   font-weight: 500;
-  color: #1a73e8;
-}
-
-.instructor-intro {
-  font-size: 13px;
-  color: #666;
-  margin: 0;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  margin-bottom: 4px;
 }
 
 .stats {
   display: flex;
   justify-content: space-between;
+  color: #666;
   font-size: 13px;
-  color: var(--text-color);
-  opacity: 0.7;
-  margin-top: 8px;
-}
-
-.views, .upload-date {
-  color: var(--text-color);
-  opacity: 0.7;
 }
 
 .pagination {
+  margin-top: 40px;
+  margin-bottom: 20px;
   display: flex;
   justify-content: center;
-  margin-top: 20px;
+  gap: 12px;
 }
 
 .pagination button {
-  margin: 0 10px;
-  padding: 10px 20px;
-  font-size: 16px;
-  cursor: pointer;
-  background-color: var(--bg-color);
-  color: var(--text-color);
-  border: 1px solid var(--border-color);
-  transition: all 0.3s ease;
+  background: white;
+  color: #333;
+  border: 2px solid #FFE082;
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.2s ease;
 }
 
-.pagination button:hover {
-  background-color: var(--hover-color);
+.pagination button:hover:not(:disabled) {
+  background: #FFF8E1;
+  border-color: #FFC107;
 }
 
 .pagination button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+  background: #f5f5f5;
+  border-color: #e0e0e0;
+  color: #999;
 }
 
-.loading, .error {
-  text-align: center;
-  margin-top: 200px;
-  font-size: 18px;
-  color: var(--text-color);
+/* 다크모드 */
+:root.dark-mode .video-div {
+  background: #1a1a1a;
 }
 
-.error {
-  color: #ff4444;
-}
-
-:root.dark-mode .video-thumbnail img {
-  filter: brightness(0.9);
+:root.dark-mode .video-menu {
+  background: #242424;
+  border-bottom-color: #FFC107;
 }
 
 :root.dark-mode .video {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  background: #242424;
+  border-color: #FFC107;
 }
 
-:root.dark-mode .menu-item img {
-  filter: invert(1) brightness(0.8);
+:root.dark-mode .video-title {
+  color: #fff;
 }
 
-.menu-item.active img {
-  filter: brightness(1.2);
+:root.dark-mode .stats {
+  color: #bbb;
 }
 
-:root.dark-mode .menu-item.active img {
-  filter: invert(1) brightness(1);
+:root.dark-mode .menu-item span {
+  color: #fff;
 }
 
-.menu-item:hover img {
-  transform: scale(1.1);
-}
-
-:root.dark-mode .menu-item:hover img {
-  filter: invert(1) brightness(1);
+:root.dark-mode .menu-item:hover,
+:root.dark-mode .menu-item.active {
+  background: rgba(255, 193, 7, 0.1);
 }
 </style>

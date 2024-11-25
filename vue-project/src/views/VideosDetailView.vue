@@ -10,19 +10,22 @@
       <!-- 메인 비디오 섹션 -->
       <div class="primary-content">
         <div class="video-container">
-          <iframe :src="`https://www.youtube.com/embed/${video.videoId}`" frameborder="0"
+          <iframe
+            :src="getYouTubeEmbedUrl(video.videoId)"
+            frameborder="0"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowfullscreen></iframe>
+            allowfullscreen
+            id="youtube-player"
+          ></iframe>
         </div>
 
         <!-- 비디오 제목 및 정보 -->
         <div class="video-info">
           <h1 class="video-title">{{ video.vTitle }}</h1>
           <div class="video-meta">
-
             <span class="views">조회수 {{ formatViewsDetail(video.vViews) }}회</span>
-
- 
+            <span v-if="isLoggedIn && progressRate !== null" class="progress-rate">
+            </span>
           </div>
 
           <!-- 액션 버튼 -->
@@ -39,7 +42,7 @@
               >
                 <i class="bi" :class="isSaved ? 'bi-bookmark-fill' : 'bi-bookmark'"></i>
                 {{ isSaved ? '저장됨' : '저장하기' }}
-              </button>
+              </button>3
               <button class="action-btn like">
                 <i class="bi bi-hand-thumbs-up"></i>
                 좋아요
@@ -101,10 +104,19 @@
       @close="showLoginModal = false"
       @login-success="handleLoginSuccess"
     />
+
+    <!-- 토스트 메시지 추가 -->
+    <div 
+      v-if="showToast" 
+      class="toast-message"
+      :class="{ 'show': showToast }"
+    >
+      {{ toastMessage }}
+    </div>
   </div>
 </template>
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, onUnmounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
 import LoginViewModal from '../views/LoginViewModal.vue'; // 경로 수정
@@ -121,6 +133,18 @@ const loading = ref(false)
 const error = ref(null)
 const isLoggedIn = ref(false)
 const showLoginModal = ref(false)
+
+// 플레이어 관련 변수들 추가
+const player = ref(null);
+const progressInterval = ref(null);
+const isPlaying = ref(false);
+const currentTime = ref(0);
+const duration = ref(0);
+
+// YouTube URL 생성 함수 추가
+const getYouTubeEmbedUrl = (videoId) => {
+  return `https://www.youtube.com/embed/${videoId}?enablejsapi=1&controls=1&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&playsinline=1`;
+};
 
 const fetchVideoDetails = async () => {
   const videoId = route.params.id;
@@ -216,60 +240,73 @@ const handleVideoClick = async (videoNo) => {
   }
 };
 
-// 저장하기 관련 코드만 남기고 나머지 제거
+// toast 관련 ref 추가
+const showToast = ref(false);
+const toastMessage = ref('');
+
+// toast 표시 함수
+const displayToast = (message) => {
+  toastMessage.value = message;
+  showToast.value = true;
+  setTimeout(() => {
+    showToast.value = false;
+  }, 3000);
+};
+
+// 저장/저장취소 처리 함수 수정
 const handleSaveClick = async () => {
   try {
     const userInfo = JSON.parse(localStorage.getItem('userInfo'));
     if (!userInfo) {
-      showLoginModal.value = true;  // 로그인 모달 표시
+      showLoginModal.value = true;
       return;
     }
 
-    // 이미 저장된 경우 저장 취소
+    // 이미 저장된 상태면 저장 취소 처리
     if (isSaved.value) {
-      const response = await axios.delete(`/api/saved-videos/${video.value.vNo}`, {
-        params: { userNo: userInfo.userNo }
-      });
+      const response = await axios.delete(
+        `/api/saved-videos/${video.value.vNo}`,
+        {
+          params: {
+            userNo: userInfo.userNo
+          }
+        }
+      );
+
       if (response.data.success) {
         isSaved.value = false;
-        alert('저장이 취소되었습니다.');
+        displayToast('저장이 취소되었습니다.');
+      }
+      return;
+    }
+
+    // 저장 처리
+    const response = await axios.post(
+      `/api/saved-videos/${video.value.vNo}`,
+      null,
+      {
+        params: {
+          userNo: userInfo.userNo
+        }
+      }
+    );
+
+    if (response.data.success) {
+      isSaved.value = true;
+      displayToast('영상이 저장되었습니다.');
+    }
+  } catch (error) {
+    console.error('저장/취소 처리 중 오류 발생:', error);
+    
+    if (error.response?.data?.message) {
+      displayToast(error.response.data.message);
+      // 이미 저장된 경우 ���태 업데이트
+      if (error.response.data.message.includes('이미 저장된')) {
+        isSaved.value = true;
       }
     } else {
-      // 저장하기
-      const response = await axios.post(`/api/saved-videos/${video.value.vNo}`, null, {
-        params: { userNo: userInfo.userNo }
-      });
-      if (response.data.success) {
-        isSaved.value = true;
-        alert('영상이 저장되었습니다.');
-        router.push('/mypage');  // 마이페이지로 이동
-      }
+      displayToast(isSaved.value ? '저장 취소에 실패했습니다.' : '저장에 실패했습니다.');
     }
-  } catch (error) {
-    console.error('저장 처리 중 오류 발생:', error);
-    alert('저장 처리 중 오류가 발생했습니다.');
-  }
-};
-
-// 저장 상태 확인
-const checkSavedStatus = async () => {
-  try {
-    if (!video.value?.vno) return;
-    
-    const userInfoStr = localStorage.getItem('userInfo');
-    if (!userInfoStr) return;
-
-    const userInfo = JSON.parse(userInfoStr);
-    if (!userInfo || !userInfo.userNo) return;
-
-    const response = await axios.get(`/api/saved-videos/${video.value.vno}/check`);
-    console.log('저장 상태 확인 응답:', response.data);
-    
-    if (response.data.success) {
-      isSaved.value = response.data.isSaved;
-    }
-  } catch (error) {
-    console.error('저장 상태 확 중 오류:', error);
   }
 };
 
@@ -302,12 +339,33 @@ const getAuthHeader = () => {
   };
 };
 
-// onMounted에서 플레이리스트 관련 코드 제거
+// 저장 상태 확인 함수 수정
+const checkSavedStatus = async () => {
+  try {
+    const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+    if (!userInfo || !video.value) return;
+
+    const response = await axios.get(`/api/saved-videos/${video.value.vNo}/check`, {
+      params: {
+        userNo: userInfo.userNo
+      }
+    });
+
+    console.log('저장 상태 확인 응답:', response.data);
+    isSaved.value = response.data.isSaved;
+  } catch (error) {
+    console.error('저장 상태 확인 중 오류:', error);
+    isSaved.value = false;
+  }
+};
+
+// 컴포넌트 마운트 시 실행
 onMounted(async () => {
   console.log('컴포넌트 마운트, route.params:', route.params);
-  checkLoginStatus();
   await fetchVideoDetails();
-  await checkSavedStatus();
+  if (checkLoginStatus()) {
+    await checkSavedStatus();
+  }
 });
 
 // 로그인 상태 변경 감지를 위한 watch 추가
@@ -361,34 +419,233 @@ const handleLoginSuccess = () => {
 
 // rememberMe 관련 경고를 해결하기 위해 추가
 const rememberMe = ref(false);
+
+// 플레이어 초기화 함수 수정
+const initPlayer = () => {
+  if (!selectedVideo.value) return;
+  
+  try {
+    player = new window.YT.Player(`video-player-${selectedVideo.value.vno}`, {
+      events: {
+        onReady: (event) => {
+          isLoading.value = false;
+          const videoDuration = event.target.getDuration();
+          if (isFinite(videoDuration)) {
+            duration.value = videoDuration;
+          }
+          player.setPlaybackQuality('hd720');
+        },
+        onStateChange: (event) => {
+          if (event.data === window.YT.PlayerState.PLAYING) {
+            isPlaying.value = true;
+            hasStarted.value = true;
+            startProgressTracking();
+          } else if (event.data === window.YT.PlayerState.PAUSED) {
+            isPlaying.value = false;
+          } else if (event.data === window.YT.PlayerState.ENDED) {
+            isPlaying.value = false;
+            stopProgressTracking();
+          }
+        }
+      },
+      playerVars: {
+        controls: 0,           // YouTube 컨트롤 숨기기
+        disablekb: 1,         // 키보드 컨트롤 비활성화
+        fs: 0,                // 전체화면 버튼 숨기기
+        iv_load_policy: 3,    // 동영상 주석 숨기기
+        modestbranding: 1,    // YouTube 로고 최소화
+        rel: 0,               // 관련 동영상 숨기
+        showinfo: 0,          // 동영상 정보 숨기기
+        autoplay: 0,          // 자동재생 비활성화
+        playsinline: 1,       // iOS에서 인라인 재생
+        enablejsapi: 1,       // JavaScript API 활성화
+        origin: window.location.origin
+      }
+    });
+  } catch (error) {
+    console.error('플레이어 초기화 실패:', error);
+    isLoading.value = false;
+  }
+};
+
+// iframe 초기화 시 필요한 매개변수 추가
+const initVideo = () => {
+  const videoId = route.params.id;
+  if (!videoId) return;
+
+  const iframe = document.querySelector('.video-container iframe');
+  if (iframe) {
+    // YouTube API 매개변수 추가
+    const updatedSrc = `https://www.youtube.com/embed/${video.value.videoId}?enablejsapi=1&controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&disablekb=1&playsinline=1&origin=${window.location.origin}`;
+    iframe.src = updatedSrc;
+
+    // YouTube API 초기화
+    if (window.YT) {
+      initYouTubePlayer();
+    } else {
+      // YouTube API가 아직 로드되지 않은 경우
+      window.onYouTubeIframeAPIReady = initYouTubePlayer;
+    }
+  }
+};
+
+// YouTube 플레이어 초기화
+const initYouTubePlayer = () => {
+  const iframe = document.querySelector('.video-container iframe');
+  if (!iframe) return;
+
+  player.value = new window.YT.Player(iframe, {
+    events: {
+      'onReady': (event) => {
+        console.log('Player ready');
+        duration.value = event.target.getDuration();
+      },
+      'onStateChange': (event) => {
+        console.log('Player state changed:', event.data);
+        if (event.data === window.YT.PlayerState.PLAYING) {
+          isPlaying.value = true;
+          startProgressTracking();
+        } else if (event.data === window.YT.PlayerState.PAUSED || 
+                  event.data === window.YT.PlayerState.ENDED) {
+          isPlaying.value = false;
+          updateProgress();
+          stopProgressTracking();
+        }
+      }
+    }
+  });
+};
+
+// 진도율 추적 시작
+const startProgressTracking = () => {
+  if (progressInterval.value) clearInterval(progressInterval.value);
+  progressInterval.value = setInterval(async () => {
+    if (!player.value) return;
+    
+    try {
+      currentTime.value = await player.value.getCurrentTime();
+      const progress = Math.floor((currentTime.value / duration.value) * 100);
+      
+      const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+      if (!userInfo) return;
+
+      await axios.put(`/api/saved-videos/${video.value.vNo}/progress`, {
+        progressRate: progress,
+        userNo: userInfo.userNo,
+        currentTime: currentTime.value
+      });
+      
+      console.log('Progress updated:', progress);
+    } catch (error) {
+      console.error('Progress update failed:', error);
+    }
+  }, 5000); // 5초마다 업데이트
+};
+
+// 진도율 추적 중지
+const stopProgressTracking = () => {
+  if (progressInterval.value) {
+    clearInterval(progressInterval.value);
+    progressInterval.value = null;
+  }
+};
+
+// 진도율 업데이트
+const updateProgress = async () => {
+  if (!player || !video.value) return;
+
+  try {
+    const currentTime = player.getCurrentTime();
+    const duration = player.getDuration();
+    const progress = Math.floor((currentTime / duration) * 100);
+
+    const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+    if (!userInfo) return;
+
+    await axios.put(`/api/saved-videos/${video.value.vno}/progress`, {
+      progressRate: progress,
+      userNo: userInfo.userNo
+    });
+
+  } catch (error) {
+    console.error('진도율 업데이트 실패:', error);
+  }
+};
+
+// 컴포넌트 마운트 시 초기화
+onMounted(() => {
+  // YouTube API 스크립트 로드
+  if (!window.YT) {
+    const tag = document.createElement('script');
+    tag.src = 'https://www.youtube.com/iframe_api';
+    const firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+    
+    window.onYouTubeIframeAPIReady = () => {
+      console.log('YouTube API Ready');
+      initVideo();
+    };
+  } else {
+    initVideo();
+  }
+});
+
+// 컴포넌트 언마운트 시 정리
+onUnmounted(() => {
+  stopProgressTracking();
+  if (player.value) {
+    player.value.destroy();
+  }
+});
+
+// 비디오 변경 시 재초기화
+watch(() => route.params.id, () => {
+  stopProgressTracking();
+  if (player.value) {
+    player.value.destroy();
+  }
+  initVideo();
+});
 </script>
 
 <style scoped>
+/* 1. 변수 정의 */
+:root {
+  --primary-color: #FFD93D;
+  --secondary-color: #FFF6BD;
+  --accent-color: #FFB84C;
+  --hover-color: #F5F5F5;
+  --text-primary: #4F4F4F;
+  --text-secondary: #6B6B6B;
+  --border-radius: 16px;
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* 2. 기본 레이아웃 */
 .video-detail {
-  background: var(--bg-color);
+  background: #FFFEF8;
   min-height: 100vh;
-  transition: background-color 0.3s ease;
+  padding: 20px;
 }
 
 .content-wrapper {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 400px;
-  gap: 40px;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  gap: 30px;
   max-width: 1600px;
   margin: 0 auto;
-  padding: 30px;
-  background: var(--bg-color);
+  padding: 20px;
 }
 
+/* 3. 비디오 플레이어 */
 .video-container {
   position: relative;
   padding-bottom: 56.25%;
   height: 0;
   overflow: hidden;
-  background: #000;
-  margin-bottom: 30px;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 25px;
 }
 
 .video-container iframe {
@@ -399,34 +656,30 @@ const rememberMe = ref(false);
   height: 100%;
 }
 
+/* 4. 비디오 정보 섹션 */
 .video-title {
-  font-size: 36px;
-  font-weight: bold;
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text-primary);
   margin-bottom: 15px;
-  color: var(--text-color);
-  line-height: 1.3;
+  line-height: 1.4;
 }
 
 .video-meta {
-  font-size: 18px;
-  color: var(--text-color);
-  opacity: 0.8;
-  margin-bottom: 20px;
+  background: var(--secondary-color);
+  padding: 12px 20px;
+  border-radius: 25px;
+  display: inline-block;
+  font-size: 14px;
+  color: var(--text-secondary);
 }
 
-.bullet {
-  margin: 0 8px;
-  color: #DEB887;
-}
-
+/* 5. 액션 버튼 */
 .action-bar {
-  display: flex;
-  justify-content: flex-start;
-  align-items: center;
   margin: 25px 0;
   padding: 20px 0;
-  border-top: 1px solid var(--border-color);
-  border-bottom: 1px solid var(--border-color);
+  border-top: 2px dashed #FFE5A5;
+  border-bottom: 2px dashed #FFE5A5;
 }
 
 .action-buttons {
@@ -439,468 +692,288 @@ const rememberMe = ref(false);
   align-items: center;
   gap: 8px;
   padding: 12px 24px;
-  border: none;
   border-radius: 25px;
-  background: var(--button-bg, #DEB887);
-  color: var(--button-text, white);
-  font-size: 16px;
-  font-weight: 500;
+  border: none;
+  background: var(--primary-color);
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 15px;
   cursor: pointer;
-  transition: all 0.2s;
-}
-
-:root.dark-mode .action-btn {
-  background: #4a4a4a;
-  color: #fff;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(255, 217, 61, 0.3);
 }
 
 .action-btn:hover {
-  background: var(--button-hover-bg, #CD853F);
   transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 217, 61, 0.4);
 }
 
-.action-btn i {
-  font-size: 18px;
+.action-btn.save.saved {
+  background: #FFB84C;
+  color: white;
 }
 
+/* 6. 설명 섹션 */
 .description {
-  font-size: 18px;
-  line-height: 1.8;
-  color: var(--text-color);
-  margin: 30px 0;
-  padding: 20px;
-  background: var(--hover-color);
-  border-radius: 8px;
+  background: white;
+  padding: 25px;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  line-height: 1.7;
+  color: var(--text-secondary);
+  border: 1px solid #FFE5A5;
 }
 
+/* 7. 강사 정보 */
 .about-speaker {
-  margin-top: 40px;
-  padding: 30px;
-  background: var(--hover-color);
-  border-radius: 8px;
-}
-
-.about-speaker h2 {
-  font-size: 28px;
-  font-weight: 600;
-  margin-bottom: 25px;
-  color: var(--text-color);
+  background: white;
+  padding: 25px;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  margin-top: 30px;
+  border: 1px solid #FFE5A5;
 }
 
 .speaker-info {
   display: flex;
-  gap: 25px;
+  gap: 20px;
+  align-items: center;
 }
 
 .speaker-avatar {
-  width: 100px;
-  height: 100px;
+  width: 80px;
+  height: 80px;
   border-radius: 50%;
-  background: #DEB887;
+  background: var(--primary-color);
+  border: 3px solid white;
+  box-shadow: var(--shadow);
 }
 
-:root.dark-mode .speaker-avatar {
-  filter: brightness(0.8);
-}
-
-.speaker-details h3 {
-  font-size: 22px;
-  font-weight: 600;
-  margin-bottom: 12px;
-  color: var(--text-color);
-}
-
-.speaker-bio {
-  font-size: 17px;
-  line-height: 1.6;
-  color: var(--text-color);
-  opacity: 0.8;
-}
-
+/* 8. 사이드바 - 다음 동영상 */
 .sidebar {
-  padding: 20px;
-  background: var(--hover-color);
-  border-radius: 8px;
+  background: #FFFEF8;
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 2px 12px rgba(255, 217, 61, 0.15);
   height: fit-content;
+  border: 1px solid #FFE5A5;
+  width: 100%;
 }
 
 .watch-next {
-  font-size: 24px;
-  font-weight: 600;
-  margin-bottom: 20px;
+  font-size: 22px;
+  font-weight: 700;
+  color: #4F4F4F;
+  margin-bottom: 24px;
   padding-bottom: 15px;
-  border-bottom: 2px solid var(--border-color);
-  color: var(--text-color);
+  border-bottom: 2px dashed #FFE5A5;
+  text-align: left;
+  letter-spacing: -0.5px;
 }
 
 .next-videos {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.next-videos::-webkit-scrollbar {
+  width: 6px;
+}
+
+.next-videos::-webkit-scrollbar-track {
+  background: #FFF6BD;
+  border-radius: 10px;
+}
+
+.next-videos::-webkit-scrollbar-thumb {
+  background: #FFD93D;
+  border-radius: 10px;
 }
 
 .video-item {
   display: flex;
-  gap: 12px;
-  padding: 12px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border-radius: 8px;
+  gap: 16px;
+  padding: 16px;
+  border-radius: 16px;
+  background: white;
+  transition: all 0.3s ease;
+  border: 1px solid #FFE5A5;
+  align-items: flex-start;
 }
 
 .video-item:hover {
-  background: var(--hover-color);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 217, 61, 0.2);
+  border-color: #FFD93D;
 }
 
 .thumbnail {
-  position: relative;
-  width: 168px;
-  height: 94px;
-  border-radius: 8px;
+  flex: 0 0 160px;
+  height: 90px;
+  border-radius: 12px;
   overflow: hidden;
+  position: relative;
 }
 
 .thumbnail img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 0.3s ease;
 }
 
-:root.dark-mode .thumbnail img {
-  filter: brightness(0.8);
-  transition: filter 0.3s ease;
+.video-item:hover .thumbnail img {
+  transform: scale(1.05);
 }
 
 .video-info {
   flex: 1;
   min-width: 0;
-  /* 텍스트 오버우 방지 */
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.video-title {
-  font-size: 14px;
+.video-info h3 {
+  font-size: 15px;
   font-weight: 600;
-  margin-bottom: 4px;
+  color: #333;
+  line-height: 1.4;
+  margin: 0;
   display: -webkit-box;
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  color: var(--text-color);
+  letter-spacing: -0.3px;
 }
 
-.speaker {
+.video-info .speaker {
+  font-size: 13px;
+  color: #FFB84C;
+  font-weight: 500;
+  margin: 0;
+}
+
+.video-info .meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 12px;
-  color: var(--text-color);
-  opacity: 0.7;
-  margin-bottom: 4px;
+  color: #666;
+  margin-top: 2px;
 }
 
-.meta {
-  font-size: 12px;
-  color: var(--text-color);
-  opacity: 0.7;
+.meta .views,
+.meta .date {
+  display: inline-block;
+  color: #888;
 }
 
-.meta span:not(:last-child)::after {
-  content: "•";
-  margin: 0 4px;
-}
-
-.views {
-  color: var(--text-color);
-  opacity: 0.7;
-}
-
-.date {
-  color: var(--text-color);
-  opacity: 0.7;
+.meta .dot {
+  color: #FFD93D;
+  margin: 0 2px;
 }
 
 .no-recommendations {
-  padding: 20px;
   text-align: center;
-  color: var(--text-color);
+  padding: 20px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  background: #FFF6BD;
+  border-radius: 12px;
+  margin: 10px 0;
 }
 
+@media (max-width: 1400px) {
+  .thumbnail {
+    flex: 0 0 140px;
+    height: 80px;
+  }
+  
+  .video-info h3 {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .sidebar {
+    padding: 20px;
+  }
+  
+  .video-item {
+    padding: 14px;
+  }
+  
+  .thumbnail {
+    flex: 0 0 120px;
+    height: 70px;
+  }
+}
+
+@media (max-width: 768px) {
+  .watch-next {
+    font-size: 20px;
+  }
+  
+  .video-item {
+    padding: 12px;
+    gap: 12px;
+  }
+  
+  .thumbnail {
+    flex: 0 0 100px;
+    height: 60px;
+  }
+  
+  .video-info h3 {
+    font-size: 13px;
+  }
+  
+  .video-info .speaker {
+    font-size: 12px;
+  }
+  
+  .video-info .meta {
+    font-size: 11px;
+  }
+}
+
+/* 9. 토스트 메시지 */
+.toast-message {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 12px 24px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  z-index: 1000;
+  transition: opacity 0.3s ease;
+}
+
+/* 10. 반응형 레이아웃 */
 @media (max-width: 1200px) {
   .content-wrapper {
     grid-template-columns: 1fr;
   }
-
+  
   .sidebar {
     margin-top: 30px;
   }
 }
 
-:root.dark-mode {
-  --button-bg: #4a4a4a;
-  --button-hover-bg: #666;
-  --border-color: #444;
-}
-
-:root.dark-mode .action-btn i {
-  color: #fff;
-}
-
-:root.dark-mode .video-item:hover {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.playlist-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.playlist-modal-content {
-  background: white;
-  padding: 30px;
-  border-radius: 12px;
-  width: 90%;
-  max-width: 500px;
-  max-height: 80vh;
-  overflow-y: auto;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-}
-
-.playlist-modal-content h3 {
-  font-size: 20px;
-  font-weight: 600;
-  margin-bottom: 20px;
-  color: #333;
-}
-
-.playlist-list {
-  max-height: 300px;
-  overflow-y: auto;
-  margin: 20px 0;
-  border: 1px solid #eee;
-  border-radius: 8px;
-}
-
-.playlist-item {
-  padding: 12px 16px;
-  border-bottom: 1px solid #eee;
-  transition: background-color 0.2s;
-}
-
-.playlist-item:last-child {
-  border-bottom: none;
-}
-
-.playlist-item:hover {
-  background-color: #f8f8f8;
-}
-
-.playlist-item label {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  cursor: pointer;
-  color: #333;
-  font-size: 14px;
-}
-
-.create-playlist {
-  display: flex;
-  gap: 10px;
-  margin-top: 20px;
-  padding: 15px;
-  border-top: 1px solid #eee;
-}
-
-.create-playlist input {
-  flex: 1;
-  padding: 10px 12px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 14px;
-  color: #333;
-}
-
-.create-btn {
-  padding: 10px 20px;
-  background-color: #DEB887;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
-  transition: background-color 0.2s;
-}
-
-.create-btn:hover:not(:disabled) {
-  background-color: #CD853F;
-}
-
-.create-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  background-color: #ccc;
-}
-
-/* 다크 모드 대응 */
-:root.dark-mode .create-btn {
-  background-color: #4a4a4a;
-}
-
-:root.dark-mode .create-btn:hover:not(:disabled) {
-  background-color: #666;
-}
-
-.modal-buttons {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 20px;
-  padding-top: 15px;
-  border-top: 1px solid #eee;
-}
-
-.close-btn {
-  padding: 8px 20px;
-  background-color: #f0f0f0;
-  color: #333;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: background-color 0.2s;
-}
-
-.close-btn:hover {
-  background-color: #e0e0e0;
-}
-
-:root.dark-mode .playlist-modal-content {
-  background: #2d2d2d;
-  color: #fff;
-}
-
-:root.dark-mode .playlist-modal-content h3 {
-  color: #fff;
-}
-
-:root.dark-mode .playlist-item {
-  border-color: #404040;
-}
-
-:root.dark-mode .playlist-item:hover {
-  background-color: #3d3d3d;
-}
-
-:root.dark-mode .playlist-item label {
-  color: #fff;
-}
-
-:root.dark-mode .create-playlist input {
-  background-color: #3d3d3d;
-  border-color: #404040;
-  color: #fff;
-}
-
-:root.dark-mode .close-btn {
-  background-color: #404040;
-  color: #fff;
-}
-
-.loading-state, .error-state {
-  text-align: center;
-  padding: 2rem;
-  font-size: 1.2rem;
-}
-
-.error-state {
-  color: red;
-}
-
-.login-required {
-  text-align: center;
-  padding: 20px;
-}
-
-.login-required p {
-  margin-bottom: 15px;
-  color: var(--text-color);
-}
-
-.login-btn, .create-btn, .close-btn {
-  padding: 8px 16px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.login-btn {
-  background-color: #007bff;
-  color: white;
-}
-
-.create-btn {
-  background-color: var(--button-bg);
-  color: white;
-}
-
-.close-btn {
-  background-color: var(--button-bg);
-  color: white;
-}
-
-.login-btn:hover, .create-btn:hover, .close-btn:hover {
-  opacity: 0.9;
-  transform: translateY(-1px);
-}
-
-.modal-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.no-playlists {
-  padding: 20px;
-  text-align: center;
-  color: #666;
-  font-size: 14px;
-}
-
-.playlist-list {
-  max-height: 300px;
-  overflow-y: auto;
-  margin: 20px 0;
-  border: 1px solid #eee;
-  border-radius: 8px;
-}
-
-.playlist-item {
-  padding: 12px 16px;
-  border-bottom: 1px solid #eee;
-}
-
-.playlist-item label {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  cursor: pointer;
-}
-
-.playlist-item input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-  cursor: pointer;
+@media (max-width: 768px) {
+  .content-wrapper {
+    padding: 15px;
+  }
+  
+  .action-buttons {
+    flex-wrap: wrap;
+  }
 }
 </style>
