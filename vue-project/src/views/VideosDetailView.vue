@@ -21,45 +21,48 @@
 
         <!-- 비디오 제목 및 정보 -->
         <div class="video-info">
-          <h1 class="video-title">{{ video.vTitle }}</h1>
-          <div class="video-meta">
-            <span class="views">조회수 {{ formatViewsDetail(video.vViews) }}회</span>
-            <span v-if="isLoggedIn && progressRate !== null" class="progress-rate">
-            </span>
-          </div>
-
-          <!-- 액션 버튼 -->
-          <div class="action-bar">
-            <div class="action-buttons">
-              <button class="action-btn share" @click="handleShare">
-                <i class="bi bi-share"></i>
-                공유하기
-              </button>
-              <button 
-                class="action-btn save" 
-                @click="handleSaveClick"
-                :class="{ 'saved': isSaved }"
-              >
-                <i class="bi" :class="isSaved ? 'bi-bookmark-fill' : 'bi-bookmark'"></i>
-                {{ isSaved ? '저장됨' : '저장하기' }}
-              </button>
+          <div class="title-section">
+            <h1 class="video-title">{{ video.vTitle }}</h1>
+            <div class="video-meta">
+              <span class="views">조회수 {{ formatViewsDetail(video.vViews) }}회</span>
+              <span class="upload-date">{{ formatDate(video.vUploadDate) }}</span>
             </div>
           </div>
+        </div>
 
-          <!-- 비디오 설명 -->
-          <div class="description">
-            <p>{{ video.vDescription }}</p>
+        <!-- 액션 버튼 -->
+        <div class="action-bar">
+          <div class="action-buttons">
+            <button class="action-btn share" @click="handleShare">
+              <i class="bi bi-share"></i>
+              공유하기
+            </button>
+            <button 
+              class="action-btn save" 
+              @click="handleSaveClick"
+              :class="{ 'saved': isSaved }"
+            >
+              <i class="bi" :class="isSaved ? 'bi-bookmark-fill' : 'bi-bookmark'"></i>
+              {{ isSaved ? '저장됨' : '저장하기' }}
+            </button>
           </div>
+        </div>
 
-          <!-- 강사 정보 -->
-          <div class="about-speaker">
-            <h2>강사 소개</h2>
-            <div class="speaker-info">
-              <div class="speaker-avatar"></div>
-              <div class="speaker-details">
-                <h3>{{ video.vInstructor }}</h3>
-                <p class="speaker-bio">{{ video.vInstructorIntro }}</p>
-              </div>
+        <!-- 비디오 설명 -->
+        <div class="description">
+          <p>{{ video.vDescription }}</p>
+        </div>
+
+        <!-- 강사 정보 -->
+        <div class="about-speaker">
+          <h2>강사 소개</h2>
+          <div class="speaker-info">
+            <div class="instructor-image">
+              <img src="@/assets/img/jung.png" alt="강사 이미지">
+            </div>
+            <div class="speaker-details">
+              <h3>{{ video.vInstructor }}</h3>
+              <p class="speaker-bio">{{ video.vInstructorIntro }}</p>
             </div>
           </div>
         </div>
@@ -80,11 +83,16 @@
             <div class="video-info">
               <h3 class="video-title">{{ video.vTitle }}</h3>
               <p class="speaker">{{ video.vInstructor }}</p>
-              <p class="meta">
-                <span class="views">조회수 {{ formatViewsDetail(video.vViews) }}회</span>
-                <span class="dot">•</span>
-                <span class="date">{{ formatDate(video.vUploadDate) }}</span>
-              </p>
+              <div class="meta">
+                <span class="views">
+                  <i class="bi bi-eye"></i>
+                  조회수 {{ formatViewsDetail(video.vViews) }}회
+                </span>
+                <span class="date">
+                  <i class="bi bi-calendar3"></i>
+                  {{ formatDate(video.vUploadDate) }}
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -146,7 +154,7 @@ const fetchVideoDetails = async () => {
   const videoId = route.params.id;
   if (!videoId) {
     console.error('비디오 ID가 없습니다');
-    router.push('/videos'); // 비디오 목록으로 리다이렉트
+    router.push('/videos'); // 비디오 목록으로 리이렉트
     return;
   }
 
@@ -251,7 +259,7 @@ const displayToast = (message) => {
   }, 3000);
 };
 
-// 저/저장취소 처리 함수 수정
+// 저/저장취소 처  수정
 const handleSaveClick = async () => {
   try {
     const userInfo = JSON.parse(localStorage.getItem('userInfo'));
@@ -447,7 +455,7 @@ const initPlayer = () => {
         }
       },
       playerVars: {
-        controls: 0,           // YouTube 컨트롤 숨기기
+        controls: 0,           // YouTube 컨트롤 기기
         disablekb: 1,         // 키보드 컨트롤 비활성화
         fs: 0,                // 전체화면 버튼 숨기기
         iv_load_policy: 3,    // 동영상 주석 숨기기
@@ -605,7 +613,7 @@ watch(() => route.params.id, () => {
   initVideo();
 });
 
-// 공유하기 함수 추가
+// 공유하기 함수 가
 const handleShare = async () => {
   try {
     const currentUrl = window.location.href;
@@ -754,21 +762,38 @@ const seekToTimestamp = (startTime) => {
 }
 
 /* 4. 비디오 정보 섹션 */
+.video-info {
+  margin-bottom: 25px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(255, 217, 61, 0.3);
+}
+
 .video-title {
-  font-size: 26px;
+  font-size: 24px;
   font-weight: 700;
   color: var(--text-primary);
-  margin-bottom: 15px;
+  margin-bottom: 1px;
   line-height: 1.4;
+  word-break: keep-all;
 }
 
 .video-meta {
-  background: var(--secondary-color);
-  padding: 12px 20px;
-  border-radius: 25px;
-  display: inline-block;
-  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
   color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.views {
+  background: var(--secondary-color);
+  padding: 6px 2px;
+  border-radius: 20px;
+  font-weight: 500;
+}
+
+.upload-date {
+  color: #666;
 }
 
 /* 5. 액션 버튼 */
@@ -842,41 +867,79 @@ const seekToTimestamp = (startTime) => {
   border: 1px solid #FFE5A5;
 }
 
-.speaker-info {
-  display: flex;
-  gap: 20px;
-  align-items: center;
+.about-speaker h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #4F4F4F;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 217, 61, 0.2);
 }
 
-.speaker-avatar {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  background: var(--primary-color);
-  border: 3px solid white;
-  box-shadow: var(--shadow);
+.speaker-info {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  margin-top: 15px;
+}
+
+.instructor-image {
+  flex-shrink: 0;
+  width: 140px;
+  height: 200px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 2px solid #FFE5A5;
+}
+
+.instructor-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background-color: #FFF9E5;
+}
+
+.speaker-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 4px;
+}
+
+.speaker-details h3 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #4F4F4F;
+  margin: 0;
+}
+
+.speaker-bio {
+  font-size: 15px;
+  line-height: 1.6;
+  color: #666;
+  margin: 0;
+  white-space: pre-line;
 }
 
 /* 8. 사이드바 - 다음 동영상 */
 .sidebar {
   background: #FFFEF8;
-  border-radius: 20px;
+  border-radius: 16px;
   padding: 24px;
-  box-shadow: 0 2px 12px rgba(255, 217, 61, 0.15);
+  box-shadow: 0 2px 12px rgba(255, 217, 61, 0.1);
   height: fit-content;
-  border: 1px solid #FFE5A5;
+  border: 1px solid rgba(255, 184, 76, 0.15);
   width: 100%;
 }
 
 .watch-next {
   font-size: 22px;
-  font-weight: 700;
+  font-weight: 600;
   color: #4F4F4F;
-  margin-bottom: 24px;
-  padding-bottom: 15px;
-  border-bottom: 2px dashed #FFE5A5;
-  text-align: left;
-  letter-spacing: -0.5px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 217, 61, 0.2);
 }
 
 .next-videos {
@@ -885,7 +948,11 @@ const seekToTimestamp = (startTime) => {
   gap: 20px;
   max-height: calc(100vh - 200px);
   overflow-y: auto;
-  padding-right: 8px;
+  padding-right: 12px;
+  margin-right: -12px;
+  
+  scrollbar-width: thin;
+  scrollbar-color: #FFD93D #f0f0f0;
 }
 
 .next-videos::-webkit-scrollbar {
@@ -893,123 +960,140 @@ const seekToTimestamp = (startTime) => {
 }
 
 .next-videos::-webkit-scrollbar-track {
-  background: #FFF6BD;
+  background: #f0f0f0;
   border-radius: 10px;
 }
 
 .next-videos::-webkit-scrollbar-thumb {
-  background: #FFD93D;
+  background: linear-gradient(180deg, #FFD93D 0%, #FFB84C 100%);
   border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.next-videos::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #FFB84C 0%, #FF9642 100%);
 }
 
 .video-item {
-  display: grid;
-  grid-template-columns: 160px 1fr;
-  gap: 15px;
-  padding: 15px;
-  margin-bottom: 16px;
-  border-radius: 12px;
-  background: white;
-  transition: all 0.2s ease;
+  padding: 12px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border: 1px solid rgba(255, 184, 76, 0.1);
-  cursor: pointer;
-  min-height: 120px;
+  background: white;
+  border-radius: 16px;
 }
 
 .video-item:hover {
-  background: #FFFEF8;
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 20px rgba(255, 217, 61, 0.15);
+  border-color: rgba(255, 184, 76, 0.3);
 }
 
 .thumbnail {
-  width: 160px;
-  height: 90px;
-  border-radius: 8px;
+  border-radius: 12px;
   overflow: hidden;
+  transition: all 0.3s ease;
 }
 
-.thumbnail img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.video-item:hover .thumbnail {
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .video-info {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  min-height: 90px;
-  overflow: hidden;
+  gap: 0;
+  padding: 4px 0;
 }
 
 .video-info h3.video-title {
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 1.4;
-  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: #333;
+  margin: 1;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  flex: 1;
 }
 
 .video-info .speaker {
   font-size: 13px;
   color: #666;
   margin: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  margin-bottom: -2px;
+  line-height: 1.2;
 }
 
 .meta {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  justify-content: space-between;
   font-size: 12px;
   color: #888;
-  margin-top: auto;
+  margin-top: 0;
+  line-height: 1.2;
 }
 
 .views, .date {
-  display: block;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
-.dot {
-  display: none;
+.views i, .date i {
+  font-size: 12px;
+  color: #FFB84C;
 }
 
-/* 반응형 조정 */
-@media (max-width: 768px) {
-  .video-item {
-    grid-template-columns: 120px 1fr;
-    gap: 12px;
+/* 호버 효과 */
+.video-item:hover {
+  background: #FFFEF8;
+  transform: translateY(-2px);
+  border-color: rgba(255, 184, 76, 0.2);
+  box-shadow: 0 4px 12px rgba(255, 217, 61, 0.15);
+}
+
+/* 사이드바 전체 스타일 */
+.sidebar {
+  background: #FFFEF8;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 2px 12px rgba(255, 217, 61, 0.1);
+  height: fit-content;
+  border: 1px solid rgba(255, 184, 76, 0.15);
+  width: 100%;
+}
+
+.watch-next {
+  font-size: 20px;
+  font-weight: 600;
+  color: #4F4F4F;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid rgba(255, 217, 61, 0.2);
+}
+
+.next-videos {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+/* 반응형 처리 */
+@media (max-width: 1400px) {
+  .next-videos {
+    grid-template-columns: 1fr;
   }
-
+  
   .thumbnail {
-    width: 120px;
-    height: 68px;
-  }
-
-  .video-info {
-    height: 68px;
-  }
-
-  .video-info h3.video-title {
-    font-size: 13px;
-    -webkit-line-clamp: 2;
-  }
-
-  .video-info .speaker {
-    font-size: 12px;
-  }
-
-  .meta {
-    font-size: 11px;
-    gap: 1px;
+    height: 200px;
   }
 }
 
@@ -1048,7 +1132,7 @@ const seekToTimestamp = (startTime) => {
   }
 }
 
-/* 다크모드 스타일 추가 */
+/* 다크드 스타일 추가 */
 :root.dark-mode .video-detail {
   background: #1a1a1a;
 }
@@ -1137,5 +1221,47 @@ const seekToTimestamp = (startTime) => {
 
 :root.dark-mode .action-bar {
   border-color: #333;
+}
+
+/* 다크모드 대응 */
+:root.dark-mode .title-section {
+  border-bottom-color: rgba(255, 217, 61, 0.1);
+}
+
+:root.dark-mode .views {
+  background: rgba(255, 217, 61, 0.1);
+  color: #fff;
+}
+
+:root.dark-mode .upload-date {
+  color: #999;
+}
+
+/* 모바일 대응 */
+@media (max-width: 768px) {
+  .video-title {
+    font-size: 20px;
+  }
+
+  .video-meta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}
+
+/* 반응형 처리 */
+@media (max-width: 768px) {
+  .speaker-info {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .instructor-image {
+    width: 150px;
+    height: 150px;
+    margin-bottom: 16px;
+  }
 }
 </style>

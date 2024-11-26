@@ -32,4 +32,7 @@ public interface GroupCommentDao {
     
     // 댓글 번호로 게시글 번호 조회
     int getBoardNoByCommentNo(int boardCommentNo);
+    
+    // 대댓글 조회 메서드 추가
+	List<GroupComment> findRepliesByCommentNo(int parentCommentNo);
 }

@@ -1,6 +1,7 @@
 package com.oo.groupcomment.model.service;
 
 import java.util.List;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -59,4 +60,10 @@ public class GroupCommentServiceImpl implements GroupCommentService {
         int commentCount = groupCommentDao.countCommentsByBoardNo(boardNo);
         groupCommentDao.updateCommentCount(boardNo, commentCount);
     }
+
+    @Override
+    public List<GroupComment> getRepliesByCommentNo(int parentCommentNo) {
+        return groupCommentDao.findRepliesByCommentNo(parentCommentNo);
+    }
+    
 }

@@ -30,16 +30,12 @@
   // 이미지와 이동할 경로를 매핑 (URL 사용)
   const slideLinks = [
 	{ 
-	  image: new URL('@/assets/img/yang.png', import.meta.url).href,
-	  path: '/videos/5' 
-	},
-	{ 
 	  image: new URL('@/assets/img/kang.png', import.meta.url).href,
-	  path: '/videos/3' 
+	  path: '/videos/12' 
 	},
 	{ 
 	  image: new URL('@/assets/img/pang.png', import.meta.url).href,
-	  path: '/videos/4' 
+	  path: '/videos/13' 
 	},
 	{ 
 	  image: new URL('@/assets/img/lia.png', import.meta.url).href,
@@ -76,14 +72,14 @@
 	margin-top: 5vh;
 	margin-bottom: 10vh;
 	position: relative;
-	max-width: 900px;
+	max-width: 1200px;
 	margin-left: auto;
 	margin-right: auto;
   }
   
   .carousel__item {
 	width: 100%;
-	height: 350px;
+	height: 450px;
 	color: var(--vc-clr-white);
 	font-size: 20px;
 	border-radius: 8px;
@@ -94,8 +90,8 @@
   }
   
   .slideImg {
-	width: 85%;
-	height: 85%;
+	width: 90%;
+	height: 90%;
 	object-fit: contain;
 	border-radius: 8px;
   }
@@ -105,13 +101,13 @@
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	gap: 15px;
+	gap: 20px;
 	background-color: #75757505;
 	color: white;
 	border-radius: 20px;
-	padding: 8px 16px;
+	padding: 10px 20px;
 	position: absolute;
-	bottom: 15px;
+	bottom: 20px;
 	left: 50%;
 	transform: translateX(-50%);
   }
@@ -120,7 +116,7 @@
 	background: none;
 	border: none;
 	color: white;
-	font-size: 18px;
+	font-size: 24px;
 	cursor: pointer;
 	display: flex;
 	align-items: center;

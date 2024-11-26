@@ -28,15 +28,16 @@
     <div class="content-wrapper">
       <!-- Event Info Section -->
       <div id="info-section" class="info-section animate__animated animate__fadeIn">
-        <div class="description-bubble">
-          <p>{{ event.description }}</p>
-        </div>
+        
 
         <!-- Map Container -->
         <div id="map-section" class="map-section">
           <div class="map-bubble">
             <div id="kakao-map" style="width: 100%; height: 100%; position: relative;"></div>
           </div>
+        </div>
+        <div class="description-bubble">
+          <p>{{ event.description }}</p>
         </div>
 
         <!-- Details Bubbles -->
@@ -169,86 +170,83 @@ onUnmounted(() => {
 const mapLoaded = ref(false);
 const mapInstance = ref(null);
 
-// 카카오맵 초기화 함수 수정
-const initializeKakaoMap = async () => {
-  console.log('카카오맵 초기화 시작');
-  
-  // kakao 객체 확인
-  if (typeof kakao === 'undefined') {
+// 카카오맵 초기화 함수
+const initializeKakaoMap = () => {
+  if (!window.kakao?.maps) {
     console.error('Kakao Maps SDK not loaded');
     return;
   }
 
   const container = document.getElementById('kakao-map');
-  if (!container) {
-    console.error('Map container not found');
+  const address = event.value?.address;
+  
+  console.log('지도 초기화 시작:', { container, address });
+
+  if (!container || !address) {
+    console.error('컨테이너 또는 주소 없음');
     return;
   }
 
-  try {
-    // 지도 생성
-    const options = {
-      center: new kakao.maps.LatLng(37.5665, 126.9780), // 서울 시청 기본 좌표
-      level: 3
-    };
+  // 지도 생성
+  const map = new kakao.maps.Map(container, {
+    center: new kakao.maps.LatLng(37.5665, 126.9780),
+    level: 3
+  });
 
-    const map = new kakao.maps.Map(container, options);
-    mapInstance.value = map;
-    console.log('지도 생성 성공');
+  // 주소-좌표 변환 객체 생성
+  const geocoder = new kakao.maps.services.Geocoder();
 
-    // 주소로 좌표 검색
-    if (event.value?.address) {
-      console.log('검색할 주소:', event.value.address);
-      
-      // 주소-좌표 변환 객체 생성
-      const geocoder = new kakao.maps.services.Geocoder();
-
-      // 주소로 좌표 검색
-      geocoder.addressSearch(event.value.address, function(result, status) {
-        console.log('주소 검색 결과:', status, result);
-
-        if (status === kakao.maps.services.Status.OK) {
-          const coords = new kakao.maps.LatLng(result[0].y, result[0].x);
-
-          // 마커 생성
-          const marker = new kakao.maps.Marker({
-            map: map,
-            position: coords
-          });
-
-          // 인포윈도우 생성
-          const infowindow = new kakao.maps.InfoWindow({
-            content: `<div style="padding:5px;font-size:12px;text-align:center;">
-                      <strong>${event.value.title || '행사 장소'}</strong><br>
-                      ${event.value.address}
-                    </div>`
-          });
-
-          // 마커에 마우스오버 이벤트 추가
-          kakao.maps.event.addListener(marker, 'mouseover', function() {
-            infowindow.open(map, marker);
-          });
-
-          // 마커에 마우스아웃 이벤트 추가
-          kakao.maps.event.addListener(marker, 'mouseout', function() {
-            infowindow.close();
-          });
-
-          // 지도 중심을 검색된 좌표로 이동
-          map.setCenter(coords);
-          map.setLevel(3); // 줌 레벨 설정
-          
-          console.log('지도 이동 완료:', coords);
+  // 주소로 좌표를 검색
+  geocoder.addressSearch(address, function(result, status) {
+    if (status === kakao.maps.services.Status.OK && result.length > 0) {
+      // 정확한 주소로 검색 성공
+      const coords = new kakao.maps.LatLng(result[0].y, result[0].x);
+      displayLocation(map, coords, address);
+    } else {
+      // 정확한 주소 검색 실패시, 키워드로 검색
+      const ps = new kakao.maps.services.Places();
+      ps.keywordSearch(address, (places, status) => {
+        if (status === kakao.maps.services.Status.OK && places.length > 0) {
+          const coords = new kakao.maps.LatLng(places[0].y, places[0].x);
+          displayLocation(map, coords, address);
         } else {
-          console.error('주소 검색 실패:', status);
+          // 키워드 검색도 실패시, 지역명으로 검색
+          const district = address.split(' ').slice(0, 2).join(' ');
+          ps.keywordSearch(district, (places, status) => {
+            if (status === kakao.maps.services.Status.OK && places.length > 0) {
+              const coords = new kakao.maps.LatLng(places[0].y, places[0].x);
+              displayLocation(map, coords, address);
+            }
+          });
         }
       });
-    } else {
-      console.error('주소 정보가 없습니다.');
     }
-  } catch (error) {
-    console.error('지도 초기화 중 오류:', error);
-  }
+  });
+
+  mapInstance.value = map;
+};
+
+// 위치 표시 함수
+const displayLocation = (map, coords, address) => {
+  // 마커 생성
+  const marker = new kakao.maps.Marker({
+    map: map,
+    position: coords
+  });
+
+  // 인포윈도우 생성
+  const infowindow = new kakao.maps.InfoWindow({
+    content: `
+      <div style="padding:10px;text-align:center;min-width:200px;">
+        <strong>${event.value.title || '행사 장소'}</strong><br>
+        <span style="font-size:12px;color:#666;">${address}</span>
+      </div>
+    `
+  });
+
+  infowindow.open(map, marker);
+  map.setCenter(coords);
+  map.setLevel(3);
 };
 
 // 이미지 URL 생성 함수 추가
@@ -274,14 +272,13 @@ onMounted(async () => {
     });
     
     if (response.data) {
-      // 이벤트 데이터 설정
       event.value = response.data;
+      console.log('이벤트 데이터 로드:', event.value);
       
-      // DOM 업데이트 대기
-      await nextTick();
-      
-      // 카카오맵 초기화
-      await initializeKakaoMap();
+      // DOM 업데이트와 지도 초기화 사이에 약간의 지연 추가
+      setTimeout(() => {
+        initializeKakaoMap();
+      }, 100);
     }
   } catch (error) {
     console.error("API 요청 실패:", error);
@@ -303,7 +300,7 @@ const toggleChatbot = () => {
 const formatWebsiteUrl = (url) => {
   if (!url) return '#';
   
-  // URL이 http:// 또는 https://로 시작하지 않면 추가
+  // URL이 http:// 또는 https://로 시작하지 않면 추
   if (!url.startsWith('http://') && !url.startsWith('https://')) {
     return `https://${url}`;
   }
@@ -322,35 +319,68 @@ const formatWebsiteUrl = (url) => {
 
 /* Bubble Navigation */
 .bubble-navigation {
-  display: flex;
-  justify-content: center;
-  gap: 25px;
-  margin-bottom: 40px;
-}
-
-.bubble {
+  position: fixed;
+  right: 30px;
+  top: 50%;
+  transform: translateY(-50%);
   display: flex;
   flex-direction: column;
-  align-items: center;
-  padding: 15px 25px;
-  background-color: var(--bg-color);
-  border: 2px solid #ebd03b;
-  border-radius: 20px;
-  cursor: pointer;
+  gap: 15px;
+  z-index: 1000;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 15px 10px;
+  border-radius: 30px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(5px);
   transition: all 0.3s ease;
 }
 
-.bubble.active {
-  background-color: #ebd03b;
-  color: #fff;
-  transform: translateY(-5px);
-  box-shadow: 0 5px 15px rgba(235, 208, 59, 0.3);
+.bubble {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background: white;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
 }
 
 .bubble i {
   font-size: 24px;
-  margin-bottom: 5px;
-  color: #ebd03b;
+  color: #666;
+  margin-bottom: 4px;
+  transition: all 0.3s ease;
+}
+
+.bubble span {
+  font-size: 12px;
+  color: #666;
+  transition: all 0.3s ease;
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.bubble:hover {
+  transform: translateY(-3px);
+  background: #ffd987;
+}
+
+.bubble:hover i,
+.bubble:hover span {
+  color: white
+}
+
+.bubble.active {
+  background: #ebd03b;
+  color: #fff;
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(235, 208, 59, 0.3);
 }
 
 .bubble.active i {
@@ -388,6 +418,7 @@ const formatWebsiteUrl = (url) => {
 .map-section {
   width: 100%;
   padding: 20px;
+  margin-bottom: 60px;
 }
 
 .map-bubble {
@@ -398,6 +429,7 @@ const formatWebsiteUrl = (url) => {
   overflow: hidden;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   position: relative;
+  margin-bottom: 30px;
 }
 
 #kakao-map {

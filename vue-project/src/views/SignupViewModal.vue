@@ -193,11 +193,8 @@
     <div class="agreement-section">
       <label class="marketing-agree">
         <input type="checkbox" v-model="marketingAgree" class="agree-checkbox" />
-        <span>혜택 및 소식 받아보기 🎁</span>
+        <span>가입 시 이용약관과 개인정보처방침에 동의하게 됩니다</span>
       </label>
-      <p class="terms-notice">
-        가입 시 이용약관과 개인정보처방침에 동의하게 됩니다
-      </p>
     </div>
   </div>
 </template>

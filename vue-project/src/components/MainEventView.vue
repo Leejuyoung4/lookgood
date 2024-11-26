@@ -33,19 +33,19 @@ const eventLinks = [
   },
   { 
     image: new URL('@/assets/img/running.png', import.meta.url).href, 
-    id: 8
+    id: 3
   },
   { 
     image: new URL('@/assets/img/running1.png', import.meta.url).href, 
-    id: 43 
+    id: 1 
   },
   { 
     image: new URL('@/assets/img/ocean.png', import.meta.url).href, 
-    id: 45  // ocean 이미지의 ID를 45로 변경
+    id: 5  // ocean 이미지의 ID를 45로 변경
   },
   { 
     image: new URL('@/assets/img/walking.png', import.meta.url).href, 
-    id: 33 
+    id: 8
   }
 ];
 

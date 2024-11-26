@@ -38,22 +38,29 @@ public class GroupCommentController {
         return ResponseEntity.ok(comments != null ? comments : new ArrayList<>());
     }
     
-    // 댓글 등록
     @PostMapping("/{boardNo}")
     public ResponseEntity<String> addComment(
             @PathVariable("boardNo") int boardNo, 
             @RequestBody GroupComment comment) {
         try {
+            System.out.println("=== 댓글 등록 시도 ===");
+            System.out.println("boardNo: " + boardNo);
+            System.out.println("comment: " + comment.toString());
+            
             comment.setBoardNo(boardNo);
             groupCommentService.addComment(comment);
+            
             return ResponseEntity.status(HttpStatus.CREATED)
                                .body("댓글이 작성되었습니다.");
         } catch (Exception e) {
+            System.err.println("=== 댓글 등록 실패 ===");
+            System.err.println("에러 메시지: " + e.getMessage());
+            e.printStackTrace();  // 스택 트레이스 출력
+            
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                               .body("댓글 작성에 실패했습니다.");
+                               .body("댓글 작성에 실패했습니다. 원인: " + e.getMessage());
         }
-    }
-    
+    }    
     
     
     
@@ -91,6 +98,31 @@ public class GroupCommentController {
                 ? ResponseEntity.ok("좋아요 성공")
                 : ResponseEntity.status(HttpStatus.BAD_REQUEST)
                               .body("이미 좋아요를 눌렀습니다.");
+    }
+    
+ // 대댓글 작성
+    @PostMapping("/{commentNo}/reply")
+    public ResponseEntity<String> addReply(
+            @PathVariable("commentNo") int parentCommentNo,
+            @RequestBody GroupComment reply) {
+        try {
+            reply.setParentCommentNo(parentCommentNo);
+            reply.setCommentDepth(1);  // 대댓글 깊이 설정
+            groupCommentService.addComment(reply);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                               .body("대댓글이 작성되었습니다.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                               .body("대댓글 작성에 실패했습니다.");
+        }
+    }
+
+    // 대댓글 목록 조회 (특정 댓글의)
+    @GetMapping("/{commentNo}/replies")
+    public ResponseEntity<List<GroupComment>> getReplies(
+            @PathVariable("commentNo") int parentCommentNo) {
+        List<GroupComment> replies = groupCommentService.getRepliesByCommentNo(parentCommentNo);
+        return ResponseEntity.ok(replies != null ? replies : new ArrayList<>());
     }
 }
 	

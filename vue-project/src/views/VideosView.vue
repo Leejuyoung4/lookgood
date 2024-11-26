@@ -409,7 +409,6 @@ const displayedPages = computed(() => {
   line-height: 1.4;
   margin-bottom: 8px;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }

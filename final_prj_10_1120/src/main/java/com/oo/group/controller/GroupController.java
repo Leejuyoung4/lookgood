@@ -2,34 +2,32 @@ package com.oo.group.controller;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays; // 추가
 import java.util.Collections; // 추가
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.bind.annotation.RequestBody;
 
 import com.oo.group.model.dto.Group;
 import com.oo.group.model.service.GroupService;
 
 @RestController
 @RequestMapping("/api/group")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "*", allowedHeaders = "*")
 public class GroupController {
     private final GroupService groupService;
 
@@ -67,35 +65,27 @@ public class GroupController {
     }
     
     // 게시글 등록
-    @PostMapping(consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
+ // 게시글 등록
+    @PostMapping("")
     public ResponseEntity<?> createGroup(
-        @RequestPart("boardTitle") String boardTitle,      // g 제거
-        @RequestPart("boardContent") String boardContent,  // g 제거
-        @RequestPart(value = "boardFiles", required = false) List<MultipartFile> boardFiles) {  // g 제거
-
+        @ModelAttribute Group group,
+        @RequestParam(value = "boardFile", required = false) MultipartFile file
+    ) {
         try {
-            Group group = new Group();
-            group.setBoardTitle(boardTitle);
-            group.setBoardContent(boardContent);
-
-            List<String> fileNames = new ArrayList<>();
-            if (boardFiles != null) {
-                for (MultipartFile file : boardFiles) {
-                    String savedFileName = saveFile(file);
-                    fileNames.add(savedFileName);
-                }
+            // 파일이 있다면 저장
+            if (file != null && !file.isEmpty()) {
+                String savedFileName = saveFile(file);
+                group.setBoardFiles(savedFileName);
             }
-            group.setBoardFiles(String.join(",", fileNames));
-
+            
             groupService.createGroup(group);
-            return new ResponseEntity<>(group, HttpStatus.CREATED);
+            return ResponseEntity.ok().body("게시글이 성공적으로 등록되었습니다.");
         } catch (Exception e) {
             e.printStackTrace();
-            return new ResponseEntity<>("게시글 등록 실패", HttpStatus.INTERNAL_SERVER_ERROR);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                               .body("게시글 등록에 실패했습니다: " + e.getMessage());
         }
     }
-
-
 
     // 게시글 삭제
     @DeleteMapping("{boardNo}")  // gBoardNo -> boardNo

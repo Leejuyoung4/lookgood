@@ -82,33 +82,23 @@
     <!-- 글쓰기 모달 -->
     <div v-if="showWriteModal" class="modal">
       <div class="modal-content">
-        <h3>글쓰기</h3>
-        <form @submit.prevent="submitPost" enctype="multipart/form-data">
-          <label>
-            제목:
-            <input type="text" v-model="newPostTitle" placeholder="제목을 입력하세요" required />
-          </label>
-          <label>
-            내용:
-            <textarea v-model="newPostContent" placeholder="내용을 입력하세요" required></textarea>
-          </label>
-          <label>
-            첨부 파일 (여러 개 선택 가능):
-            <input type="file" multiple @change="handleFileUpload" />
-          </label>
+        <input v-model="newPostTitle" placeholder="제목" />
+        <textarea v-model="newPostContent" placeholder="내용"></textarea>
+        
+        <!-- 파일 입력과 미리보기 -->
+        <input 
+          type="file" 
+          @change="handleFileSelect" 
+          accept="image/*"
+        />
+        
+        <!-- 이미지 미리보기 -->
+        <div v-if="imagePreview" class="image-preview">
+          <img :src="imagePreview" alt="미리보기" style="max-width: 200px;" />
+        </div>
 
-          <!-- 이미지 미리보기 -->
-          <div v-if="filePreviews.length > 0" class="image-previews">
-            <div v-for="(preview, index) in filePreviews" :key="index" class="image-preview">
-              <img :src="preview" alt="미리보기" />
-            </div>
-          </div>
-
-          <div class="form-actions">
-            <button type="submit">등록</button>
-            <button type="button" @click="closeWriteModal">취소</button>
-          </div>
-        </form>
+        <button @click="submitPost">등록</button>
+        <button @click="closeWriteModal">취소</button>
       </div>
     </div>
 
@@ -215,6 +205,9 @@ const selectedCategory = ref('전체');
 // 현재 정렬 기준
 const sortBy = ref('latest');
 
+// userInfo를 ref로 선언
+const userInfo = ref(null);
+
 // API 호출 함수
 onMounted(async () => {
   try {
@@ -306,13 +299,15 @@ const sortPosts = criteria => {
 const showWriteModal = ref(false); // 글쓰기 모달 표시 상태
 const newPostTitle = ref(''); // 새 글 제목
 const newPostContent = ref(''); // 새 글 내용
+const selectedFiles = ref([]); // 선택된 파일 배열
+const imagePreview = ref(''); // 미리보기 URL
 
 // 데이터 초기화 함수
 const resetWriteModalData = () => {
   newPostTitle.value = ""; // 제목 초기화
   newPostContent.value = ""; // 내 초기화
   selectedFiles.value = []; // 파일 초기화
-  filePreviews.value = []; // 미리보기 초기화
+  imagePreview.value = ''; // 미리보기 초기화
 };
 
 // 글쓰기 모달 닫기 및 데이터 초기화
@@ -331,46 +326,35 @@ const openWriteModal = () => {
   showWriteModal.value = true; // 모달 열기
 };
 
-// 여러 파일을 저장할 상태와 미리보기 URL 배열
-const selectedFiles = ref([]); // 선택된 파일 배열
-const filePreviews = ref([]); // 파일 미리보기 URL 배열
-
 // 파일 선택 이벤트 핸들러
-const handleFileUpload = (event) => {
-  const files = Array.from(event.target.files); // 선택된 파일 배열로 변환
-  selectedFiles.value = files; // 선택된 파일 저장
-
-  // 미리보기 생성 (이미지 파일만 처리)
-  filePreviews.value = files
-    .filter((file) => file.type.startsWith("image/"))
-    .map((file) => URL.createObjectURL(file));
+const handleFileSelect = (event) => {
+  const file = event.target.files[0];
+  selectedFiles.value = event.target.files;
+  
+  if (file && file.type.includes('image')) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      imagePreview.value = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  } else {
+    imagePreview.value = '';
+  }
 };
 
 
-// 서버로 글 등록 요청
-const submitPost = async () => {
+
+// 게시글 삭제
+const deletePost = async (boardNo) => {
+  if (!confirm('게시글을 삭제하시겠습니까?')) return;
+
   try {
-    const formData = new FormData();
-    formData.append("boardTitle", newPostTitle.value);
-    formData.append("boardContent", newPostContent.value);
-
-    if (selectedFiles.value.length > 0) {
-      selectedFiles.value.forEach((file) => {
-        formData.append("boardFiles", file);
-      });
-    }
-
-    const response = await axios.post("/api/group", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-
-    alert("게시글이 성공적으로 등록되었습니다!");
-    const createdPostId = response.data.boardNo;
-    router.push(`/community/group/detail/${createdPostId}`);
-    window.location.reload();
+    await axios.delete(`/api/group/${boardNo}`);
+    alert('게시글이 삭제되었습니');
+    await fetchPosts(); // 게시글 목록 새로고침
   } catch (error) {
-    console.error("글 등록 중 오류 발생:", error);
-    alert("게시글 등록에 실패했습니다.");
+    console.error('게시글 삭제 실패:', error);
+    alert('게시글 삭제에 실패했습니다.');
   }
 };
 
@@ -510,10 +494,66 @@ const displayedPages = computed(() => {
   return Array.from({ length: end - start + 1 }, (_, i) => start + i);
 });
 
+// 컴포넌트 마운트 시 사용자 정보 로드
+onMounted(() => {
+  const storedUserInfo = localStorage.getItem('userInfo');
+  console.log('저장된 사용자 정보:', storedUserInfo);
+  
+  if (storedUserInfo) {
+    userInfo.value = JSON.parse(storedUserInfo);
+    console.log('파싱된 사용자 정보:', userInfo.value);
+  }
+});
+
+// 게시글 목록을 가져오는 함수
+const fetchPosts = async () => {
+  try {
+    const response = await axios.get('/api/group');
+    posts.value = response.data;
+  } catch (error) {
+    console.error('게시글 목록 조회 실패:', error);
+  }
+};
+
+const submitPost = async () => {
+  const storedUser = JSON.parse(localStorage.getItem('userInfo'));
+
+  try {
+    const formData = new FormData();
+    formData.append('userNo', String(storedUser.userNo));
+    formData.append('boardTitle', newPostTitle.value);
+    formData.append('boardContent', newPostContent.value);
+    
+    if (selectedFiles.value.length > 0) {
+      formData.append('boardFile', selectedFiles.value[0]);
+    }
+
+    const response = await axios.post('/api/group', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+
+    if (response.data) {
+      alert('게시글이 등록되었습니다.');
+      closeWriteModal();
+      await fetchPosts(); // 목록 새로고침
+    }
+  } catch (error) {
+    console.error('에러:', error.response?.data || error.message);
+    alert('게시글 등록에 실패했습니다.');
+  }
+};
+
+// 컴포넌트 마운트 시 게시글 목록 가져오기
+onMounted(() => {
+  fetchPosts();
+});
+
 </script>
 
 <style scoped>
-/* 전체 컨테이너 */
+/* 전체 컨���이너 */
 .event-div {
   max-width: 1200px;
   margin: 0 auto;
@@ -562,7 +602,7 @@ const displayedPages = computed(() => {
 }
 
 .board-tab1 .tab-item:hover {
-  color: #000; /* 호버 시 강 색상 */
+  color: #000; /* 호버 시  색상 */
   transform: translateY(-2px); /* 살짝 위로 이동 */
 }
 
@@ -648,7 +688,7 @@ const displayedPages = computed(() => {
   border: none;
   cursor: pointer;
   font-size: 18px;
-  color: #aaa; /* 기본 색상 */
+  color: #aaa; /* 기본 색 */
   transition: color 0.3s ease, transform 0.2s ease; /* 부드러운 전환 효과 */
 }
 
@@ -665,7 +705,7 @@ const displayedPages = computed(() => {
 .board-tab2 .tab-item2.active::after {
   content: '';
   position: absolute;
-  bottom: -5px; /* 버튼 아래쪽 여백 */
+  bottom: -5px; /* 버 아래쪽 여백 */
   left: 10%; /* 선 양쪽 여백 */
   right: 10%;
   height: 3px;
@@ -680,7 +720,7 @@ const displayedPages = computed(() => {
   background-color: #ccc; /* 호버 시 강조 */
 }
 
-/* 반응형 디자인 (위치는 유지, 크기만 조정) */
+/* 반응형 디자인 (위치 유지, 크기만 조정) */
 @media (max-width: 768px) {
   .board-tab1, .board-tab2 {
     width: 90%;
@@ -949,7 +989,7 @@ const displayedPages = computed(() => {
   color: #666;
 }
 
-/* 링크 스타일 제거 */
+/* 링크 일 제거 */
 .list-link {
   text-decoration: none;
   color: inherit;
@@ -1110,7 +1150,7 @@ const displayedPages = computed(() => {
 .tag.community { background-color: #d4edda; color: #28a745; }
 .tag.etc { background-color: #f8d7da; color: #dc3545; }
 
-/* 제목 */
+/* 목 */
 .title {
   font-size: 18px;
   font-weight: bold;
@@ -1247,6 +1287,20 @@ const displayedPages = computed(() => {
 :root.dark-mode .tag.completed {
   background: #666666;
   color: #e0e0e0;
+}
+
+.image-preview {
+  margin: 10px 0;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.image-preview img {
+  max-width: 200px;
+  height: auto;
+  display: block;
+  margin: 0 auto;
 }
 
 </style>

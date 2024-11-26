@@ -361,18 +361,7 @@
       ></textarea>
     </div>
 
-    <!-- 글쓰기 버튼에 조건부 스타일 추가 -->
-    <div class="write-wrapper">
-      <button 
-        class="write-button" 
-        @click="openWriteModal"
-        :disabled="!isLoggedIn"
-        :class="{ 'disabled': !isLoggedIn }"
-      >
-        <img :src="penImg" class="button-icon"/>
-        {{ isLoggedIn ? '글쓰기' : '로그인 필요' }}
-      </button>
-    </div>
+
   </div>
 </template>
 
@@ -2660,7 +2649,7 @@ body.modal-open {
   }
 }
 
-/* 다���모드 스타일 */
+/* 다�����모드 스타일 */
 :root.dark-mode .memo-input {
   background: #2a2a2a;
   color: #fff;
@@ -3129,7 +3118,7 @@ body.modal-open {
   cursor: pointer;
   padding: 8px;
   border-radius: 50%;
-  transition: all 0.3s ease, transform 0.2s ease; /* 효과에 스케일 전환 추가 */
+  transition: all 0.3s ease, transform 0.2s ease; /* 효과에 스케일 전환 추�� */
   display: flex;
   align-items: center;
   justify-content: center;
