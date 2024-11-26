@@ -18,15 +18,16 @@
         <div class="event-list-container">
           <transition-group name="fade" tag="div">
             <div v-for="event in paginatedEvents" :key="event.eNo" class="event-item" @click="navigateToEvent(event.eNo)">
-              <img :src="event.image || 'path/to/default-image.jpg'" alt="이벤트 이미지" class="event-image" />
               <div class="event-info">
-                <h3>{{ event.eTitle }}</h3>
-                <p>{{ event.eBigCity }} - {{ event.eSmallCity }}</p>
-                <p>{{ event.eShort }}</p>
-                <p>{{ formatDate(event.eStartDate) }} ~ {{ formatDate(event.eEndDate) }}</p>
-                <p v-if="sortBy === 'distance'" class="distance-info">
-                  현재 위치에서 {{ event.distance }}
-                </p>
+                <h3 class="event-title">{{ event.eTitle }}</h3>
+                <div class="event-details">
+                  <span class="location"><i class="bi bi-geo-alt"></i> {{ event.eBigCity }} {{ event.eSmallCity }}</span>
+                  <span class="date"><i class="bi bi-calendar"></i> {{ formatDate(event.eStartDate) }} ~ {{ formatDate(event.eEndDate) }}</span>
+                  <span class="description">{{ event.eShort }}</span>
+                  <span v-if="sortBy === 'distance'" class="distance">
+                    <i class="bi bi-signpost-2"></i> {{ event.distance }}
+                  </span>
+                </div>
               </div>
             </div>
           </transition-group>
@@ -69,7 +70,7 @@
           <div class="tags-list">
             <button v-for="region in uniqueRegions" :key="region" class="tag-filter-item"
               :class="{ active: selectedRegion === region }" @click="filterByRegion(region)">
-              {{ region }}
+              {{ truncateText(region, 5) }}
             </button>
           </div>
         </div>
@@ -79,7 +80,7 @@
           <div class="tags-list">
             <button v-for="subregion in filteredSubregions" :key="subregion" class="tag-filter-item"
               :class="{ active: selectedSubregion === subregion }" @click="filterBySubregion(subregion)">
-              {{ subregion }}
+              {{ truncateText(subregion, 5) }}
             </button>
           </div>
         </div>
@@ -295,7 +296,7 @@ const filterBySubregion = (subregion) => {
 
 // 페이지네이션 련 상태
 const currentPage = ref(1);
-const itemsPerPage = 8;
+const itemsPerPage = 5;
 
 // 페이지네이션된 이벤트 목록
 const paginatedEvents = computed(() => {
@@ -339,11 +340,46 @@ const displayedPages = computed(() => {
 
   return range;
 });
+
+// 글자 수 제한 함수 추가
+const truncateText = (text, maxLength) => {
+  if (text.length > maxLength) {
+    return text.slice(0, maxLength) + '..';
+  }
+  return text;
+};
 </script>
 
 
 
 <style scoped>
+/* CSS 변수 수정 */
+:root {
+  --bg-color: #ffffff;
+  --bg-color-lighter: #ffffff;
+  --text-color: #333333;
+  --text-color-secondary: #666666;
+  --border-color: #FFE082;
+  --hover-color: #f8f9fa;
+  --card-bg: #ffffff;
+  --accent-color: #FFC107;
+  --accent-hover: #FFF8E1;
+  --shadow-color: rgba(255, 193, 7, 0.15);
+}
+
+:root.dark-mode {
+  --bg-color: #1a1a1a;
+  --bg-color-lighter: #242424; /* 바깥보다 덜 어두운 색상 */
+  --text-color: #e0e0e0;
+  --text-color-secondary: #a0a0a0;
+  --border-color: #FFC107;
+  --hover-color: #2a2a2a;
+  --card-bg: #2a2a2a;  /* 카드 배경도 덜 어둡게 */
+  --accent-color: #FFC107;
+  --accent-hover: rgba(255, 193, 7, 0.1);
+  --shadow-color: rgba(0, 0, 0, 0.3);
+}
+
 .event-div {
   max-width: 1200px;
   margin: 0 auto;
@@ -400,42 +436,105 @@ const displayedPages = computed(() => {
 }
 
 .event-item {
+  background-color: var(--bg-color-lighter);
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+  padding: 20px;
+  margin-bottom: 15px;
+  border-radius: 12px;
+  transition: all 0.3s ease;
   cursor: pointer;
-  /* 커서 스타일 추가 */
-  display: flex;
-  gap: 20px;
-  padding: 20px 0;
-  border-bottom: 1px solid var(--border-color);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  text-decoration: none;
-  color: inherit;
-  background-color: var(--bg-color);
 }
 
 .event-item:hover {
+  background-color: var(--hover-color);
+  border-color: var(--accent-color);
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 12px var(--shadow-color);
+}
+
+.event-info {
+  width: 100%;
+}
+
+.event-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: var(--text-color);
+}
+
+.event-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--text-color-secondary);
+}
+
+.event-details span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+
+.event-details i {
+  color: #ebd03b;
+  font-size: 1rem;
+}
+
+.location, .date, .description, .distance {
+  padding: 4px 0;
+}
+
+.description {
+  color: var(--text-color-secondary);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.distance {
+  color: #ebd03b;
+  font-weight: 500;
+}
+
+/* 다크모드 대응 */
+:root.dark-mode .event-item {
+  background-color: var(--bg-color);
+  border-color: var(--border-color);
+}
+
+:root.dark-mode .event-item:hover {
+  border-color: #ebd03b;
   background-color: var(--hover-color);
 }
 
-.event-image {
-  width: 120px;
-  height: 120px;
-  object-fit: cover;
-  border-radius: 8px;
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .event-details {
+    gap: 6px;
+  }
+  
+  .event-title {
+    font-size: 1.1rem;
+  }
+  
+  .event-details span {
+    font-size: 0.85rem;
+  }
 }
 
 /* 태그 필터 개선 */
 .tag-filter {
   width: 25%;
   padding: 30px;
-  background: var(--hover-color);
+  background: var(--card-bg);
   border-radius: 15px;
   position: sticky;
   top: 20px;
   height: fit-content;
-  border: 1px solid #FFE082;
-  box-shadow: 0 2px 8px rgba(255, 193, 7, 0.1);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 2px 8px var(--shadow-color);
 }
 
 /* 지역 필터 섹션 */
@@ -451,14 +550,14 @@ const displayedPages = computed(() => {
   margin-bottom: 15px;
   color: var(--text-color);
   padding-bottom: 10px;
-  border-bottom: 2px solid #FFE082;
+  border-bottom: 2px solid var(--border-color);
 }
 
 /* 태그 리스트 컨테이너 */
 .tags-list {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
+  gap: 8px;
   margin-top: 15px;
 }
 
@@ -467,27 +566,29 @@ const displayedPages = computed(() => {
   width: 100%;
   padding: 10px;
   text-align: center;
-  background: white;
-  border: 1px solid #FFE082;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
   color: var(--text-color);
   transition: all 0.2s ease;
   cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100px; /* 최대 너비 설정 */
 }
 
 .tag-filter-item:hover {
-  background-color: #FFF8E1;
-  border-color: #FFC107;
+  background-color: var(--accent-hover);
+  border-color: var(--accent-color);
   transform: translateY(-2px);
 }
 
 .tag-filter-item.active {
-  background-color: #FFC107;
-  border-color: #FFC107;
-  color: white;
-  font-weight: 600;
+  background-color: var(--accent-color);
+  color: var(--bg-color);
 }
 
 /* 다크모드 대응 */
@@ -527,6 +628,11 @@ const displayedPages = computed(() => {
 
   .tags-list {
     grid-template-columns: repeat(3, 1fr);
+  }
+
+  .tag-filter-item {
+    max-width: 80px;
+    font-size: 13px;
   }
 }
 
@@ -613,11 +719,6 @@ const displayedPages = computed(() => {
   .tag-filter {
     width: 100%;
   }
-
-  .event-image {
-    width: 100px;
-    height: 100px;
-  }
 }
 
 /* 로딩 버레이 스타일 */
@@ -637,8 +738,8 @@ const displayedPages = computed(() => {
 .loading-spinner {
   width: 40px;
   height: 40px;
-  border: 4px solid #333;
-  border-top: 4px solid var(--accent-color, #ffd987);
+  border: 4px solid var(--border-color);
+  border-top: 4px solid var(--accent-color);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -667,9 +768,9 @@ const displayedPages = computed(() => {
 
 .page-button {
   padding: 8px 16px;
-  border: 2px solid #FFE082;
-  background: white;
-  color: #333;
+  border: 2px solid var(--border-color);
+  background: var(--card-bg);
+  color: var(--text-color);
   border-radius: 8px;
   cursor: pointer;
   font-weight: 500;
@@ -677,15 +778,15 @@ const displayedPages = computed(() => {
 }
 
 .page-button:hover:not(:disabled) {
-  background: #FFF8E1;
-  border-color: #FFC107;
+  background: var(--accent-hover);
+  border-color: var(--accent-color);
   transform: translateY(-2px);
 }
 
 .page-button:disabled {
-  background: #f5f5f5;
-  border-color: #e0e0e0;
-  color: #999;
+  background: var(--hover-color);
+  border-color: var(--border-color);
+  color: var(--text-color-secondary);
   cursor: not-allowed;
 }
 
@@ -697,9 +798,9 @@ const displayedPages = computed(() => {
 .page-number {
   width: 36px;
   height: 36px;
-  border: 2px solid #FFE082;
-  background: white;
-  color: #333;
+  border: 2px solid var(--border-color);
+  background: var(--card-bg);
+  color: var(--text-color);
   border-radius: 50%;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -707,15 +808,14 @@ const displayedPages = computed(() => {
 }
 
 .page-number:hover:not(.active) {
-  background: #FFF8E1;
-  border-color: #FFC107;
+  background: var(--accent-hover);
+  border-color: var(--accent-color);
   transform: translateY(-2px);
 }
 
 .page-number.active {
-  background: #FFC107;
-  border-color: #FFC107;
-  color: white;
+  background: var(--accent-color);
+  color: var(--bg-color);
 }
 
 /* 다크모드 대응 */
@@ -744,25 +844,77 @@ const displayedPages = computed(() => {
 
 /* 이벤트 아이템 스타일 수정 */
 .event-item {
-  border: 1px solid #FFE082;
+  border: 1px solid var(--border-color);
   border-radius: 12px;
   padding: 20px;
   margin-bottom: 20px;
 }
 
 .event-item:hover {
-  border-color: #FFC107;
-  box-shadow: 0 4px 12px rgba(255, 193, 7, 0.15);
+  border-color: var(--accent-color);
+  box-shadow: 0 4px 12px var(--shadow-color);
 }
 
 /* 태그 필터 스타일 수정 */
 .tag-filter-item.active {
-  background-color: #FFC107;
-  color: white;
+  background-color: var(--accent-color);
+  color: var(--bg-color);
 }
 
 .tag-filter-item:hover {
-  background-color: #FFF8E1;
-  color: #FFC107;
+  background-color: var(--accent-hover);
+  color: var(--accent-color);
+}
+
+/* 이벤트 내용 스타일 수정 */
+.event-info h3 {
+  color: var(--text-color);
+}
+
+.event-details {
+  color: var(--text-color-secondary);
+}
+
+/* 태그 필터 스타일 수정 */
+.tag-filter {
+  background-color: var(--bg-color-lighter);
+}
+
+/* 총 건수 표시 스타일 */
+.total-count {
+  color: var(--accent-color);
+  font-weight: bold;
+}
+
+/* 이미지 섹션 스타일 추가 */
+.image-section {
+  width: 100%;
+  margin-bottom: 30px;
+}
+
+.image-bubble {
+  width: 100%;
+  border-radius: 15px;
+  overflow: hidden;
+  border: 2px solid var(--border-color);
+  background-color: var(--bg-color);
+  box-shadow: 0 4px 12px var(--shadow-color);
+}
+
+.event-image {
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  display: block;
+}
+
+/* 다크모드에서의 이미지 스타일 */
+:root.dark-mode .image-bubble {
+  border-color: var(--border-color);
+  background-color: var(--bg-color-lighter);
+}
+
+:root.dark-mode .event-image {
+  filter: brightness(0.9);
 }
 </style>

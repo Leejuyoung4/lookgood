@@ -377,7 +377,7 @@ watch(() => checkLoginStatus(), async (isLoggedIn) => {
   }
 });
 
-// route params가 변경될 때마다 데이터 다시 로딩
+// route params가 변경될 때마다 데이 다시 로딩
 watch(() => route.params.id, async (newId) => {
   console.log('route params 변경:', newId); // 디버용
   if (newId) {
@@ -904,14 +904,16 @@ const seekToTimestamp = (startTime) => {
 
 .video-item {
   display: grid;
-  grid-template-columns: 120px 1fr;
-  gap: 12px;
-  padding: 12px;
+  grid-template-columns: 160px 1fr;
+  gap: 15px;
+  padding: 15px;
   margin-bottom: 16px;
   border-radius: 12px;
   background: white;
   transition: all 0.2s ease;
   border: 1px solid rgba(255, 184, 76, 0.1);
+  cursor: pointer;
+  min-height: 120px;
 }
 
 .video-item:hover {
@@ -919,8 +921,8 @@ const seekToTimestamp = (startTime) => {
 }
 
 .thumbnail {
-  width: 120px;
-  height: 68px;
+  width: 160px;
+  height: 90px;
   border-radius: 8px;
   overflow: hidden;
 }
@@ -934,10 +936,12 @@ const seekToTimestamp = (startTime) => {
 .video-info {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  gap: 8px;
+  min-height: 90px;
+  overflow: hidden;
 }
 
-.title {
+.video-info h3.video-title {
   font-size: 14px;
   font-weight: 500;
   line-height: 1.4;
@@ -946,41 +950,66 @@ const seekToTimestamp = (startTime) => {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  color: #333;
+  flex: 1;
 }
 
-.speaker {
+.video-info .speaker {
   font-size: 13px;
   color: #666;
-  margin: 4px 0;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   font-size: 12px;
   color: #888;
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  margin-top: auto;
+}
+
+.views, .date {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .dot {
-  font-size: 8px;
+  display: none;
 }
 
 /* 반응형 조정 */
 @media (max-width: 768px) {
   .video-item {
-    grid-template-columns: 100px 1fr;
-    gap: 10px;
+    grid-template-columns: 120px 1fr;
+    gap: 12px;
   }
 
   .thumbnail {
-    width: 100px;
-    height: 56px;
+    width: 120px;
+    height: 68px;
   }
 
-  .title {
+  .video-info {
+    height: 68px;
+  }
+
+  .video-info h3.video-title {
     font-size: 13px;
+    -webkit-line-clamp: 2;
+  }
+
+  .video-info .speaker {
+    font-size: 12px;
+  }
+
+  .meta {
+    font-size: 11px;
+    gap: 1px;
   }
 }
 

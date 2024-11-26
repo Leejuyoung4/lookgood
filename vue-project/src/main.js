@@ -10,6 +10,7 @@ const currentIP = window.location.hostname;
 // axios 기본 설정 (withCredentials 제거)
 axios.defaults.baseURL = `http://${currentIP}:8080`
 // axios.defaults.baseURL = `http://localhost:8080`
+// axios.defaults.baseURL = `http://192.168.210.84:8080`
 axios.defaults.withCredentials = false; 
 
 const app = createApp(App)

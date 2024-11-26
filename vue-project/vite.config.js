@@ -19,8 +19,8 @@ export default defineConfig({
     port: 5173,       // 포트 번호
     hmr: {
       clientPort: 5173,
-      host: 'localhost',
-      protocol: 'ws'
+      // host: '192.168.210.84',
+      // protocol: 'ws'
     },
     watch: {
       usePolling: true  // 파일 변경 감지를 위한 폴링 사용

@@ -3,7 +3,6 @@
     <div class="modal-content">
       <!-- 헤더 -->
       <div class="modal-header">
-        <span>이용약관</span>
         <button class="close-btn" @click="closeModal">X</button>
       </div>
 
