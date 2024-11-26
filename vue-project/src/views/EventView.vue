@@ -8,30 +8,59 @@
 
       <div class="board-tab">
         <button class="tab-item" :class="{ active: sortBy === 'latest' }" @click="setSortBy('latest')">최신순</button>
-        <!-- <span class="divider-vertical">|</span> -->
         <button class="tab-item" :class="{ active: sortBy === 'distance' }" @click="setSortBy('distance')">거리순</button>
-        <!-- <span class="divider-vertical">|</span> -->
-        <button class="tab-item" :class="{ active: sortBy === 'likes' }" @click="setSortBy('likes')">인기순</button>
       </div>
     </div>
     <hr class="divider thin">
 
     <div class="content-area">
-      <div class="event-list-container">
-        <transition-group name="fade" tag="div">
-          <div v-for="event in filteredEvents" :key="event.eNo" class="event-item" @click="navigateToEvent(event.eNo)">
-            <img :src="event.image || 'path/to/default-image.jpg'" alt="이벤트 이미지" class="event-image" />
-            <div class="event-info">
-              <h3>{{ event.eTitle }}</h3>
-              <p>{{ event.eBigCity }} - {{ event.eSmallCity }}</p>
-              <p>{{ event.eShort }}</p>
-              <p>{{ formatDate(event.eStartDate) }} ~ {{ formatDate(event.eEndDate) }}</p>
-              <p v-if="sortBy === 'distance'" class="distance-info">
-                현재 위치에서 {{ event.distance }}
-              </p>
+      <div class="left-content">
+        <div class="event-list-container">
+          <transition-group name="fade" tag="div">
+            <div v-for="event in paginatedEvents" :key="event.eNo" class="event-item" @click="navigateToEvent(event.eNo)">
+              <img :src="event.image || 'path/to/default-image.jpg'" alt="이벤트 이미지" class="event-image" />
+              <div class="event-info">
+                <h3>{{ event.eTitle }}</h3>
+                <p>{{ event.eBigCity }} - {{ event.eSmallCity }}</p>
+                <p>{{ event.eShort }}</p>
+                <p>{{ formatDate(event.eStartDate) }} ~ {{ formatDate(event.eEndDate) }}</p>
+                <p v-if="sortBy === 'distance'" class="distance-info">
+                  현재 위치에서 {{ event.distance }}
+                </p>
+              </div>
             </div>
+          </transition-group>
+        </div>
+
+        <div class="pagination" v-if="totalPages > 1">
+          <button 
+            class="page-button"
+            :disabled="currentPage === 1"
+            @click="currentPage = Math.max(1, currentPage - 1)"
+          >
+            이전
+          </button>
+          
+          <div class="page-numbers">
+            <button
+              v-for="pageNum in displayedPages"
+              :key="pageNum"
+              @click="currentPage = pageNum"
+              class="page-number"
+              :class="{ active: currentPage === pageNum }"
+            >
+              {{ pageNum }}
+            </button>
           </div>
-        </transition-group>
+
+          <button 
+            class="page-button"
+            :disabled="currentPage === totalPages"
+            @click="currentPage = Math.min(totalPages, currentPage + 1)"
+          >
+            다음
+          </button>
+        </div>
       </div>
 
       <div class="tag-filter">
@@ -98,6 +127,9 @@ const userLocation = ref({
   lng: 127.3848378
 });
 
+// 상단에 현재 날짜 상태 추가
+const currentDate = ref(new Date());
+
 // 거리 계산 함수
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
   const R = 6371; // 지구의 반경 (km)
@@ -141,23 +173,27 @@ const calculateEventDistances = async () => {
 // 이벤트 데이터 가져오기
 onMounted(async () => {
   try {
-    // axios 인스턴스 생성하여 credentials 설정 제거
     const response = await axios({
       method: 'get',
       url: '/api/event',
       withCredentials: false
     });
     
-    console.log('받아온 데이터:', response.data);
-    
     if (response.data) {
-      eventList.value = response.data.map((event) => ({
+      // 원본 데이터 확인
+      console.log('원본 데이터 첫번째 항목:', response.data[0]);
+      
+      eventList.value = response.data.map(event => ({
         ...event,
         eStartDate: new Date(event.eStartDate),
-        eEndDate: new Date(event.eEndDate),
+        eEndDate: new Date(event.eEndDate)
       }));
+      
+      // 변환된 데이터 확인
+      console.log('변환된 데이터 첫번째 항목:', eventList.value[0]);
+      console.log('시작일 타입:', typeof eventList.value[0].eStartDate);
+      console.log('시작일이 Date 객체인지:', eventList.value[0].eStartDate instanceof Date);
     }
-    
   } catch (error) {
     console.error("데이터를 가져오는 중 오류 발생:", error);
     eventList.value = [];
@@ -184,34 +220,46 @@ const formatDate = (date) => {
 const setSortBy = async (criteria) => {
   try {
     sortBy.value = criteria;
-    isLoading.value = true; // 로딩 시작
+    isLoading.value = true;
+
+    let filteredList = [...eventList.value];
+    console.log('전체 이벤트 수:', filteredList.length);
+
+    switch (criteria) {
+      case "distance":
+        console.log('거리순 정렬 시작');
+        await calculateEventDistances();
+        filteredList.sort((a, b) => {
+          const distanceA = eventDistances.value.get(a.eNo) || Infinity;
+          const distanceB = eventDistances.value.get(b.eNo) || Infinity;
+          return distanceA - distanceB;
+        });
+        break;
+
+      case "latest":
+        console.log('최신순 정렬 시작');
+        filteredList.sort((a, b) => new Date(b.eStartDate) - new Date(a.eStartDate));
+        break;
+    }
+
+    console.log('정렬 완료:', filteredList[0]?.eTitle);
+    eventList.value = filteredList;
 
     if (criteria === "distance") {
-      await calculateEventDistances();
-      eventList.value.sort((a, b) => {
-        const distanceA = eventDistances.value.get(a.eNo) || Infinity;
-        const distanceB = eventDistances.value.get(b.eNo) || Infinity;
-        return distanceA - distanceB;
-      });
-
-      // 거리 정보 표시 추가
       eventList.value = eventList.value.map(event => ({
         ...event,
         distance: eventDistances.value.get(event.eNo)
           ? `${eventDistances.value.get(event.eNo).toFixed(1)}km`
           : '거리 정보 없음'
       }));
-    } else if (criteria === "latest") {
-      eventList.value.sort((a, b) => b.eStartDate - a.eStartDate);
-    } else if (criteria === "likes") {
-      eventList.value.sort((a, b) => (b.likes || 0) - (a.likes || 0));
     }
   } catch (error) {
-    console.error('거리순 정렬 실패:', error);
+    console.error('정렬 실패:', error);
   } finally {
-    isLoading.value = false; // 로딩 종료
+    isLoading.value = false;
   }
 };
+
 
 // 지역 필터링 로직
 const uniqueRegions = computed(() => {
@@ -244,6 +292,53 @@ const filterByRegion = (region) => {
 const filterBySubregion = (subregion) => {
   selectedSubregion.value = subregion === selectedSubregion.value ? "" : subregion;
 };
+
+// 페이지네이션 련 상태
+const currentPage = ref(1);
+const itemsPerPage = 8;
+
+// 페이지네이션된 이벤트 목록
+const paginatedEvents = computed(() => {
+  const startIndex = (currentPage.value - 1) * itemsPerPage;
+  return filteredEvents.value.slice(startIndex, startIndex + itemsPerPage);
+});
+
+// 총 페이지 수 계산
+const totalPages = computed(() => 
+  Math.ceil(filteredEvents.value.length / itemsPerPage)
+);
+
+// 표시할 페이지 번호 계산
+const displayedPages = computed(() => {
+  const delta = 2;
+  const range = [];
+  const maxPages = totalPages.value;
+  const currentPageValue = currentPage.value;
+
+  for (
+    let i = Math.max(2, currentPageValue - delta);
+    i <= Math.min(maxPages - 1, currentPageValue + delta);
+    i++
+  ) {
+    range.push(i);
+  }
+
+  if (currentPageValue - delta > 2) {
+    range.unshift('...');
+  }
+  if (currentPageValue + delta < maxPages - 1) {
+    range.push('...');
+  }
+
+  if (maxPages > 1) {
+    range.unshift(1);
+    if (maxPages > 1) {
+      range.push(maxPages);
+    }
+  }
+
+  return range;
+});
 </script>
 
 
@@ -291,9 +386,17 @@ const filterBySubregion = (subregion) => {
   margin-top: 20px;
 }
 
-/* 이벤트 리스트 */
-.event-list-container {
+/* 왼쪽 컨텐츠 영역 */
+.left-content {
   width: 65%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 이벤트 리스트 컨테이너 */
+.event-list-container {
+  width: 100%;
+  margin-bottom: 20px;
 }
 
 .event-item {
@@ -325,38 +428,113 @@ const filterBySubregion = (subregion) => {
 /* 태그 필터 개선 */
 .tag-filter {
   width: 25%;
-  padding: 25px;
+  padding: 30px;
   background: var(--hover-color);
   border-radius: 15px;
   position: sticky;
   top: 20px;
   height: fit-content;
-  border: 1px solid var(--border-color);
+  border: 1px solid #FFE082;
+  box-shadow: 0 2px 8px rgba(255, 193, 7, 0.1);
 }
 
-.tag-filter-item {
-  background: var(--bg-color);
-  border: none;
-  display: inline-block;
-  padding: 8px 12px;
-  cursor: pointer;
-  border-radius: 6px;
-  transition: all 0.2s ease;
-  font-size: 14px;
+/* 지역 필터 섹션 */
+.region-filter,
+.subregion-filter {
+  margin-bottom: 30px;
+}
+
+.region-filter h4,
+.subregion-filter h4 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 15px;
   color: var(--text-color);
+  padding-bottom: 10px;
+  border-bottom: 2px solid #FFE082;
+}
+
+/* 태그 리스트 컨테이너 */
+.tags-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-top: 15px;
+}
+
+/* 태그 버튼 스타일 */
+.tag-filter-item {
+  width: 100%;
+  padding: 10px;
+  text-align: center;
+  background: white;
+  border: 1px solid #FFE082;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-color);
+  transition: all 0.2s ease;
+  cursor: pointer;
 }
 
 .tag-filter-item:hover {
-  background-color: var(--hover-color);
-  color: var(--accent-color, #f8cd71);
+  background-color: #FFF8E1;
+  border-color: #FFC107;
+  transform: translateY(-2px);
 }
 
 .tag-filter-item.active {
-  background-color: var(--accent-color, #ffd987);
-  color: var(--bg-color);
+  background-color: #FFC107;
+  border-color: #FFC107;
+  color: white;
+  font-weight: 600;
 }
 
+/* 다크모드 대응 */
+:root.dark-mode .tag-filter {
+  background: #242424;
+  border-color: #FFC107;
+}
 
+:root.dark-mode .tag-filter-item {
+  background: #333;
+  border-color: #FFC107;
+  color: #fff;
+}
+
+:root.dark-mode .tag-filter-item:hover {
+  background: rgba(255, 193, 7, 0.1);
+}
+
+:root.dark-mode .tag-filter-item.active {
+  background: #FFC107;
+  color: #242424;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 1200px) {
+  .tags-list {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .tag-filter {
+    width: 100%;
+    margin-top: 20px;
+    position: static;
+  }
+
+  .tags-list {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .tags-list {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
 
 /* 정렬 탭 */
 .board-tab {
@@ -395,7 +573,7 @@ const filterBySubregion = (subregion) => {
   height: 3px; /* 밑줄 두께 */
   background-color: var(--accent-color, #ffd987); /* 활성화 밑줄 색상 */
   border-radius: 2px; /* 둥근 모서리 */
-  transition: width 0.3s ease, background-color 0.3s ease; /* 부드러운 효과 */
+  transition: width 0.3s ease, background-color 0.3s ease; /* 부러운 효과 */
 }
 
 
@@ -415,7 +593,7 @@ const filterBySubregion = (subregion) => {
   transform: translateY(10px);
 }
 
-/* 반응형 디자인 */
+/* 반형 디자인 */
 @media (max-width: 1024px) {
   .event-top {
     width: 100%;
@@ -431,7 +609,7 @@ const filterBySubregion = (subregion) => {
     flex-direction: column;
   }
 
-  .event-list-container,
+  .left-content,
   .tag-filter {
     width: 100%;
   }
@@ -442,7 +620,7 @@ const filterBySubregion = (subregion) => {
   }
 }
 
-/* 로딩 오버레이 스타일 */
+/* 로딩 버레이 스타일 */
 .loading-overlay {
   position: fixed;
   top: 0;
@@ -475,5 +653,116 @@ const filterBySubregion = (subregion) => {
   color: var(--text-color-secondary, #666);
   font-size: 0.9em;
   margin-top: 5px;
+}
+
+/* 페이지네이션 스타일 */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin: 40px 0;
+  width: 100%;
+}
+
+.page-button {
+  padding: 8px 16px;
+  border: 2px solid #FFE082;
+  background: white;
+  color: #333;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.page-button:hover:not(:disabled) {
+  background: #FFF8E1;
+  border-color: #FFC107;
+  transform: translateY(-2px);
+}
+
+.page-button:disabled {
+  background: #f5f5f5;
+  border-color: #e0e0e0;
+  color: #999;
+  cursor: not-allowed;
+}
+
+.page-numbers {
+  display: flex;
+  gap: 5px;
+}
+
+.page-number {
+  width: 36px;
+  height: 36px;
+  border: 2px solid #FFE082;
+  background: white;
+  color: #333;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.page-number:hover:not(.active) {
+  background: #FFF8E1;
+  border-color: #FFC107;
+  transform: translateY(-2px);
+}
+
+.page-number.active {
+  background: #FFC107;
+  border-color: #FFC107;
+  color: white;
+}
+
+/* 다크모드 대응 */
+:root.dark-mode .page-button,
+:root.dark-mode .page-number {
+  background: #242424;
+  color: #fff;
+  border-color: #FFC107;
+}
+
+:root.dark-mode .page-button:hover:not(:disabled),
+:root.dark-mode .page-number:hover:not(.active) {
+  background: rgba(255, 193, 7, 0.1);
+}
+
+:root.dark-mode .page-number.active {
+  background: #FFC107;
+  color: #242424;
+}
+
+:root.dark-mode .page-button:disabled {
+  background: #1a1a1a;
+  border-color: #333;
+  color: #666;
+}
+
+/* 이벤트 아이템 스타일 수정 */
+.event-item {
+  border: 1px solid #FFE082;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.event-item:hover {
+  border-color: #FFC107;
+  box-shadow: 0 4px 12px rgba(255, 193, 7, 0.15);
+}
+
+/* 태그 필터 스타일 수정 */
+.tag-filter-item.active {
+  background-color: #FFC107;
+  color: white;
+}
+
+.tag-filter-item:hover {
+  background-color: #FFF8E1;
+  color: #FFC107;
 }
 </style>

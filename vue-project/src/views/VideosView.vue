@@ -46,8 +46,33 @@
 
     <!-- 페이지네이션 버튼 -->
     <div class="pagination" v-if="filteredVideos.length > itemsPerPage">
-      <button @click="prevPage" :disabled="currentPage === 1">이전</button>
-      <button @click="nextPage" :disabled="currentPage === totalPages">다음</button>
+      <button 
+        class="page-button"
+        :disabled="currentPage === 1"
+        @click="currentPage = Math.max(1, currentPage - 1)"
+      >
+        이전
+      </button>
+      
+      <div class="page-numbers">
+        <button
+          v-for="pageNum in displayedPages"
+          :key="pageNum"
+          @click="currentPage = pageNum"
+          class="page-number"
+          :class="{ active: currentPage === pageNum }"
+        >
+          {{ pageNum }}
+        </button>
+      </div>
+
+      <button 
+        class="page-button"
+        :disabled="currentPage === totalPages"
+        @click="currentPage = Math.min(totalPages, currentPage + 1)"
+      >
+        다음
+      </button>
     </div>
   </div>
 </template>
@@ -246,6 +271,38 @@ defineExpose({
 const isActiveCategory = (category) => {
   return selectedCategory.value === category;
 };
+
+// 표시할 페이지 번호 계산
+const displayedPages = computed(() => {
+  const delta = 2; // 현재 페이지 기준으로 양쪽에 표시할 페이지 수
+  const range = [];
+  const maxPages = totalPages.value;
+  const currentPageValue = currentPage.value;
+
+  for (
+    let i = Math.max(2, currentPageValue - delta);
+    i <= Math.min(maxPages - 1, currentPageValue + delta);
+    i++
+  ) {
+    range.push(i);
+  }
+
+  if (currentPageValue - delta > 2) {
+    range.unshift('...');
+  }
+  if (currentPageValue + delta < maxPages - 1) {
+    range.push('...');
+  }
+
+  if (maxPages > 1) {
+    range.unshift(1);
+    if (maxPages > 1) {
+      range.push(maxPages);
+    }
+  }
+
+  return range;
+});
 </script>
 
 <style scoped>
@@ -376,28 +433,62 @@ const isActiveCategory = (category) => {
   margin-bottom: 20px;
   display: flex;
   justify-content: center;
-  gap: 12px;
+  align-items: center;
+  gap: 10px;
+  margin: 40px 0;
 }
 
-.pagination button {
+.page-button {
+  padding: 8px 16px;
+  border: 2px solid #FFE082;
   background: white;
   color: #333;
   border: 2px solid #FFE082;
   padding: 8px 20px;
   border-radius: 8px;
+  cursor: pointer;
   font-weight: 500;
   transition: all 0.2s ease;
 }
 
-.pagination button:hover:not(:disabled) {
+.page-button:hover:not(:disabled) {
   background: #FFF8E1;
   border-color: #FFC107;
 }
 
-.pagination button:disabled {
+.page-button:disabled {
   background: #f5f5f5;
   border-color: #e0e0e0;
   color: #999;
+  cursor: not-allowed;
+}
+
+.page-numbers {
+  display: flex;
+  gap: 5px;
+}
+
+.page-number {
+  width: 36px;
+  height: 36px;
+  border: 2px solid #FFE082;
+  background: white;
+  color: #333;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.page-number:hover:not(.active) {
+  background: #FFF8E1;
+  border-color: #FFC107;
+}
+
+.page-number.active {
+  background: #FFC107;
+  border-color: #FFC107;
+  color: white;
 }
 
 /* 다크모드 */
@@ -524,5 +615,89 @@ const isActiveCategory = (category) => {
 
 :root.dark-mode .navbar-toggler-icon {
   filter: invert(1);
+}
+
+/* 페이지네이션 스타일 */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin: 40px 0;
+}
+
+.page-button {
+  padding: 8px 16px;
+  border: 2px solid #FFE082;
+  background: white;
+  color: #333;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.page-button:hover:not(:disabled) {
+  background: #FFF8E1;
+  border-color: #FFC107;
+}
+
+.page-button:disabled {
+  background: #f5f5f5;
+  border-color: #e0e0e0;
+  color: #999;
+  cursor: not-allowed;
+}
+
+.page-numbers {
+  display: flex;
+  gap: 5px;
+}
+
+.page-number {
+  width: 36px;
+  height: 36px;
+  border: 2px solid #FFE082;
+  background: white;
+  color: #333;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.page-number:hover:not(.active) {
+  background: #FFF8E1;
+  border-color: #FFC107;
+}
+
+.page-number.active {
+  background: #FFC107;
+  border-color: #FFC107;
+  color: white;
+}
+
+/* 다크모드 페이지네이션 */
+:root.dark-mode .page-button,
+:root.dark-mode .page-number {
+  background: #242424;
+  color: #fff;
+  border-color: #FFC107;
+}
+
+:root.dark-mode .page-button:hover:not(:disabled),
+:root.dark-mode .page-number:hover:not(.active) {
+  background: rgba(255, 193, 7, 0.1);
+}
+
+:root.dark-mode .page-number.active {
+  background: #FFC107;
+  color: #242424;
+}
+
+:root.dark-mode .page-button:disabled {
+  background: #1a1a1a;
+  border-color: #333;
+  color: #666;
 }
 </style>

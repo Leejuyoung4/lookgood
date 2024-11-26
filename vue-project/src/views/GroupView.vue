@@ -144,7 +144,7 @@
               </span>
               <span class="info-item">
                 <i class="fas fa-comment"></i>
-                {{ post.boardCommentsCount || 0 }}
+                {{ post.boardCommentsCount }}
               </span>
             </div>
           </div>
@@ -152,19 +152,31 @@
       </RouterLink>
     </div>
 
-    <!-- 페이지네이션 추가 -->
+    <!-- 페이지네이션 수정 -->
     <div class="pagination">
       <button 
         :disabled="currentPage === 1"
-        @click="currentPage--"
+        @click="currentPage = Math.max(1, currentPage - 1)"
         class="page-button"
       >
         이전
       </button>
-      <span class="page-info">{{ currentPage }} / {{ totalPages }}</span>
+      
+      <div class="page-numbers">
+        <button
+          v-for="pageNum in displayedPages"
+          :key="pageNum"
+          @click="currentPage = pageNum"
+          class="page-number"
+          :class="{ active: currentPage === pageNum }"
+        >
+          {{ pageNum }}
+        </button>
+      </div>
+
       <button 
         :disabled="currentPage === totalPages"
-        @click="currentPage++"
+        @click="currentPage = Math.min(totalPages, currentPage + 1)"
         class="page-button"
       >
         다음
@@ -185,7 +197,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'; 
+import { ref, computed, onMounted, watch, onUnmounted } from 'vue'; 
 import axios from 'axios';
 import router from '@/router';
 
@@ -206,22 +218,33 @@ const sortBy = ref('latest');
 // API 호출 함수
 onMounted(async () => {
   try {
-    // 게시글 목록만 가져오기
     const response = await axios.get('http://localhost:8080/api/group');
     
-    // 게시글 데이터 매핑
-    posts.value = response.data.map(post => ({
-      ...post,
-      boardCategory: post.boardIsResolved ? '모집완료' : '모집중',
-      boardLikeCount: post.boardLikeCount || 0,
-      boardViews: post.boardViews || 0,
-      boardCommentsCount: post.boardCommentsCount || 0
-    }));
+    // 각 게시글의 댓글 수를 가져오는 Promise 배열 생성
+    const postsWithComments = await Promise.all(
+      response.data.map(async (post) => {
+        try {
+          // 각 게시글의 댓글 수를 가져오는 API 호출
+          const commentsResponse = await axios.get(`http://localhost:8080/api/group/comment/${post.boardNo}`);
+          return {
+            ...post,
+            boardCategory: post.boardIsResolved ? '모집완료' : '모집중',
+            boardLikeCount: post.boardLikeCount || 0,
+            boardViews: post.boardViews || 0,
+            boardCommentsCount: commentsResponse.data.length || 0  // 댓글 배열의 길이로 설정
+          };
+        } catch (error) {
+          console.error(`게시글 ${post.boardNo}의 댓글 수 조회 실패:`, error);
+          return post;
+        }
+      })
+    );
 
+    posts.value = postsWithComments;
     console.log('게시글 데이터:', posts.value);
   } catch (error) {
     console.error('API 호출 오류:', error);
-    alert('게시글을 불러오는 중 문제가 발생했습니다. 다시 시도해주세요.');
+    alert('게시글을 불러오는 중 문제가 발생했습니다.');
   }
 });
 
@@ -373,7 +396,7 @@ const handleLoginSuccess = () => {
 
 // 페이징 관련 로직 추가
 const currentPage = ref(1);
-const postsPerPage = 8; // 한 페이지당 게시글 수
+const postsPerPage = 9; // 한 페이지당 게시글 수를 9개로 변경
 
 // 페이징된 게시글 목록
 const paginatedPosts = computed(() => {
@@ -401,7 +424,6 @@ watch(currentPage, (newPage) => {
   if (newPage < 1) {
     currentPage.value = 1;
   }
-  window.scrollTo({ top: 0, behavior: 'smooth' });
 });
 
 // 필터링/정렬 시 페이지 초기화
@@ -423,25 +445,94 @@ const incrementViewCount = async (boardNo) => {
   }
 };
 
+// 댓글 수 업데이트 함수
+const updateCommentCount = async (boardNo) => {
+  try {
+    const response = await axios.get(`http://localhost:8080/api/group/comment/${boardNo}`);
+    const commentCount = response.data.length;
+    
+    const postIndex = posts.value.findIndex(p => p.boardNo === boardNo);
+    if (postIndex !== -1) {
+      posts.value[postIndex] = {
+        ...posts.value[postIndex],
+        boardCommentsCount: commentCount
+      };
+    }
+  } catch (error) {
+    console.error('댓글 수 업데이트 실패:', error);
+  }
+};
+
+// 주기적으로 댓글 수 업데이트 (선택사항)
+const startCommentCountPolling = () => {
+  setInterval(() => {
+    posts.value.forEach(post => {
+      updateCommentCount(post.boardNo);
+    });
+  }, 30000); // 30초마다 업데이트
+};
+
+onMounted(() => {
+  startCommentCountPolling(); // 폴링 시작
+});
+
+// 좋아요 수 업데이트 함수
+const updateLikeCounts = async () => {
+  try {
+    const response = await axios.get('http://localhost:8080/api/group');
+    posts.value = response.data.map(post => ({
+      ...post,
+      boardCategory: post.boardIsResolved ? '모집완료' : '모집중',
+      boardLikeCount: post.boardLikeCount || 0,
+      boardViews: post.boardViews || 0
+    }));
+  } catch (error) {
+    console.error('좋아요 수 업데이트 실패:', error);
+  }
+};
+
+// 주기적 업데이트 설정
+onMounted(() => {
+  // 기존 코드...
+  
+  // 5초마다 좋아요 수 업데이트
+  const interval = setInterval(updateLikeCounts, 5000);
+  
+  // 컴포넌트 언마운트 시 인터벌 정리
+  onUnmounted(() => {
+    clearInterval(interval);
+  });
+});
+
+// 페이지네이션 관련 computed 속성 추가
+const displayedPages = computed(() => {
+  const pageGroup = Math.ceil(currentPage.value / 5);
+  const start = (pageGroup - 1) * 5 + 1;
+  const end = Math.min(pageGroup * 5, totalPages.value);
+  
+  return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+});
+
 </script>
 
-
-
 <style scoped>
-/* 전체 레이아웃 */
+/* 전체 컨테이너 */
 .event-div {
-  background: linear-gradient(to bottom, #f9f9f9, #ffffff);
-  padding: 20px 0;
-  box-sizing: border-box;
-  position: relative;
-  overflow: hidden;
-  font-family: 'Noto Sans KR', sans-serif;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
 }
 
+/* 상단바 */
 .top-bar {
+  width: 100vw;
+  position: relative;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
   background: linear-gradient(to right, #ffd987, #fcdfa0);
   color: #ffffff;
-  width: 100%;
   height: 100px;
   text-align: center;
   font-size: 26px;
@@ -453,15 +544,13 @@ const incrementViewCount = async (boardNo) => {
   box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-/* 정렬탭1 스타일 */
+/* 정렬탭1 */
 .board-tab1 {
+  width: 100%;
+  margin: 40px 0 20px 0;
   display: flex;
-  justify-content: start; /* 기존 위치 유지 */
-  width: 1000px;
-  margin: 140px auto 0;
-  border-bottom: 1px solid #ccc;
-  position: relative;
-  z-index: 5;
+  gap: 20px;
+  border-bottom: 1px solid #eee;
 }
 
 .board-tab1 .tab-item {
@@ -476,7 +565,7 @@ const incrementViewCount = async (boardNo) => {
 }
 
 .board-tab1 .tab-item:hover {
-  color: #000; /* 호버 시 강조 색상 */
+  color: #000; /* 호버 시 강 색상 */
   transform: translateY(-2px); /* 살짝 위로 이동 */
 }
 
@@ -497,13 +586,62 @@ const incrementViewCount = async (boardNo) => {
   transition: width 0.3s ease, background-color 0.3s ease; /* 부드러운 전환 효과 */
 }
 
-/* 정렬탭2 스타일 */
-.board-tab2 {
+/* 검색바 */
+.search-wrapper {
+  width: 100%;
+  max-width: 500px;
+  margin: 20px auto;
+}
+
+.search-bar {
   display: flex;
-  justify-content: start; /* 기존 위치 유지 */
-  width: 1000px;
-  margin: 50px auto 0;
-  position: relative;
+  align-items: center;
+  background: #fff;
+  border-radius: 25px;
+  padding: 10px 20px;
+  flex-grow: 1;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.search-bar input {
+  flex-grow: 1;
+  border: none;
+  background: transparent;
+  font-size: 16px;
+  padding: 10px;
+  outline: none;
+}
+
+.search-bar:focus-within {
+  background-color: #f9f9f9;
+}
+
+.search-bar img {
+  height: 22px;
+}
+
+.search-button {
+  background: #ffd987;
+  color: white;
+  border-radius: 20px;
+  padding: 10px 20px;
+  font-size: 16px;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s ease, background-color 0.3s ease;
+}
+
+.search-button:hover {
+  background-color: #f8cd71;
+  transform: translateY(-2px);
+}
+
+/* 정렬탭2 */
+.board-tab2 {
+  width: 100%;
+  margin: 20px 0;
+  display: flex;
+  gap: 20px;
 }
 
 .board-tab2 .tab-item2 {
@@ -573,7 +711,7 @@ const incrementViewCount = async (boardNo) => {
   align-items: center;
   justify-content: center;
   margin: 20px auto;
-  width: 40%;
+  width: 500px;
   gap: 15px;
 }
 
@@ -623,7 +761,9 @@ const incrementViewCount = async (boardNo) => {
 .write-wrapper {
   display: flex;
   justify-content: flex-end;
-  margin: 20px 580px;
+  margin: 20px auto;
+  width: 1200px;
+  padding-right: 40px;
 }
 
 .write-button {
@@ -716,23 +856,234 @@ const incrementViewCount = async (boardNo) => {
 
 
 .list-container {
+  width: 1200px;
+  margin: 0 auto;
+}
+
+.list-grid {
+  display: flex;
+  flex-direction: column;
+}
+
+.list-item {
+  display: flex;
+  flex-direction: column;
+  padding: 20px 56px;
+  border-bottom: 1px solid #e0e0e0;
+  border-top: 1px solid #e0e0e0;
+  position: relative;
+  transition: background-color 0.2s ease;
+}
+
+.list-item:hover {
+  background-color: #f8f9fa;
+}
+
+/* 게시글 헤더 (태그 + 제목) */
+.item-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 5px;
+}
+
+/* 태그 스타일 */
+.tag {
+  background: #ffd987;
+  border-radius: 30px;
+  padding: 6px 15px;
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 600;
+  min-width: 74px;
+  text-align: center;
+}
+
+.tag.completed {
+  background: #adb5bd;
+}
+
+/* 제목 */
+.title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #000000;
+}
+
+/* 내용 */
+.description {
+  font-size: 24px;
+  color: #000000;
+  margin: 5px 0;
+  padding-left: 0;
+}
+
+/* 하단 정보 */
+.item-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+}
+
+/* 작성자 */
+.author {
+  font-size: 24px;
+  color: #878787;
+}
+
+/* 조회수, 좋아요, 댓글 정보 */
+.info {
+  display: flex;
+  gap: 30px;
+  align-items: center;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 24px;
+  color: #000000;
+}
+
+.info-item i {
+  font-size: 20px;
+  color: #666;
+}
+
+/* 링크 스타일 제거 */
+.list-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* 페이지네이션 */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.page-button {
+  padding: 8px 16px;
+  border: none;
+  background: none;
+  color: #666;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.page-numbers {
+  display: flex;
+  gap: 5px;
+}
+
+.page-number {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 16px;
+  color: #666;
+}
+
+.page-number.active {
+  background: #ffd987;
+  color: white;
+  border-radius: 50%;
+}
+
+/* 카테고리 태그 스타일 */
+.category-tag {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 15px;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 12px;
+}
+
+.category-tag.yellow {
+  background: #ffd987;
+  color: #fff;
+}
+
+.category-tag.blue {
+  background: #87CEEB;
+  color: #fff;
+}
+
+.category-tag.green {
+  background: #98FB98;
+  color: #fff;
+}
+
+.category-tag.red {
+  background: #FFB6C1;
+  color: #fff;
+}
+
+/* 제목 스타일 */
+.title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+/* 내용 스타일 */
+.content {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 16px;
+}
+
+/* 하단 정보 영역 */
+.post-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  color: #888;
+  font-size: 13px;
+}
+
+.views, .comments {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.views i, .comments i {
+  font-size: 16px;
+}
+
+/* 해결 여부 표시 */
+.resolution-status {
+  font-size: 13px;
+  color: #888;
+}
+
+/* 게시글 목록 컨테이너 */
+.list-container {
   display: flex;
   flex-direction: column;
   gap: 25px;
   padding: 20px 15%;
   background-color: #fff;
+  margin: 0 auto;
 }
 
+/* 게시글 아이템 */
 .list-item {
   background: #f9f9f9;
   border-radius: 15px;
   padding: 20px;
   box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
   transition: transform 0.2s ease, box-shadow 0.3s ease;
-  height: 200px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
 }
 
 .list-item:hover {
@@ -740,6 +1091,15 @@ const incrementViewCount = async (boardNo) => {
   box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.15);
 }
 
+/* 아이템 헤더 (태그 + 제목) */
+.item-header {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 10px;
+}
+
+/* 태그 스타일 */
 .tag {
   display: inline-block;
   font-size: 12px;
@@ -748,110 +1108,46 @@ const incrementViewCount = async (boardNo) => {
   border-radius: 10px;
 }
 
-.tag.ongoing {
-  background-color: #ffd987;
-  color: white;
-}
+.tag.user { background-color: #ffe4b3; color: #ffa500; }
+.tag.video { background-color: #cce5ff; color: #007bff; }
+.tag.community { background-color: #d4edda; color: #28a745; }
+.tag.etc { background-color: #f8d7da; color: #dc3545; }
 
-.tag.completed {
-  background-color: #d3d3d3;
-  color: #555;
-}
-
+/* 제목 */
 .title {
   font-size: 18px;
   font-weight: bold;
   color: #333;
-  margin-bottom: 10px;
 }
 
+/* 내용 */
 .description {
   font-size: 14px;
   color: #777;
-  margin-bottom: 15px;
+  margin: 10px 0;
 }
 
-.author {
-  font-size: 12px;
-  color: #aaa;
-}
-
-.info {
+/* 하단 정보 */
+.item-footer {
   display: flex;
-  gap: 15px;
-  color: #666;
+  align-items: center;
+  gap: 20px;
+  margin-top: 10px;
 }
 
 .info-item {
   display: flex;
   align-items: center;
   gap: 5px;
+  color: #555;
   font-size: 14px;
 }
 
-.info-item i {
-  color: #ffd987;
-  font-size: 16px;
-}
-
-.list-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 20px;
-  margin-bottom: 30px;
-}
-
+/* 링크 스타일 제거 */
 .list-link {
   text-decoration: none;
   color: inherit;
 }
 
-.list-item {
-  height: 200px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-
-.item-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: auto;
-}
-
-.pagination {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 20px;
-  margin-top: 40px;
-  padding: 20px 0;
-}
-
-.page-button {
-  padding: 8px 16px;
-  background-color: #ffd987;
-  color: white;
-  border: none;
-  border-radius: 20px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.page-button:disabled {
-  background-color: #d3d3d3;
-  cursor: not-allowed;
-}
-
-.page-button:not(:disabled):hover {
-  background-color: #f8cd71;
-  transform: translateY(-2px);
-}
-
-.page-info {
-  font-size: 16px;
-  color: #666;
-}
-
 </style>
+

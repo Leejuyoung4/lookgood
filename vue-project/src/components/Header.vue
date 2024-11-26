@@ -83,7 +83,7 @@
           <div class="welcome-text" v-if="userInfo">{{ userInfo.userName }}님 환영합니다</div>
           <div class="user-menu">
             <router-link to="/mypage" class="log-item">
-              마이페이지
+              플레이리스트
               <img class="my-page-img" :src="fluentHomePersonImage" alt="My Page" />
             </router-link>
             <button class="log-item" @click="logout">
