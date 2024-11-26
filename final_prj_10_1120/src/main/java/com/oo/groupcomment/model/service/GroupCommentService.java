@@ -23,6 +23,8 @@ public interface GroupCommentService {
     boolean removeLike(int boardCommentNo, int userNo);
     
     public void updateCommentCount(int boardNo);
+
+	List<GroupComment> getRepliesByCommentNo(int parentCommentNo);
    
     
 }
