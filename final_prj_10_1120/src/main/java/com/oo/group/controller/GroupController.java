@@ -95,7 +95,7 @@ public class GroupController {
         }
     }
 
-    // ... saveFile 메서드는 그대로 유지 ...
+
 
     // 게시글 삭제
     @DeleteMapping("{boardNo}")  // gBoardNo -> boardNo

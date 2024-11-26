@@ -603,6 +603,7 @@ const submitPost = async () => {
   gap: 25px;
   padding: 20px 15%;
   background-color: #fff;
+  margin: 0 auto;
 }
 
 .list-item {
@@ -614,16 +615,15 @@ const submitPost = async () => {
 }
 
 .list-item:hover {
-  transform: translateY(-5px); /* 카드 위로 살짝 이동 */
+  transform: translateY(-5px);
   box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.15);
 }
 
-.item-footer {
+.item-header {
   display: flex;
-  /* justify-content: space-between; */
   align-items: center;
-  margin-top: 10px;
-  gap: 20px;
+  gap: 15px;
+  margin-bottom: 10px;
 }
 
 .tag {
@@ -634,42 +634,28 @@ const submitPost = async () => {
   border-radius: 10px;
 }
 
-.tag.user {
-  background-color: #ffe4b3; /* 회원 태그 */
-  color: #ffa500;
-}
-
-.tag.video {
-  background-color: #cce5ff; /* 영상 태그 */
-  color: #007bff;
-}
-
-.tag.community {
-  background-color: #d4edda; /* 모임 태그 */
-  color: #28a745;
-}
-
-.tag.etc {
-  background-color: #f8d7da; /* 기타 태그 */
-  color: #dc3545;
-}
+.tag.user { background-color: #ffe4b3; color: #ffa500; }
+.tag.video { background-color: #cce5ff; color: #007bff; }
+.tag.community { background-color: #d4edda; color: #28a745; }
+.tag.etc { background-color: #f8d7da; color: #dc3545; }
 
 .title {
   font-size: 18px;
   font-weight: bold;
   color: #333;
-  margin-bottom: 10px;
 }
 
 .description {
   font-size: 14px;
   color: #777;
-  margin-bottom: 15px;
+  margin: 10px 0;
 }
 
-.author {
-  font-size: 12px;
-  color: #aaa;
+.item-footer {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-top: 10px;
 }
 
 .info-item {
@@ -677,6 +663,12 @@ const submitPost = async () => {
   align-items: center;
   gap: 5px;
   color: #555;
+  font-size: 14px;
+}
+
+.list-link {
+  text-decoration: none;
+  color: inherit;
 }
 
 .category-toggle {

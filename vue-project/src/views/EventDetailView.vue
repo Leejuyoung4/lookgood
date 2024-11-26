@@ -2,41 +2,43 @@
   <div class="event-detail">
     <!-- Cute Navigation Bubbles -->
     <div class="bubble-navigation animate__animated animate__bounceIn">
-      <div class="bubble active">
+      <div class="bubble" 
+           :class="{ active: activeSection === 'image' }"
+           @click="scrollToSection('image-section')">
         <i class="bi bi-image"></i>
         <span>사진</span>
       </div>
-      <div class="bubble">
+      <div class="bubble" 
+           :class="{ active: activeSection === 'info' }"
+           @click="scrollToSection('info-section')">
         <i class="bi bi-info-circle"></i>
         <span>정보</span>
       </div>
-      <div class="bubble">
-        <i class="bi bi-list-check"></i>
-        <span>준비물</span>
-      </div>
-      <div class="bubble">
-        <i class="bi bi-wallet2"></i>
-        <span>비용</span>
+      <div class="bubble" 
+           :class="{ active: activeSection === 'map' }"
+           @click="scrollToSection('map-section')">
+        <i class="bi bi-map"></i>
+        <span>지도</span>
       </div>
     </div>
 
     <!-- Main Content -->
     <div class="content-wrapper">
       <!-- Main Image Section -->
-      <div class="image-section animate__animated animate__fadeIn">
+      <div id="image-section" class="image-section animate__animated animate__fadeIn">
         <div class="main-image-container">
           <img :src="getEventImage(event.description)" alt="Event Main Image" />
         </div>
       </div>
 
       <!-- Event Info Section -->
-      <div class="info-section animate__animated animate__fadeIn">
+      <div id="info-section" class="info-section animate__animated animate__fadeIn">
         <div class="description-bubble">
           <p>{{ event.description }}</p>
         </div>
 
         <!-- Map Container -->
-        <div class="map-section">
+        <div id="map-section" class="map-section">
           <div class="map-bubble">
             <div id="kakao-map" style="width: 100%; height: 100%; position: relative;"></div>
           </div>
@@ -70,19 +72,8 @@
           </div>
           <div class="detail-bubble">
             <i class="bi bi-globe"></i>
-            <a :href="event.websiteUrl" target="_blank">트 방문</a>
+            <a :href="formatWebsiteUrl(event.websiteUrl)" target="_blank">{{ event.websiteUrl }}</a>
           </div>
-        </div>
-
-        <!-- Comment Section -->
-        <div class="comment-bubble">
-          <textarea 
-            v-model="comment" 
-            placeholder="귀여운 댓글을 남겨주세요 ✨"
-          ></textarea>
-          <button @click="submitComment" class="submit-btn">
-            <i class="bi bi-send-fill"></i> 등록하기
-          </button>
         </div>
       </div>
     </div>
@@ -136,8 +127,45 @@ const event = ref({
   entryFee: 0,
 });
 
-const comment = ref('');
 const isChatbotOpen = ref(false);
+
+const activeSection = ref('image');
+
+const scrollToSection = (sectionId) => {
+  const element = document.getElementById(sectionId);
+  if (element) {
+    const offset = element.offsetTop - (window.innerHeight - element.offsetHeight) / 2;
+    window.scrollTo({
+      top: offset,
+      behavior: 'smooth'
+    });
+    activeSection.value = sectionId.replace('-section', '');
+  }
+};
+
+const updateActiveSection = () => {
+  const sections = ['image-section', 'info-section', 'map-section'];
+  const viewportMiddle = window.scrollY + window.innerHeight / 2;
+
+  for (const sectionId of sections) {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      const elementMiddle = element.offsetTop + element.offsetHeight / 2;
+      if (Math.abs(viewportMiddle - elementMiddle) < element.offsetHeight / 2) {
+        activeSection.value = sectionId.replace('-section', '');
+        break;
+      }
+    }
+  }
+};
+
+onMounted(() => {
+  window.addEventListener('scroll', updateActiveSection);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', updateActiveSection);
+});
 
 // 주소를 기반으로 구글 지도 URL 생성
 const getMapUrl = (address) => {
@@ -210,21 +238,52 @@ const initializeKakaoMap = async () => {
         return response.result[0];
       }
 
-      // 2. 도로명이나 지역명으로 검색
+      // 2. 번지수 제거 후 검색
+      const addressWithoutNumber = address.replace(/[0-9-]+/g, '').trim();
+      response = await searchAddressPromise(addressWithoutNumber);
+      if (response.status === kakao.maps.services.Status.OK) {
+        return response.result[0];
+      }
+
+      // 3. 도로명/지번 주소 키워드 제거 후 검색
       const parts = address.split(' ');
-      if (parts.length >= 2) {
-        // 도로명이나 동네 이름 추출
-        const locationName = parts[parts.length - 1].replace(/[0-9]/g, '');
+      if (parts.length >= 3) {
+        // 도로명이나 동네 이름에서 '길', '로', '동' 등의 키워드 제거
+        const locationName = parts[parts.length - 1]
+          .replace(/[0-9-]+/g, '')
+          .replace(/(길|로|가|동|읍|면)$/, '');
+        
+        // 시/구/동 조합으로 검색
         const areaSearch = `${parts[0]} ${parts[1]} ${locationName}`;
         response = await searchAddressPromise(areaSearch);
         if (response.status === kakao.maps.services.Status.OK) {
+          // 구청, 시청 등의 키워드가 포함된 결과 필터링
+          const filteredResults = response.result.filter(item => 
+            !item.address_name.includes('청사') &&
+            !item.address_name.includes('구청') &&
+            !item.address_name.includes('시청')
+          );
+          
+          if (filteredResults.length > 0) {
+            return filteredResults[0];
+          }
           return response.result[0];
         }
 
-        // 3. 주요 지역으로 검색
-        const mainArea = `${parts[0]} ${parts[1]} 중심가`;
-        response = await searchAddressPromise(mainArea);
+        // 4. 더 넓은 지역으로 검색
+        const broadArea = `${parts[0]} ${parts[1]}`;
+        response = await searchAddressPromise(broadArea);
         if (response.status === kakao.maps.services.Status.OK) {
+          // 구청, 시청 등의 키워드가 포함된 결과 필터링
+          const filteredResults = response.result.filter(item => 
+            !item.address_name.includes('청사') &&
+            !item.address_name.includes('구청') &&
+            !item.address_name.includes('시청')
+          );
+          
+          if (filteredResults.length > 0) {
+            return filteredResults[0];
+          }
           return response.result[0];
         }
       }
@@ -310,18 +369,19 @@ onUnmounted(() => {
   }
 });
 
-// Submit a comment
-const submitComment = () => {
-  if (comment.value.trim()) {
-    console.log("Comment submitted:", comment.value);
-    comment.value = ""; // Clear the comment field after submission
-  } else {
-    alert("댓글을 작성해주세요.");
-  }
-};
-
 const toggleChatbot = () => {
   isChatbotOpen.value = !isChatbotOpen.value;
+};
+
+// 웹사이트 URL 포맷팅 함수 추가
+const formatWebsiteUrl = (url) => {
+  if (!url) return '#';
+  
+  // URL이 http:// 또는 https://로 시작하지 않으면 추가
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    return `https://${url}`;
+  }
+  return url;
 };
 </script>
 
@@ -623,5 +683,15 @@ a:hover {
 /* 아이콘 색상 */
 .detail-bubble i {
   color: var(--border-color);
+}
+
+.detail-bubble a {
+  text-decoration: none;
+  color: var(--text-color);
+  transition: color 0.3s ease;
+}
+
+.detail-bubble a:hover {
+  color: #ebd03b;
 }
 </style>
