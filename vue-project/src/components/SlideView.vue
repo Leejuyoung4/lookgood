@@ -1,7 +1,7 @@
 <template>
 	<div class="wrapper">
 	  <Carousel ref="carousel" :autoplay="5000" :wrap-around="true">
-		<Slide v-for="slide in slides" :key="slide">
+		<Slide v-for="(slide, index) in slides" :key="slide" @click="goToPage(index)">
 		  <div class="carousel__item">
 			<img class="slideImg" :src="slide" style="cursor: pointer;" />
 		  </div>
@@ -21,14 +21,38 @@
   
   <script setup>
   import { ref } from 'vue';
+  import { useRouter } from 'vue-router';
   import { Carousel, Pagination, Slide } from 'vue3-carousel';
-  import home_1 from "@/assets/img/exer1.avif";
-  import home_2 from "@/assets/img/exer2.jfif";
-  import home_3 from "@/assets/img/exer3.jfif";
-  
   import "vue3-carousel/dist/carousel.css";
   
-  const slides = ref([home_1, home_2, home_3]);
+  const router = useRouter();
+  
+  // 이미지와 이동할 경로를 매핑 (URL 사용)
+  const slideLinks = [
+	{ 
+	  image: new URL('@/assets/img/yang.png', import.meta.url).href,
+	  path: '/videos/5' 
+	},
+	{ 
+	  image: new URL('@/assets/img/kang.png', import.meta.url).href,
+	  path: '/videos/3' 
+	},
+	{ 
+	  image: new URL('@/assets/img/pang.png', import.meta.url).href,
+	  path: '/videos/4' 
+	},
+	{ 
+	  image: new URL('@/assets/img/lia.png', import.meta.url).href,
+	  path: '/videos/8' 
+	}
+  ];
+  
+  const slides = ref(slideLinks.map(slide => slide.image));
+  
+  // 페이지 이동 함수
+  const goToPage = (index) => {
+	router.push(slideLinks[index].path);
+  };
   
   // Carousel 인스턴스 참조 변수
   const carousel = ref(null);
@@ -49,14 +73,17 @@
   
   <style>
   .wrapper {
-	margin-top: 7vh;
-	margin-bottom: 20vh;
+	margin-top: 5vh;
+	margin-bottom: 10vh;
 	position: relative;
+	max-width: 900px;
+	margin-left: auto;
+	margin-right: auto;
   }
   
   .carousel__item {
 	width: 100%;
-	height: 500px;
+	height: 350px;
 	color: var(--vc-clr-white);
 	font-size: 20px;
 	border-radius: 8px;
@@ -67,8 +94,8 @@
   }
   
   .slideImg {
-	width: 100%;
-	height: 100%;
+	width: 85%;
+	height: 85%;
 	object-fit: contain;
 	border-radius: 8px;
   }
@@ -82,9 +109,9 @@
 	background-color: #75757505;
 	color: white;
 	border-radius: 20px;
-	padding: 10px 20px;
+	padding: 8px 16px;
 	position: absolute;
-	bottom: 20px;
+	bottom: 15px;
 	left: 50%;
 	transform: translateX(-50%);
   }

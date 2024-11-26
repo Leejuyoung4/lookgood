@@ -1,13 +1,15 @@
 <template>
   <div class="event-detail">
+    <!-- 이미지 섹션 수정 -->
+    <div v-if="event.imageUrls && event.imageUrls.length > 0" id="image-section" class="image-section animate__animated animate__fadeIn">
+      <div class="image-bubble">
+        <!-- 첫 번째 이미지만 표시 -->
+        <img :src="getImageUrl(event.imageUrls[0])" :alt="event.title" class="event-image">
+      </div>
+    </div>
+
     <!-- Cute Navigation Bubbles -->
     <div class="bubble-navigation animate__animated animate__bounceIn">
-      <div class="bubble" 
-           :class="{ active: activeSection === 'image' }"
-           @click="scrollToSection('image-section')">
-        <i class="bi bi-image"></i>
-        <span>사진</span>
-      </div>
       <div class="bubble" 
            :class="{ active: activeSection === 'info' }"
            @click="scrollToSection('info-section')">
@@ -24,13 +26,6 @@
 
     <!-- Main Content -->
     <div class="content-wrapper">
-      <!-- Main Image Section -->
-      <div id="image-section" class="image-section animate__animated animate__fadeIn">
-        <div class="main-image-container">
-          <img :src="getEventImage(event.description)" alt="Event Main Image" />
-        </div>
-      </div>
-
       <!-- Event Info Section -->
       <div id="info-section" class="info-section animate__animated animate__fadeIn">
         <div class="description-bubble">
@@ -60,7 +55,7 @@
           </div>
           <div class="detail-bubble">
             <i class="bi bi-p-square"></i>
-            <span>주차 {{ event.parkingAvailable ? '가능' : '불가능' }}</span>
+            <span>주차 {{ event.parkingAvailable ? '가능' : '불가' }}</span>
           </div>
           <div class="detail-bubble">
             <i class="bi bi-building"></i>
@@ -125,11 +120,12 @@ const event = ref({
   parkingAvailable: false,
   facilities: '',
   entryFee: 0,
+  imageUrls: [],
 });
 
 const isChatbotOpen = ref(false);
 
-const activeSection = ref('image');
+const activeSection = ref('info');
 
 const scrollToSection = (sectionId) => {
   const element = document.getElementById(sectionId);
@@ -167,164 +163,109 @@ onUnmounted(() => {
   window.removeEventListener('scroll', updateActiveSection);
 });
 
-// 주소를 기반으로 구글 지도 URL 생성
-const getMapUrl = (address) => {
-  if (!address) {
-    return 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3...';
-  }
-  return `https://www.google.com/maps/embed/v1/place?key=YOUR_GOOGLE_MAP_API_KEY&q=${encodeURIComponent(address)}`;
-};
 
-const getEventImage = (description) => {
-  // 설명에 포함된 키워드에 따 이미지 반환
-  if (!description) return 'https://via.placeholder.com/800x400';
 
-  const keywords = description.toLowerCase();
-
-  if (keywords.includes('마라톤') || keywords.includes('달리기')) {
-    return 'https://images.unsplash.com/photo-1530143584546-02191bc84eb5?q=80&w=1000';
-  }
-
-  if (keywords.includes('철인') || keywords.includes('트라이애슬론')) {
-    return 'https://images.unsplash.com/photo-1530549387789-4c1017266635?q=80&w=1000';
-  }
-
-  if (keywords.includes('수영')) {
-    return 'https://images.unsplash.com/photo-1530549387789-4c1017266635?q=80&w=1000';
-  }
-
-  if (keywords.includes('자전거') || keywords.includes('사이클')) {
-    return 'https://images.unsplash.com/photo-1517649763962-0c623066013b?q=80&w=1000';
-  }
-
-  if (keywords.includes('패션')) {
-    return 'https://images.unsplash.com/photo-1509631179647-0177331693ae?q=80&w=1000';
-  }
-
-  // 기본 이미지
-  return 'https://via.placeholder.com/800x400';
-};
-
-// 맵 관련 상태
+// 맵 련 상태
 const mapLoaded = ref(false);
 const mapInstance = ref(null);
 
-// 카카오맵 초기화 함수
+// 카카오맵 초기화 함수 수정
 const initializeKakaoMap = async () => {
+  console.log('카카오맵 초기화 시작');
+  
+  // kakao 객체 확인
+  if (typeof kakao === 'undefined') {
+    console.error('Kakao Maps SDK not loaded');
+    return;
+  }
+
   const container = document.getElementById('kakao-map');
-  const options = {
-    center: new kakao.maps.LatLng(37.5665, 126.9780),
-    level: 3
-  };
+  if (!container) {
+    console.error('Map container not found');
+    return;
+  }
 
-  const map = new kakao.maps.Map(container, options);
-  mapInstance.value = map;
-
-  const geocoder = new kakao.maps.services.Geocoder();
-
-  const searchAddressPromise = (address) => {
-    return new Promise((resolve) => {
-      geocoder.addressSearch(address, (result, status) => {
-        resolve({ result, status });
-      });
-    });
-  };
-
-  if (event.value?.address) {
-    const findLocation = async (address) => {
-      // 1. 정확한 주소로 검색
-      let response = await searchAddressPromise(address);
-      if (response.status === kakao.maps.services.Status.OK) {
-        return response.result[0];
-      }
-
-      // 2. 번지수 제거 후 검색
-      const addressWithoutNumber = address.replace(/[0-9-]+/g, '').trim();
-      response = await searchAddressPromise(addressWithoutNumber);
-      if (response.status === kakao.maps.services.Status.OK) {
-        return response.result[0];
-      }
-
-      // 3. 도로명/지번 주소 키워드 제거 후 검색
-      const parts = address.split(' ');
-      if (parts.length >= 3) {
-        // 도로명이나 동네 이름에서 '길', '로', '동' 등의 키워드 제거
-        const locationName = parts[parts.length - 1]
-          .replace(/[0-9-]+/g, '')
-          .replace(/(길|로|가|동|읍|면)$/, '');
-        
-        // 시/구/동 조합으로 검색
-        const areaSearch = `${parts[0]} ${parts[1]} ${locationName}`;
-        response = await searchAddressPromise(areaSearch);
-        if (response.status === kakao.maps.services.Status.OK) {
-          // 구청, 시청 등의 키워드가 포함된 결과 필터링
-          const filteredResults = response.result.filter(item => 
-            !item.address_name.includes('청사') &&
-            !item.address_name.includes('구청') &&
-            !item.address_name.includes('시청')
-          );
-          
-          if (filteredResults.length > 0) {
-            return filteredResults[0];
-          }
-          return response.result[0];
-        }
-
-        // 4. 더 넓은 지역으로 검색
-        const broadArea = `${parts[0]} ${parts[1]}`;
-        response = await searchAddressPromise(broadArea);
-        if (response.status === kakao.maps.services.Status.OK) {
-          // 구청, 시청 등의 키워드가 포함된 결과 필터링
-          const filteredResults = response.result.filter(item => 
-            !item.address_name.includes('청사') &&
-            !item.address_name.includes('구청') &&
-            !item.address_name.includes('시청')
-          );
-          
-          if (filteredResults.length > 0) {
-            return filteredResults[0];
-          }
-          return response.result[0];
-        }
-      }
-
-      return null;
+  try {
+    // 지도 생성
+    const options = {
+      center: new kakao.maps.LatLng(37.5665, 126.9780), // 서울 시청 기본 좌표
+      level: 3
     };
 
-    const searchResult = await findLocation(event.value.address);
-    
-    if (searchResult) {
-      const coords = new kakao.maps.LatLng(searchResult.y, searchResult.x);
+    const map = new kakao.maps.Map(container, options);
+    mapInstance.value = map;
+    console.log('지도 생성 성공');
+
+    // 주소로 좌표 검색
+    if (event.value?.address) {
+      console.log('검색할 주소:', event.value.address);
       
-      // 마커 생성
-      const marker = new kakao.maps.Marker({
-        map: map,
-        position: coords
+      // 주소-좌표 변환 객체 생성
+      const geocoder = new kakao.maps.services.Geocoder();
+
+      // 주소로 좌표 검색
+      geocoder.addressSearch(event.value.address, function(result, status) {
+        console.log('주소 검색 결과:', status, result);
+
+        if (status === kakao.maps.services.Status.OK) {
+          const coords = new kakao.maps.LatLng(result[0].y, result[0].x);
+
+          // 마커 생성
+          const marker = new kakao.maps.Marker({
+            map: map,
+            position: coords
+          });
+
+          // 인포윈도우 생성
+          const infowindow = new kakao.maps.InfoWindow({
+            content: `<div style="padding:5px;font-size:12px;text-align:center;">
+                      <strong>${event.value.title || '행사 장소'}</strong><br>
+                      ${event.value.address}
+                    </div>`
+          });
+
+          // 마커에 마우스오버 이벤트 추가
+          kakao.maps.event.addListener(marker, 'mouseover', function() {
+            infowindow.open(map, marker);
+          });
+
+          // 마커에 마우스아웃 이벤트 추가
+          kakao.maps.event.addListener(marker, 'mouseout', function() {
+            infowindow.close();
+          });
+
+          // 지도 중심을 검색된 좌표로 이동
+          map.setCenter(coords);
+          map.setLevel(3); // 줌 레벨 설정
+          
+          console.log('지도 이동 완료:', coords);
+        } else {
+          console.error('주소 검색 실패:', status);
+        }
       });
-
-      // 인포윈도우 생성
-      const infowindow = new kakao.maps.InfoWindow({
-        content: `<div style="padding:5px;font-size:12px;">
-                  ${event.value.address}
-                  </div>`
-      });
-
-      // 마커 이벤트
-      kakao.maps.event.addListener(marker, 'mouseover', () => infowindow.open(map, marker));
-      kakao.maps.event.addListener(marker, 'mouseout', () => infowindow.close());
-
-      // 지도 중심 이동
-      map.setCenter(coords);
-      map.setLevel(3);
+    } else {
+      console.error('주소 정보가 없습니다.');
     }
+  } catch (error) {
+    console.error('지도 초기화 중 오류:', error);
   }
+};
+
+// 이미지 URL 생성 함수 추가
+const getImageUrl = (filename) => {
+  if (!filename) {
+    console.log('파일명이 없음');
+    return null;
+  }
+  const url = `http://${currentIP}:8080/uploads/${filename}`;
+  console.log('생성된 이미지 URL:', url);
+  return url;
 };
 
 onMounted(async () => {
   const eventId = route.params.id;
   
   try {
-    // 1. 이벤트 데이터 가져오기
     const response = await axios({
       method: 'get',
       url: `/api/event-detail/${eventId}`,
@@ -332,33 +273,18 @@ onMounted(async () => {
       withCredentials: false
     });
     
-    event.value = response.data;
-    console.log('서버 응답:', response.data);
-
-    // 2. DOM 업데이트 대기
-    await nextTick();
-
-    // 3. 카카오맵 초기화
-    if (window.kakao && window.kakao.maps) {
-      initializeKakaoMap();
-    } else {
-      let attempts = 0;
-      const maxAttempts = 20;
+    if (response.data) {
+      // 이벤트 데이터 설정
+      event.value = response.data;
       
-      const checkMap = setInterval(() => {
-        if (window.kakao && window.kakao.maps) {
-          clearInterval(checkMap);
-          initializeKakaoMap();
-        } else if (attempts >= maxAttempts) {
-          clearInterval(checkMap);
-          console.error('카카오맵 로드 타임아웃');
-        }
-        attempts++;
-      }, 500);
+      // DOM 업데이트 대기
+      await nextTick();
+      
+      // 카카오맵 초기화
+      await initializeKakaoMap();
     }
-
   } catch (error) {
-    console.error("이벤트 상세 정보 가져오기 실패:", error);
+    console.error("API 요청 실패:", error);
   }
 });
 
@@ -377,7 +303,7 @@ const toggleChatbot = () => {
 const formatWebsiteUrl = (url) => {
   if (!url) return '#';
   
-  // URL이 http:// 또는 https://로 시작하지 않으면 추가
+  // URL이 http:// 또는 https://로 시작하지 않면 추가
   if (!url.startsWith('http://') && !url.startsWith('https://')) {
     return `https://${url}`;
   }
@@ -429,26 +355,6 @@ const formatWebsiteUrl = (url) => {
 
 .bubble.active i {
   color: #fff;
-}
-
-/* Main Image */
-.main-image-container {
-  border-radius: 20px;
-  overflow: hidden;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
-  margin-bottom: 30px;
-  border: 3px solid #ebd03b;
-}
-
-.main-image-container img {
-  width: 100%;
-  height: 400px;
-  object-fit: cover;
-  transition: transform 0.3s ease;
-}
-
-.main-image-container:hover img {
-  transform: scale(1.05);
 }
 
 /* Info Bubbles */
@@ -693,5 +599,38 @@ a:hover {
 
 .detail-bubble a:hover {
   color: #ebd03b;
+}
+
+/* 이미지 섹션 스타일 추가 */
+.image-section {
+  width: 100%;
+  margin-bottom: 30px;
+}
+
+.image-bubble {
+  width: 100%;
+  border-radius: 15px;
+  overflow: hidden;
+  border: 2px solid var(--border-color);
+  background-color: var(--bg-color);
+  box-shadow: 0 4px 12px var(--shadow-color);
+}
+
+.event-image {
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  display: block;
+  max-height: 500px;
+}
+
+/* 다크모드에서의 이미지 스타일 */
+:root.dark-mode .image-bubble {
+  border-color: var(--border-color);
+  background-color: var(--bg-color-lighter);
+}
+
+:root.dark-mode .event-image {
+  filter: brightness(0.9);
 }
 </style>

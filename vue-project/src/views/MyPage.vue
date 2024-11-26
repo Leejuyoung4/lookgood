@@ -2660,7 +2660,7 @@ body.modal-open {
   }
 }
 
-/* 다크모드 스타일 */
+/* 다���모드 스타일 */
 :root.dark-mode .memo-input {
   background: #2a2a2a;
   color: #fff;

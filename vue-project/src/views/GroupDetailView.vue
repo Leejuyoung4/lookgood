@@ -35,7 +35,7 @@
            :key="index" 
            class="image-container"
            @click="openImageModal(image)">
-        <img :src="`http://localhost:8080/uploads/${image}`" :alt="`첨부 이미지 ${index + 1}`">
+        <img :src="`/uploads/${image}`" :alt="`첨부 이미지 ${index + 1}`">
       </div>
     </div>
 
@@ -105,7 +105,7 @@
     <!-- 이미지 모달 -->
     <div v-if="showImageModal" class="image-modal" @click="closeImageModal">
       <div class="modal-content">
-        <img :src="`http://localhost:8080/uploads/${selectedImage}`" alt="확대된 이미지">
+        <img :src="`/uploads/${selectedImage}`" alt="확대된 이미지">
       </div>
     </div>
   </div>
@@ -149,13 +149,8 @@ const formatDate = (dateString) => {
 
 // 사용자 ID를 가져오는 함수
 const getUserId = async (userNo) => {
-  // 이미 캐시된 ID가 있다면 반환
-  if (userIds.value.has(userNo)) {
-    return userIds.value.get(userNo);
-  }
-
   try {
-    const response = await axios.get(`http://localhost:8080/api/user/id/${userNo}`);
+    const response = await axios.get(`/api/user/id/${userNo}`);
     if (response.data.success) {
       const userId = response.data.userId;
       userIds.value.set(userNo, userId);
@@ -172,7 +167,7 @@ const getUserId = async (userNo) => {
 // 게시글 로드
 const loadPost = async () => {
   try {
-    const response = await axios.get(`http://localhost:8080/api/group/${route.params.boardNo}`);
+    const response = await axios.get(`/api/group/${route.params.boardNo}`);
     group.value = response.data;
     
     // 게시글 작성자 ID 조회
@@ -187,7 +182,7 @@ const loadPost = async () => {
 // 댓글 로드
 const loadComments = async () => {
   try {
-    const response = await axios.get(`http://localhost:8080/api/group/comment/${route.params.boardNo}`);
+    const response = await axios.get(`/api/group/comment/${route.params.boardNo}`);
     comments.value = response.data;
     
     // 각 댓글 작성자의 ID 조회
@@ -204,7 +199,7 @@ const loadComments = async () => {
 // 좋아요 수 로드 함수 수정
 const loadLikeCount = async () => {
   try {
-    const response = await axios.get(`http://localhost:8080/api/group/${route.params.boardNo}`);
+    const response = await axios.get(`/api/group/${route.params.boardNo}`);
     likeCount.value = response.data.boardLikeCount || 0;
   } catch (error) {
     console.error('좋아요 수 로드 실패:', error);
@@ -223,7 +218,7 @@ const toggleLike = async () => {
     const userInfo = JSON.parse(localStorage.getItem('userInfo'));
     
     await axios.put(
-      `http://localhost:8080/api/group/${route.params.boardNo}/like`, 
+      `/api/group/${route.params.boardNo}/like`, 
       null,
       {
         params: { userNo: userInfo.userNo }
@@ -264,7 +259,7 @@ const submitComment = async () => {
 
   try {
     const userInfo = JSON.parse(localStorage.getItem('userInfo'));
-    await axios.post(`http://localhost:8080/api/group/comment/${route.params.boardNo}`, {
+    await axios.post(`/api/group/comment/${route.params.boardNo}`, {
       userNo: userInfo.userNo,
       boardCommentContent: newComment.value
     });
@@ -282,7 +277,7 @@ const deleteComment = async (commentNo) => {
   if (!confirm('댓글을 삭제하시겠습니까?')) return;
 
   try {
-    await axios.delete(`http://localhost:8080/api/group/comment/${commentNo}`);
+    await axios.delete(`/api/group/comment/${commentNo}`);
     await loadComments();
   } catch (error) {
     console.error('댓글 삭제 실패:', error);
@@ -293,7 +288,7 @@ const deleteComment = async (commentNo) => {
 // 댓글 수정 (필요한 경우)
 const updateComment = async (commentNo, content) => {
   try {
-    await axios.put(`http://localhost:8080/api/group/comment/${commentNo}`, {
+    await axios.put(`/api/group/comment/${commentNo}`, {
       boardCommentContent: content
     });
     await loadComments();
@@ -312,7 +307,7 @@ const likeComment = async (commentNo) => {
 
   try {
     const userInfo = JSON.parse(localStorage.getItem('userInfo'));
-    await axios.post(`http://localhost:8080/api/group/comment/${commentNo}/like`, userInfo.userNo);
+    await axios.post(`/api/group/comment/${commentNo}/like`, userInfo.userNo);
     await loadComments();
   } catch (error) {
     console.error('댓글 좋아요 실패:', error);
@@ -371,7 +366,7 @@ const toggleResolveStatus = async () => {
     };
 
     const response = await axios.put(
-      `http://localhost:8080/api/group/${route.params.boardNo}`,
+      `/api/group/${route.params.boardNo}`,
       updatedGroup
     );
     
@@ -392,7 +387,7 @@ const checkLikeStatus = async () => {
   try {
     const userInfo = JSON.parse(localStorage.getItem('userInfo'));
     const response = await axios.get(
-      `http://localhost:8080/api/group/${route.params.boardNo}/like`,
+      `/api/group/${route.params.boardNo}/like`,
       {
         params: { userNo: userInfo.userNo }
       }
@@ -428,7 +423,7 @@ const saveCommentEdit = async (commentNo) => {
   }
 
   try {
-    await axios.put(`http://localhost:8080/api/group/comment/${commentNo}`, {
+    await axios.put(`/api/group/comment/${commentNo}`, {
       boardCommentContent: editingCommentText.value
     });
     

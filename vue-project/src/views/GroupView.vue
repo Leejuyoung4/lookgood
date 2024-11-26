@@ -218,20 +218,19 @@ const sortBy = ref('latest');
 // API 호출 함수
 onMounted(async () => {
   try {
-    const response = await axios.get('http://localhost:8080/api/group');
+    const response = await axios.get('/api/group');
     
     // 각 게시글의 댓글 수를 가져오는 Promise 배열 생성
     const postsWithComments = await Promise.all(
       response.data.map(async (post) => {
         try {
-          // 각 게시글의 댓글 수를 가져오는 API 호출
-          const commentsResponse = await axios.get(`http://localhost:8080/api/group/comment/${post.boardNo}`);
+          const commentsResponse = await axios.get(`/api/group/comment/${post.boardNo}`);
           return {
             ...post,
             boardCategory: post.boardIsResolved ? '모집완료' : '모집중',
             boardLikeCount: post.boardLikeCount || 0,
             boardViews: post.boardViews || 0,
-            boardCommentsCount: commentsResponse.data.length || 0  // 댓글 배열의 길이로 설정
+            boardCommentsCount: commentsResponse.data.length || 0
           };
         } catch (error) {
           console.error(`게시글 ${post.boardNo}의 댓글 수 조회 실패:`, error);
@@ -241,7 +240,6 @@ onMounted(async () => {
     );
 
     posts.value = postsWithComments;
-    console.log('게시글 데이터:', posts.value);
   } catch (error) {
     console.error('API 호출 오류:', error);
     alert('게시글을 불러오는 중 문제가 발생했습니다.');
@@ -362,7 +360,7 @@ const submitPost = async () => {
       });
     }
 
-    const response = await axios.post("http://localhost:8080/api/group", formData, {
+    const response = await axios.post("/api/group", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
 
@@ -434,8 +432,7 @@ watch([selectedCategory, sortBy, searchQuery], () => {
 // 조회수 증가 함수
 const incrementViewCount = async (boardNo) => {
   try {
-    await axios.put(`http://localhost:8080/api/group/${boardNo}/view`);
-    // 조회수 증가 후 로컬 상태 업데이트
+    await axios.put(`/api/group/${boardNo}/view`);
     const post = posts.value.find(p => p.boardNo === boardNo);
     if (post) {
       post.boardViews = (post.boardViews || 0) + 1;
@@ -448,7 +445,7 @@ const incrementViewCount = async (boardNo) => {
 // 댓글 수 업데이트 함수
 const updateCommentCount = async (boardNo) => {
   try {
-    const response = await axios.get(`http://localhost:8080/api/group/comment/${boardNo}`);
+    const response = await axios.get(`/api/group/comment/${boardNo}`);
     const commentCount = response.data.length;
     
     const postIndex = posts.value.findIndex(p => p.boardNo === boardNo);
@@ -479,7 +476,7 @@ onMounted(() => {
 // 좋아요 수 업데이트 함수
 const updateLikeCounts = async () => {
   try {
-    const response = await axios.get('http://localhost:8080/api/group');
+    const response = await axios.get('/api/group');
     posts.value = response.data.map(post => ({
       ...post,
       boardCategory: post.boardIsResolved ? '모집완료' : '모집중',
@@ -1147,6 +1144,109 @@ const displayedPages = computed(() => {
 .list-link {
   text-decoration: none;
   color: inherit;
+}
+
+/* 다크모드 스타일 */
+:root.dark-mode .event-div {
+  background-color: #1a1a1a;
+  color: #e0e0e0;
+}
+
+:root.dark-mode .top-bar {
+  background: linear-gradient(to right, #c4a05e, #d4b36b);
+  color: #1a1a1a;
+}
+
+:root.dark-mode .list-item {
+  background: #2d2d2d;
+  border: 1px solid #404040;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+:root.dark-mode .list-item:hover {
+  background: #333333;
+  transform: translateY(-5px);
+  box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+:root.dark-mode .title {
+  color: #e0e0e0;
+}
+
+:root.dark-mode .description {
+  color: #b0b0b0;
+}
+
+:root.dark-mode .author {
+  color: #909090;
+}
+
+:root.dark-mode .info-item {
+  color: #909090;
+}
+
+:root.dark-mode .search-bar {
+  background: #2d2d2d;
+  border: 1px solid #404040;
+}
+
+:root.dark-mode .search-bar input {
+  color: #e0e0e0;
+}
+
+:root.dark-mode .search-bar input::placeholder {
+  color: #909090;
+}
+
+:root.dark-mode .search-bar:focus-within {
+  background: #333333;
+}
+
+:root.dark-mode .board-tab1 .tab-item,
+:root.dark-mode .board-tab2 .tab-item2 {
+  color: #909090;
+}
+
+:root.dark-mode .board-tab1 .tab-item:hover,
+:root.dark-mode .board-tab2 .tab-item2:hover {
+  color: #e0e0e0;
+}
+
+:root.dark-mode .board-tab1 .tab-item.active,
+:root.dark-mode .board-tab2 .tab-item2.active {
+  color: #ffffff;
+}
+
+:root.dark-mode .modal-content {
+  background: #2d2d2d;
+  border: 1px solid #404040;
+}
+
+:root.dark-mode .modal-content input,
+:root.dark-mode .modal-content textarea {
+  background: #333333;
+  border: 1px solid #404040;
+  color: #e0e0e0;
+}
+
+:root.dark-mode .page-button,
+:root.dark-mode .page-number {
+  color: #909090;
+}
+
+:root.dark-mode .page-number.active {
+  background: #c4a05e;
+  color: #1a1a1a;
+}
+
+:root.dark-mode .tag {
+  background: #c4a05e;
+  color: #1a1a1a;
+}
+
+:root.dark-mode .tag.completed {
+  background: #666666;
+  color: #e0e0e0;
 }
 
 </style>

@@ -76,7 +76,7 @@ watch(
   max-width: 1200px;
   margin: 200px auto;
   padding: 20px;
-  background: #f8f9fa;
+  background: var(--background-color);
   border-radius: 8px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
@@ -87,21 +87,21 @@ watch(
   font-weight: bold;
   margin-bottom: 20px;
   text-align: center;
-  color: #333;
+  color: var(--text-color);
 }
 
 /* 검색 결과 컨테이너 */
 .results-container {
   padding: 20px;
-  background: #fff;
-  border: 1px solid #e9ecef;
+  background: var(--background-color-secondary);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
 }
 
 /* 결과가 없을 때 스타일 */
 .no-results {
   text-align: center;
-  color: #6c757d;
+  color: var(--text-color-secondary);
   font-size: 16px;
 }
 
@@ -128,13 +128,13 @@ watch(
   font-size: 18px;
   font-weight: bold;
   margin-bottom: 8px;
-  color: #495057;
+  color: var(--text-color);
 }
 
 /* 결과 내용 */
 .result-content {
   font-size: 22px;
-  color: #6c757d;
+  color: var(--text-color-secondary);
   line-height: 1.6;
 }
 
